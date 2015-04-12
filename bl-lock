@@ -1,0 +1,22 @@
+#!/bin/bash
+# bl-lock
+# -------
+# This is a wrapper for the 'xscreensaver-command -lock' command.
+# If running in live mode, offer up a prompt detailing the live session password.
+# Else, run xscreensaver-command -lock.
+# Simples!
+if [ -d /live/overlay ]; then
+    if [ ! -f /home/$USER/.config/bunsen/bl-lock ]; then
+        zenity --info --title="Lock screen info:" --text="Lock screen has detected you are running a live session.\nThe password needed to unlock the screen is \"live\".\nThis notice will only be displayed once per live session."
+        if [ ! -d /home/$USER/.config/bunsen ]; then
+            mkdir /home/$USER/.config/bunsen
+        fi
+        touch /home/$USER/.config/bunsen/bl-lock
+        xscreensaver-command -lock
+        exit 0
+    fi
+    xscreensaver-command -lock
+else
+    xscreensaver-command -lock
+fi
+exit 0

@@ -1,0 +1,5 @@
+bl-exit usr/bin
+bl-lock usr/bin
+bl-aerosnap usr/bin
+bl-hotcorners usr/bin
+bl-user-setup usr/lib/bunsen/bunsen-utilities

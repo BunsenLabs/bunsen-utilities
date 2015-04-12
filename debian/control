@@ -1,0 +1,28 @@
+Source: bunsen-utilities
+Section: misc
+Priority: extra
+Maintainer: John Crawley <john@rafflesnagoya.com>
+Build-Depends: debhelper (>= 9)
+Standards-Version: 3.9.5
+Homepage: https://github.com/BunsenLabs/bunsen-utilities
+Vcs-Git: https://github.com/BunsenLabs/bunsen-utilities.git
+Vcs-Browser: https://github.com/BunsenLabs/bunsen-utilities.git
+
+Package: bunsen-utilities
+Architecture: all
+Depends: ${misc:Depends}, python-gtk2, upower, zenity, xscreensaver, rpl, tar, lightdm, bunsen-configs, wmctrl, python, python-xlib, xdotool (>=1:2.20110530.1-3)
+Conflicts: bunsen-exit, bunsen-lock, bunsen-user-setup, bunsen-wmhacks
+Recommends: gmrun
+Description: Small scripts to use with BunsenLabs.
+ A collection of small scripts to provide various functions
+ which might be useful to BunsenLinux users.
+ .
+  - bl-exit: Logout dialog box with various options.
+  - bl-lock: Script to lock the display.
+  - bl-user-setup: Script to install user config files in ~/
+  - bl-aerosnap: Script to add aero style window snapping to Openbox.
+  - bl-hotcorners: Script to add hot corners to Openbox.
+ .
+ Originally imported from cb-exit, cb-lock, cb-slim and cb-wmhacks,
+ made for CrunchBang Linux and subsequently modified for BunsenLabs.
+
