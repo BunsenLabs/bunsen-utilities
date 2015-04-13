@@ -1,10 +1,13 @@
 #!/usr/bin/python2
+# -*- coding: utf-8 -*-
 
 import pygtk
 pygtk.require('2.0')
 import gtk
 import os
 import getpass
+
+dbus_send = "dbus-send --print-reply --system --dest=org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager.{} boolean:true"
 
 class bl_exit:
     def disable_buttons(self):
@@ -27,18 +30,18 @@ class bl_exit:
         self.disable_buttons()
         self.status.set_label("Suspending, please standby...")
         os.system("bl-lock")
-        os.system("systemctl suspend")
+        os.system(dbus_send.format("Suspend"))
         gtk.main_quit()
 
     def reboot_action(self,btn):
         self.disable_buttons()
         self.status.set_label("Rebooting, please standby...")
-        os.system("systemctl reboot")
+        os.system(dbus_send.format("Reboot"))
 
     def shutdown_action(self,btn):
         self.disable_buttons()
         self.status.set_label("Shutting down, please standby...")
-        os.system("systemctl poweroff")
+        os.system(dbus_send.format("PowerOff"))
 
     def create_window(self):
         self.window = gtk.Window()
@@ -68,8 +71,8 @@ class bl_exit:
 
         #Cancel key (Escape)
         accelgroup = gtk.AccelGroup()
-        key, mod = gtk.accelerator_parse('Escape')
-        accelgroup.connect_group(key, mod, gtk.ACCEL_VISIBLE, gtk.main_quit)
+        self.key, self.mod = gtk.accelerator_parse('Escape')
+        accelgroup.connect_group(self.key, self.mod, gtk.ACCEL_VISIBLE, gtk.main_quit)
         self.window.add_accel_group(accelgroup)
 
         #Logout button
