@@ -1,0 +1,122 @@
+#!/bin/bash
+#
+#   BunsenLabs tint2 selection and switcher script
+#
+#   Written by <damo>, April 2015 
+#
+########################################################################
+#
+#   Tint2 config files must be in $TINT2PATH
+#
+#   When the dialog opens, any running tint2s will be checkmarked.
+#
+#   Click "OK" and all running tint2s are stopped, and all checkmarked
+#   tint2s are started
+#
+#   To stop a tint2 just uncheck it, and "OK"
+#
+#   Running tint2s are saved to a session file, and can be run with
+#   the "tint2-session" script. To start them at login, add the 
+#   following line to autostart:
+#                    (sleep 2s && tint2-session) &
+#
+########################################################################
+
+TINT2PATH="$HOME/.config/tint2"
+TEMPFILE="$TINT2PATH/tint2-temp"
+SESSIONFILE="$TINT2PATH/tint2-session"
+
+tintRunning(){
+    > $TEMPFILE #make blank tempfile
+    if [ "$(pidof tint2)" ];then
+        # get last field of output = tint2 filepath; write to tempfile
+        ps aux | grep [t]int2" -c" |  awk  '{print $NF}' >> $TEMPFILE
+    fi
+}
+
+fillArrays(){
+    num="$1"
+    tintsPath[$num]="$2"   # full filepath to the tint2
+    tintsArr[$num]="$3"    # displayed name
+    # see if name matches one of the running tints
+    while read line; do
+        f=$(echo $line | awk -F"/" '{print $(NF-1)"/"$NF}')
+        if [[ $3 = $f ]];then
+            checkArr[$num]="TRUE" # match, so break out of loop
+            break
+        else
+            checkArr[$num]="FALSE"
+        fi
+    done < "$TEMPFILE"
+}
+
+findTint(){
+# search dirs for tint2 config files
+    num=0
+    for x in $(find $TINT2PATH -type f );do
+        # check if likely tint2 config file
+        pm=$(grep  "panel_monitor" "$x")
+        if [[ $pm ]];then
+            TINT2=$( echo $x | awk -F"/" '{print $(NF-1)"/"$NF}')
+            fillArrays $num $x $TINT2
+            num=$(($num+1))
+        fi
+    done
+}
+# get tint2 directories in .tint2, add to array
+tintRunning
+findTint
+
+# loop through arrays, and build msg text for zenity dialog
+msg=""
+for ((j=0; j<${#tintsArr[*]}; j++));do
+    msg="$msg ${checkArr[j]} ${tintsArr[j]}"
+done
+
+## Populate zenity dialog from array, get return value(s)
+RET=`zenity --list --title "BunsenLabs Tint2 chooser" --checklist --width=300 --height=500 \
+    --column "Select" --column "tint2 Name" --separator=":"\
+    $msg`
+
+if [[ $? == 1 ]]; then # cancel button pressed
+    exit 0
+else
+    > $SESSIONFILE    # Create new session file
+    # loop through returned choices, add to array
+    i=0
+    OIFS=$IFS   # copy original IFS
+    IFS=":"     # separator is ":" in returned choices
+    for name in $RET; do 
+        retTint[$i]=$name
+        i=$(($i+1))
+    done
+    IFS=$IFS    # reset IFS
+    
+    # kill all tint2s
+    if [ "$(pidof tint2)" ];then
+        killall tint2
+    fi
+    
+    for name in ${retTint[*]};do       # loop through checkmarked tint2 names
+    echo "name= $name"
+        for ((j=0; j<${#tintsPath[*]}; j++));do  # traverse through elements
+            for f in ${tintsPath[j]};do
+                display=$( echo $f | awk -F"/" '{print $(NF-1)"/"$NF}')
+                # see if it matches the returned name
+                if [[ $display = $name ]];then
+                    fpath="$f"
+                    echo -e "tint2 -c $f & sleep 1s" >> $SESSIONFILE
+                    tint2 -c "$f" & #start the tint2
+                    sleep 0.5s
+                fi
+            done
+        done
+    done 
+fi
+
+rm -r $TEMPFILE
+
+exit 0
+
+
+

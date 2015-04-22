@@ -1,0 +1,36 @@
+#!/bin/bash
+##
+#   Read a saved BunsenLabs tint2 session file and start the tint2s
+#
+#   written by <damo> for BunsenLabs, April 2015
+#
+########################################################################
+TINT2PATH="$HOME/.config/tint2"
+SESSIONFILE="$TINT2PATH/tint2-session"
+USAGE=$(
+    echo -e "\vUSAGE:  with no command argument, the script uses the default"
+    echo -e "\tTint2 session file \"$TINT2PATH/tint2-session.txt\""
+    echo -e "\v\tTo start them at login, add the following line to autostart:"
+    echo -e "\v\t\t\"(sleep 2s && tint2-session) &\""
+)
+
+if [ $# -eq 0 ];then
+    if test -f "$1";then
+        if [ "$(pidof tint2)" ];then    # kill running tint2s
+            killall tint2 && sleep 0.2s
+        fi
+        source $SESSIONFILE
+    else
+        echo -e "\v\tERROR: SESSIONFILE \"$SESSIONFILE\" not found!" >&2
+        echo "$USAGE"
+        exit 1
+    fi
+elif [[ $1 = "-h" ]] || [[ $1 = "--help" ]];then
+    echo "$USAGE"
+    exit 0
+else
+    echo -e "\v\tWrong input!"
+    echo -e "\v\tUse \"bl-tint2-session [-h|--help]\"\v"
+fi
+
+exit 0
