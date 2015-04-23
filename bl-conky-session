@@ -4,9 +4,14 @@
 #
 #   written by <damo> for BunsenLabs, April 2015
 #
+#   To start the default conky session at login, add the following line
+#   to config/openbox/autostart:
+#
+#      (sleep 2s && bl-conky-session --autostart) &
+#
 ########################################################################
 CONKYPATH="$HOME/.conky"
-SESSIONFILE="$CONKYPATH/conky-session"
+SESSIONFILE="$CONKYPATH/conky-sessionfile"
 USAGE=$(echo -e "\vUSAGE:\tbl-conky-session [OPTION(S)]...FILES"
          echo -e "\n\tWith no command argument, the script uses the default"
          echo -e "\t\"\$CONKYPATH/conky-session\" sessionfile"
@@ -24,7 +29,6 @@ USAGE=$(echo -e "\vUSAGE:\tbl-conky-session [OPTION(S)]...FILES"
 
 findArgs(){     # get command args (switches & sessionfile paths)
     i=0
-
     for arg in "$@";do
         if [[ $arg = "--default" ]];then
             arg="$SESSIONFILE"
@@ -37,8 +41,9 @@ findArgs(){     # get command args (switches & sessionfile paths)
             rawArr[$i]="$arg"       # add sessionfiles to array
             i=$(($i+1))
         else
-            echo "ERROR: sessionfile \"$arg\" not found" >&2
-            exit 1
+            echo -e "ERROR: sessionfile \"$arg\" not found. Using default" >&2
+            conky -q 
+            exit 0
         fi
     done
     # remove duplicate args

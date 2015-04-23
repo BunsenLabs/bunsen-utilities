@@ -31,7 +31,7 @@
 
 CONKYPATH="$HOME/.conky"
 TEMPFILE="$CONKYPATH/conky-temp"
-SESSIONFILE="$CONKYPATH/conky-session"
+SESSIONFILE="$CONKYPATH/conky-sessionfile"
 SESSIONS="$CONKYPATH/saved-sessions"    # to be used by a pipemenu
 
 ########## FUNCTIONS ###################################################
@@ -108,7 +108,7 @@ for ((j=0; j<${#conkysArr[*]}; j++));do
 done
 
 ## Populate zenity dialog from array, get return value(s)
-RET=$(zenity --list --text "BunsenLabs Conky Chooser\n\nSession will be saved to\n $SESSIONFILE"\
+RET=$(zenity --list --title "BunsenLabs Conky Chooser"--text "Session will be saved to:\n $SESSIONFILE"\
  --checklist --width=400 --height=500 \
     --column "Select" --column "Conky Name" --separator=":"\
     $msg)
