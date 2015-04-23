@@ -18,13 +18,14 @@
 #   Running tint2s are saved to a session file, and can be run with
 #   the "tint2-session" script. To start them at login, add the 
 #   following line to autostart:
-#                    (sleep 2s && tint2-session) &
+#
+#           (sleep 2s && bl-tint2-session --autostart) &
 #
 ########################################################################
 
 TINT2PATH="$HOME/.config/tint2"
 TEMPFILE="$TINT2PATH/tint2-temp"
-SESSIONFILE="$TINT2PATH/tint2-session"
+SESSIONFILE="$TINT2PATH/tint2-sessionfile"
 
 tintRunning(){
     > $TEMPFILE #make blank tempfile
@@ -39,15 +40,11 @@ fillArrays(){
     tintsPath[$num]="$2"   # full filepath to the tint2
     tintsArr[$num]="$3"    # displayed name
     # see if name matches one of the running tints
-    while read line; do
-        f=$(echo $line | awk -F"/" '{print $(NF-1)"/"$NF}')
-        if [[ $3 = $f ]];then
-            checkArr[$num]="TRUE" # match, so break out of loop
-            break
-        else
-            checkArr[$num]="FALSE"
-        fi
-    done < "$TEMPFILE"
+    if grep -qx "$2" "$TEMPFILE";then # if tint2 is running (read from tempfile)
+        checkArr[$num]="TRUE"       # make checkmark in dialog
+    else
+        checkArr[$num]="FALSE"
+    fi
 }
 
 findTint(){
@@ -74,7 +71,7 @@ for ((j=0; j<${#tintsArr[*]}; j++));do
 done
 
 ## Populate zenity dialog from array, get return value(s)
-RET=`zenity --list --title "BunsenLabs Tint2 chooser" --checklist --width=300 --height=500 \
+RET=`zenity --list --title "BunsenLabs Tint2 chooser" --text "Select Tint2s from the list:" --checklist --width=300 --height=300 \
     --column "Select" --column "tint2 Name" --separator=":"\
     $msg`
 
