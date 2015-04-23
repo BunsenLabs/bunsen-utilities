@@ -11,3 +11,8 @@ bl-hotcorners: Script to add hot corners to Openbox.
 
 Originally imported from cb-exit, cb-lock, cb-slim and cb-wmhacks,
 made for CrunchBang Linux and subsequently modified for BunsenLabs.
+
+bl-conkyzen     :
+bl-conky-session:
+bl-tint2zen     :
+bl-tint-session :       Conky and Tint2 Chooser scripts
