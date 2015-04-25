@@ -34,6 +34,28 @@ TEMPFILE="$CONKYPATH/conky-temp"
 SESSIONFILE="$CONKYPATH/conky-sessionfile"
 SESSIONS="$CONKYPATH/saved-sessions"    # to be used by a pipemenu
 
+USAGE1=$(echo -e "\vUSAGE:\tbl-conkyzen [OPTION]...FILES"
+        echo -e "\v\tWith no command option the script runs the gui"
+        echo -e "\v\t-h,--help \t\t: full USAGE help"
+        echo -e "\t-f,--file  FILEPATH\t: specify file to save session to"
+)
+
+USAGE2=$(echo -e "\vUSAGE:\tbl-conkyzen [OPTION]...FILES"
+        echo -e "\v\tWith no command option the script runs the gui"
+        echo -e "\v\t-h,--help   : this USAGE help"
+        echo -e "\t-f,--file  FILEPATH : specify file to save session to"
+        echo -e "\v\tWhen the dialog opens, any running conkys will be checkmarked."
+        echo -e "\tClick "OK" and all running conkys are stopped, and all"
+        echo -e "\tcheckmarked conkys are started."
+        echo -e "\v\tTo stop a conky just uncheck it, and \"OK\""
+        echo -e "\vEXAMPLES:"
+        echo -e "\tSave session to a new saved-session file with:"
+        echo -e "\v\t\tbl-conkyzen -f /path/to/sessionfile"
+        echo -e "\v\tTo start the default conky session at login, add the"
+        echo -e "\tfollowing line to autostart:"
+        echo -e "\v\t\t(sleep 2s && bl-conky-session --autostart) &\v"
+)
+
 ########## FUNCTIONS ###################################################
 conkyRunning(){    # find running conkys
     > "$TEMPFILE" # make blank tempfile, to save running conky paths
@@ -74,6 +96,7 @@ done
 writeSessions(){    # save a new sessionfile name for use by a menu
     fullpath=$(readlink -f "$1")    # ensure full filepath is used
     SESSIONFILE="$fullpath"
+    echo "fullpath= $fullpath"
     if ! [ -f "$SESSIONS" ];then
         > "$SESSIONS"
     fi
@@ -88,11 +111,30 @@ writeSessions(){    # save a new sessionfile name for use by a menu
 # get args passed to script (session can be saved to a different file)
 for arg in "$@";do
     case "$arg" in
-        -f|-F ) SESSIONFILE="$2"    # sessionfile has been specified
-                writeSessions "$SESSIONFILE"    # if sessionfile is new, write name to saved-sessions
-                ;; 
-        *     ) SESSIONFILE="$SESSIONFILE" # sessionfile is default
-                ;;
+        -h|--help   ) echo "$USAGE2"
+                      echo
+                      exit 0
+                      ;;
+        -f|--files  ) if [[ $2 ]];then
+                        SESSIONFILE="$2"    # sessionfile has been specified
+                        writeSessions "$SESSIONFILE"    # if sessionfile is new, write name to saved-sessions
+                        break
+                      else
+                        echo 
+                        echo -e "\tNo saved-session file specified!"
+                        echo "$USAGE1"
+                        echo
+                        exit 1
+                      fi
+                      ;; 
+                 *  ) if ! [[ $arg ]];then
+                        SESSIONFILE="$SESSIONFILE" # sessionfile is default
+                        break
+                      else
+                        echo "$USAGE1"
+                        exit 1
+                      fi
+                      ;;
     esac
 done
 
