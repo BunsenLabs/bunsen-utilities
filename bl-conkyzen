@@ -29,7 +29,7 @@
 #
 ########################################################################
 
-CONKYPATH="$HOME/.conky"
+CONKYPATH="$HOME/.config/conky"
 TEMPFILE="$CONKYPATH/conky-temp"
 SESSIONFILE="$CONKYPATH/conky-sessionfile"
 SESSIONS="$CONKYPATH/saved-sessions"    # to be used by a pipemenu
