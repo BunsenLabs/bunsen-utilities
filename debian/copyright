@@ -5,6 +5,8 @@ Source: <url://example.com>
 Files: *
 Copyright: 2012 Philip Newborough <corenominal@corenominal.org>
            2015 John Crawley <john@rafflesnagoya.com>
+           2015 Craig Oakes <bunsen@craigoakes.com>
+           2015 Damo
 License: GPL-3.0+
 
 Files: debian/*

@@ -10,7 +10,7 @@ Vcs-Browser: https://github.com/BunsenLabs/bunsen-utilities.git
 
 Package: bunsen-utilities
 Architecture: all
-Depends: ${misc:Depends}, python-gtk2, upower, zenity, xscreensaver, tar, lightdm, bunsen-configs, wmctrl, python, python-xlib, xdotool (>=1:2.20110530.1-3)
+Depends: ${misc:Depends}, bunsen-configs, python-gtk2, upower, zenity, xscreensaver, tar, lightdm, wmctrl, python, python-xlib, xdotool (>=1:2.20110530.1-3)
 Conflicts: bunsen-exit, bunsen-lock, bunsen-user-setup, bunsen-wmhacks
 Recommends: gmrun
 Description: Small scripts to use with BunsenLabs.
@@ -22,7 +22,12 @@ Description: Small scripts to use with BunsenLabs.
   - bl-user-setup: Script to install user config files in ~/
   - bl-aerosnap: Script to add aero style window snapping to Openbox.
   - bl-hotcorners: Script to add hot corners to Openbox.
+  - bl-alternatives: Script to manage BunsenLabs alternatives.
+  - bl-conkyzen: Zenity-based conky manager.
+  - bl-conky-session: Script to handle multiple conky sessions.
+  - bl-tint2zen: Zenity-based tint2 manager.
+  - bl-tint2-session: Script to handle multiple tint2 sessions.
+  - bl-kb.py: Script to manage keyboard shortcuts.
  .
  Originally imported from cb-exit, cb-lock, cb-slim and cb-wmhacks,
  made for CrunchBang Linux and subsequently modified for BunsenLabs.
-
