@@ -10,7 +10,7 @@
 #      (sleep 2s && bl-conky-session --autostart) &
 #
 ########################################################################
-CONKYPATH="$HOME/.conky"
+CONKYPATH="$HOME/.config/conky"
 SESSIONFILE="$CONKYPATH/conky-sessionfile"
 USAGE=$(echo -e "\vUSAGE:\tbl-conky-session [OPTION(S)]...FILES"
          echo -e "\n\tWith no command argument, the script uses the default"
