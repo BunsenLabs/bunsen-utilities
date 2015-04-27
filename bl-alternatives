@@ -5,13 +5,13 @@ usage()
 {
     cat <<EOF
 Usage: $EXECNAME <action>
-  Perform the given action to manage BunsenLabs alternatives.  Superuser 
+  Perform the given action to manage BunsenLabs alternatives.  Superuser
   permission required to make changes.
 Action:
-  help	    show help (also --help)
+  help      show help (also --help)
   install   install BunsenLabs alternatives with default packages
-  list	    list all assigned BunsenLabs alternatives
-  remove    remove all assigned BunsenLabs alternatives 
+  list      list all assigned BunsenLabs alternatives
+  remove    remove all assigned BunsenLabs alternatives
   update    update BunsenLabs alternatives with typical installed packages
 EOF
 }
@@ -48,7 +48,7 @@ update_alt()
 #  or remove given binary when package missing (or not executable).
 {
     local BINPATH=$1
-    local MANPATH=$2			# optional, may be empty ""
+    local MANPATH=$2            # optional, may be empty ""
     local ALTNAME=$3
     local PRIO=$4
 
@@ -56,18 +56,18 @@ update_alt()
         update-alternatives --remove $ALTNAME $BINPATH 2>/dev/null
     else
         update-alternatives --list $ALTNAME 2>/dev/null | \
-	    grep -q $BINPATH && return 0
+        grep -q $BINPATH && return 0
         local ALTPATH=/usr/bin/$ALTNAME
-	if [ "$MANPATH" ] ; then
-	    [ ! -f "$MANPATH" ] && \
-	        echo "Bad man path ($MANPATH)" >&2 && return 1
-	    local ALTMANPATH=/usr/share/man/man1/$ALTNAME.1.gz
-	    update-alternatives --quiet --install $ALTPATH $ALTNAME $BINPATH \
-	        $PRIO --slave $ALTMANPATH ${ALTMANPATH##*/} $MANPATH
-	else
-	    update-alternatives --quiet --install $ALTPATH $ALTNAME $BINPATH \
-	        $PRIO
-	fi
+    if [ "$MANPATH" ] ; then
+        [ ! -f "$MANPATH" ] && \
+            echo "Bad man path ($MANPATH)" >&2 && return 1
+        local ALTMANPATH=/usr/share/man/man1/$ALTNAME.1.gz
+        update-alternatives --quiet --install $ALTPATH $ALTNAME $BINPATH \
+            $PRIO --slave $ALTMANPATH ${ALTMANPATH##*/} $MANPATH
+    else
+        update-alternatives --quiet --install $ALTPATH $ALTNAME $BINPATH \
+            $PRIO
+    fi
     fi
 }
 
@@ -80,18 +80,18 @@ install)
     [ `id -u` != 0 ] && echo "Must be superuser" >&2 && exit 0
     bunsen_alt
     for ALT in $BLALTS ; do
-	update-alternatives --auto $ALT
+    update-alternatives --auto $ALT
     done
     ;;
 list)
     for ALT in $BLALTS ; do
         LINK=`readlink /etc/alternatives/$ALT`
-	if [ "$LINK" ] ; then
-	    printf "%-22.22s uses %s\n" $ALT $LINK
-	    update-alternatives --list $ALT | xargs printf "    %s\n"
-	else
-	    printf "%-22.22s unused\n" $ALT
-	fi
+    if [ "$LINK" ] ; then
+        printf "%-22.22s uses %s\n" $ALT $LINK
+        update-alternatives --list $ALT | xargs printf "    %s\n"
+    else
+        printf "%-22.22s unused\n" $ALT
+    fi
     done
     ;;
 remove)
@@ -104,18 +104,23 @@ update)
     [ `id -u` != 0 ] && echo "Must be superuser" >&2 && exit 0
     bunsen_alt
     for BLPROG in $OTHERFM ; do
-	update_alt /usr/bin/$BLPROG $MAN1/$BLPROG.1.gz $BLFILEMANAGER $STDPRIO
+    update_alt /usr/bin/$BLPROG $MAN1/$BLPROG.1.gz $BLFILEMANAGER $STDPRIO
     done
     for BLPROG in $OTHERIV ; do
-	update_alt /usr/bin/$BLPROG $MAN1/$BLPROG.1.gz $BLIMAGEVIEWER $STDPRIO
+    update_alt /usr/bin/$BLPROG $MAN1/$BLPROG.1.gz $BLIMAGEVIEWER $STDPRIO
     done
     for BLPROG in $OTHERMP ; do
-	update_alt /usr/bin/$BLPROG $MAN1/$BLPROG.1.gz $BLMEDIAPLAYER $STDPRIO
+    update_alt /usr/bin/$BLPROG $MAN1/$BLPROG.1.gz $BLMEDIAPLAYER $STDPRIO
     done
     # gvim: wrapper doesn't match man page name
+    if type gvim >/dev/null 2>&1;then
+        chmod -f +x /usr/bin/bl-gvim
+    else
+        chmod -f -x /usr/bin/bl-gvim
+    fi
     update_alt /usr/bin/bl-gvim $MAN1/gvim.1.gz $BLTEXTEDITOR $STDPRIO
     for BLPROG in $OTHERTE ; do
-	update_alt /usr/bin/$BLPROG $MAN1/$BLPROG.1.gz $BLTEXTEDITOR $STDPRIO
+    update_alt /usr/bin/$BLPROG $MAN1/$BLPROG.1.gz $BLTEXTEDITOR $STDPRIO
     done
     ;;
 ""|*help|-h)

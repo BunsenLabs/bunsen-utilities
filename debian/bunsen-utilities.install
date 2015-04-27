@@ -3,6 +3,7 @@ bl-lock usr/bin
 bl-aerosnap usr/bin
 bl-hotcorners usr/bin
 bl-alternatives usr/bin
+bl-gvim usr/bin
 bl-conkyzen usr/bin
 bl-conky-session usr/bin
 bl-tint2zen usr/bin
