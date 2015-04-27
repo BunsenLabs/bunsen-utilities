@@ -59,7 +59,7 @@ findArgs(){     # get command args (switches & sessionfile paths)
 killConkys(){
     if [ "$(pidof conky)" ];then
         msg="Kill running conkys first?"
-        RET=$(zenity --question --text="$msg")
+        zenity --question --text="$msg"
         if [[ $? == 0 ]];then            # kill all conkys
             killall conky && sleep 0.2s
         fi
