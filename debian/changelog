@@ -1,3 +1,9 @@
+bunsen-utilities (0.3-1) unstable; urgency=low
+
+  * Add conky and tint2 scripts, add gvim support to bl-alternatives.
+
+ -- John Crawley <john@rafflesnagoya.com>  Tue, 28 Apr 2015 09:58:33 +0900
+
 bunsen-utilities (0.2-3) unstable; urgency=low
 
   * Add bl-alternatives.
