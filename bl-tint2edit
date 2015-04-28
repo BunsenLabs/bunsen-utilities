@@ -1,0 +1,82 @@
+#!/bin/bash
+#
+#   BunsenLabs Tint2 Editor
+#
+#   Written by <damo>, April 2015 
+#
+########################################################################
+#
+#   Tint2 files must be in $TINT2PATH
+#
+#   Checkmarked tint2s will be opened in the text editor
+#   Multiple tint2s can be chosen
+#
+########################################################################
+
+TINT2PATH="$HOME/.config/tint2"
+
+########## FUNCTIONS ###################################################
+
+fillArrays(){
+    num="$1"
+    tintsPath[$num]="$2"   # full filepath to tint2
+    tintsArr[$num]="$3"    # displayed name: "directory/tintfile" 
+}
+
+findTint(){
+# search dirs for tint2 config files
+    num=0
+    for x in $(find $TINT2PATH -type f );do
+        # check if likely tint2 config file
+        pm=$(grep  "panel_monitor" "$x")
+        if [[ $pm ]];then
+            TINT2=$( echo $x | awk -F"/" '{print $(NF-1)"/"$NF}')
+            fillArrays $num $x $TINT2
+            num=$(($num+1))
+        fi
+    done
+}
+######## END FUNCTIONS #################################################
+
+# get tint2 directories, add to array
+findTint
+
+# loop through arrays, and build msg text for zenity dialog
+msg=""
+for ((j=0; j<${#tintsArr[*]}; j++));do
+    msg="$msg FALSE ${tintsArr[j]}"
+done
+
+## Populate zenity dialog from array, get return value(s)
+RET=$(zenity --list --title "Tint2 Edit" \
+    --text "Select Tint2s to edit from the list\nMultiple Tint2s can be chosen" \
+    --checklist --width=400 --height=500 \
+    --column "Select" --column "Tint2 Name" --separator=":"\
+    $msg)
+
+if [[ $? == 1 ]]; then # cancel button pressed
+    exit 0
+else
+    i=0
+    OIFS=$IFS   # save Internal Field Separator
+    IFS=":"     # separator is ":" in returned choices
+    for name in $RET; do 
+        retTint[$i]="$name"
+        i=$(($i+1))
+    done
+    IFS=$OIFS   # reset IFS back to default
+    
+    # Find the chosen tint2s and edit them
+    for name in ${retTint[*]};do       # loop through checkmarked tint2 names
+        for ((j=0; j<${#tintsPath[*]}; j++));do  # traverse through elements
+            for f in ${tintsPath[j]};do    # compare with choice from dialog
+                display=$( echo "$f" | awk -F"/" '{print $(NF-1)"/"$NF}')
+                if [[ $display = $name ]];then
+                    bl-text-editor "$f"
+                fi
+            done
+        done
+    done 
+fi
+
+exit 0

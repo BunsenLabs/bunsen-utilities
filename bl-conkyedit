@@ -1,0 +1,87 @@
+#!/bin/bash
+#
+#   BunsenLabs Conky Editor
+#
+#   Written by <damo>, April 2015 
+#
+########################################################################
+#
+#   Conkys must be in $CONKYPATH
+#   The name must end with "conky" or "conkyrc"
+#
+#   Checkmarked conkys will be opened in the text editor
+#   Multiple conkys can be chosen
+#
+########################################################################
+
+CONKYPATH="$HOME/.config/conky"
+
+########## FUNCTIONS ###################################################
+
+fillArrays(){
+    num="$1"
+    conkysPath[$num]="$2"   # full filepath to conky
+    conkysArr[$num]="$3"    # displayed name: "directory/*conky(rc)" 
+}
+
+findConky(){
+# search dirs for conkys files - looking for "conky" in the name
+# if "*conky(rc)" then display it
+
+num=0
+# find files in CONKYPATH with conky in the name
+for x in $(find "$CONKYPATH" -type f );do 
+    f=$(basename "$x")    # filename from filepath
+    if [[ $f = *conkyrc ]] || [[ $f = *conky ]];then
+        # filename ends with *conky or *conkyrc
+        # get directory/conkyname to display in list
+        CONKY=$( echo "$x" | awk -F"/" '{print $(NF-1)"/"$NF}')
+        fillArrays $num "$x" "$CONKY"
+        num=$(($num+1)) 
+    fi
+done
+}
+######## END FUNCTIONS #################################################
+
+# get conky directories in .conky, add to array
+findConky
+
+# loop through arrays, and build msg text for zenity dialog
+msg=""
+for ((j=0; j<${#conkysArr[*]}; j++));do
+    msg="$msg FALSE ${conkysArr[j]}"
+done
+
+## Populate zenity dialog from array, get return value(s)
+RET=$(zenity --list --title "Conky Edit" \
+    --text "Select Conkys to edit from the list\nMultiple Conkys can be chosen" \
+    --checklist --width=400 --height=500 \
+    --column "Select" --column "Conky Name" --separator=":"\
+    $msg)
+
+if [[ $? == 1 ]]; then # cancel button pressed
+    exit 0
+else
+    i=0
+    OIFS=$IFS   # save Internal Field Separator
+    IFS=":"     # separator is ":" in returned choices
+    for name in $RET; do 
+        retConky[$i]="$name"
+        i=$(($i+1))
+    done
+    IFS=$OIFS   # reset IFS back to default
+    
+    # Find the chosen conkys and edit them
+    for name in ${retConky[*]};do       # loop through checkmarked conky names
+        for ((j=0; j<${#conkysPath[*]}; j++));do  # traverse through elements
+            for f in ${conkysPath[j]};do    # compare with choice from dialog
+                display=$( echo "$f" | awk -F"/" '{print $(NF-1)"/"$NF}')
+                if [[ $display = $name ]];then
+                    bl-text-editor "$f"
+                fi
+            done
+        done
+    done 
+fi
+
+exit 0
