@@ -44,6 +44,9 @@ testSessionfile(){
         source "$1"     # run tint2s from sessionfile
     else
         echo "ERROR: sessionfile \"$1\" not found. Using default" >&2
+        if [[ $NOKILL == 0 ]];then # offer to stop running tint2s
+            killTints
+        fi
         tint2 &
         exit 0
     fi
@@ -52,7 +55,7 @@ testSessionfile(){
 killTints(){
     if [ "$(pidof tint2)" ];then
         msg="Kill running tint2s first?"
-        RET=$(zenity --question --text="$msg")
+        zenity --question --text="$msg"
         if [[ $? == 0 ]];then            # kill all tint2s
             killall tint2 && sleep 0.2s
         fi
