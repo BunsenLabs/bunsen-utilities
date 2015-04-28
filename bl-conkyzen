@@ -101,7 +101,7 @@ writeSessions(){    # save a new sessionfile name for use by a menu
         > "$SESSIONS"
     fi
     if grep -qx "$fullpath" "$SESSIONS";then # session was previously saved
-        if [[ $2 = z ]];then    # input was from input dialog, so ask OK?
+        if [[ $2 = "-z" ]];then    # input was from input dialog, so ask OK?
             zenity --question --text "Filename already in use!\n\nOverwrite it?"
             if [[ $? = 1 ]];then
                 exit 0
@@ -144,7 +144,7 @@ for arg in "$@";do
         -z|-Z       ) SPATH=$(zenity --entry\
                       --text="Enter filepath for new saved session file")
                       if [[ $? = 0 ]];then
-                          writeSessions "$SPATH" "z"   # saved session file from input dialog
+                          writeSessions "$SPATH" "-z"   # saved session file from input dialog
                       fi
                       ;;
                  *  ) if ! [[ $arg ]];then
