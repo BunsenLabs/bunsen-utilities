@@ -212,7 +212,7 @@ else
                 if [[ $display = $name ]];then
                     echo -e "conky -c $f & sleep 1s" >> "$SESSIONFILE"
                     #start the conky (adjust the sleep time if required)
-                    conky -c "$f" & sleep 1s
+                    conky -c "$f" & sleep 0.5s
                 fi
             done
         done
