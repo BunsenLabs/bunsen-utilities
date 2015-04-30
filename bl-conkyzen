@@ -34,6 +34,8 @@ CONKYPATH="$HOME/.config/conky"
 TEMPFILE="$CONKYPATH/conky-temp"
 SESSIONFILE="$CONKYPATH/conky-sessionfile"
 SESSIONS="$CONKYPATH/saved-sessions"    # to be used by a pipemenu
+CRC="$HOME/.conkyrc"
+BLDEFAULT="$CONKYPATH/BL-Default.conkyrc"
 
 USAGE1=$(echo -e "\vUSAGE:\tbl-conkyzen [OPTION]...FILES"
         echo -e "\v\tWith no command option the script runs the gui"
@@ -158,6 +160,14 @@ for arg in "$@";do
     esac
 done
 
+# test for ~/.conkyrc, create a link to the default conky if necessary
+if ! [ -e "$CRC" ];then
+    if [ -e "$BLDEFAULT" ];then
+        ln -s "$BLDEFAULT" "$CRC"
+    else
+        echo "Default conkyrc not found"
+    fi
+fi
 
 # get conky directories in .conky, add to array
 conkyRunning
@@ -202,7 +212,7 @@ else
                 if [[ $display = $name ]];then
                     echo -e "conky -c $f & sleep 1s" >> "$SESSIONFILE"
                     #start the conky (adjust the sleep time if required)
-                    conky -c "$f"; sleep 0.5s & 
+                    conky -c "$f" & sleep 1s
                 fi
             done
         done
