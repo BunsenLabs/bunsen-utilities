@@ -143,9 +143,11 @@ for arg in "$@";do
                         exit 1
                       fi
                       ;;
-        -z|-Z       ) SPATH=$(zenity --entry\
-                      --text="Enter filepath for new saved session file")
-                      if [[ $? = 0 ]];then
+        -z|-Z       ) SPATH=$(zenity --entry --text="Enter filepath for new saved session file")
+                      if [ -z $SPATH ];then     # entry was empty
+                          zenity --error --text="No file specified for new saved session\n\nExiting..."
+                          exit 1
+                      else
                           writeSessions "$SPATH" "-z"   # saved session file from input dialog
                       fi
                       ;;
