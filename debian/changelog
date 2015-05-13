@@ -1,3 +1,9 @@
+bunsen-utilities (0.3-3) unstable; urgency=low
+
+  * Remove bl-user-setup, it is now in bunsen-configs.
+
+ -- John Crawley <john@rafflesnagoya.com>  Sat, 09 May 2015 18:34:35 +0900
+
 bunsen-utilities (0.3-2) unstable; urgency=low
 
   * Add conky and tint2 editing scripts.

@@ -9,4 +9,3 @@ bl-conky-session usr/bin
 bl-tint2zen usr/bin
 bl-tint2-session usr/bin
 bl-kb.py usr/bin
-bl-user-setup usr/lib/bunsen/bunsen-utilities

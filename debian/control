@@ -19,7 +19,6 @@ Description: Small scripts to use with BunsenLabs.
  .
   - bl-exit: Logout dialog box with various options.
   - bl-lock: Script to lock the display.
-  - bl-user-setup: Script to install user config files in ~/
   - bl-aerosnap: Script to add aero style window snapping to Openbox.
   - bl-hotcorners: Script to add hot corners to Openbox.
   - bl-alternatives: Script to manage BunsenLabs alternatives.
