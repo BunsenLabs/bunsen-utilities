@@ -63,15 +63,42 @@ USAGE2=$(echo -e "\vUSAGE:\tbl-conkyzen [OPTION]...FILES"
 conkyRunning(){    # find running conkys
     > "$TEMPFILE" # make blank tempfile, to save running conky paths
     if [ "$(pidof conky)" ];then
-        ps aux | grep [c]onky" -c" |  awk  '{print $NF}' >> "$TEMPFILE"
+        # test if default conky was started
+        for ARG in $(ps aux | grep  [c]onky | awk '{print $(NF-1)}');do
+            if [[ $ARG = "conky" ]]; then
+                echo "$CRC" >> "$TEMPFILE"  # 'conky -q' probably used
+            else                            # send conky filepath to tempfile
+                for ARG in $(ps aux | grep  [c]onkyrc | awk '{print $(NF)}');do
+                    if [[ $ARG != "-q" ]];then
+                        echo "$ARG" >> "$TEMPFILE"
+                    fi
+                done
+            fi
+        done
     fi
+    # remove any duplicates in tempfile
+    TEMP2="$CONKYPATH/temp.tmp"
+    awk '!x[$0]++' "$TEMPFILE" > "$TEMP2" && mv "$TEMP2" "$TEMPFILE"
 }
 
 fillArrays(){
-    num="$1"
-    conkysPath[$num]="$2"   # full filepath to conky
-    conkysArr[$num]="$3"    # displayed name: "directory/*conky(rc)" 
-    if grep -qx "$2" "$TEMPFILE";then # if conky is running (read from tempfile)
+    if [[ $1 != 0 ]];then
+        num="$1"    # 1st arg: array index
+    else
+        num=0   # '~/.conkyrc' added to array
+    fi
+
+    if [[ $num == 0 ]];then
+        cPATH="$CRC"
+        cARR="$USER/.conkyrc"
+    else
+        cPATH="$2"   # 2nd arg: full filepath to conky
+        cARR="$3"    # 3rd arg: displayed name: "directory/*conky(rc)" 
+    fi
+
+    conkysPath[$num]="$cPATH"
+    conkysArr[$num]="$cARR"
+    if grep -qx "$cPATH" "$TEMPFILE";then # if conky is running (read from tempfile)
         checkArr[$num]="TRUE"       # make checkmark in dialog
     else
         checkArr[$num]="FALSE"
@@ -82,12 +109,13 @@ findConky(){
 # search dirs for conkys files - looking for "conky" in the name
 # if "*conky(rc)" then display it
 
-num=0
+num=0   # added default .conkyrc
+fillArrays $num "$CRC" "$USER/.conkyrc"
+num=1
 # find files in CONKYPATH with conky in the name
 for x in $(find "$CONKYPATH" -type f );do 
     f=$(basename "$x")    # filename from filepath
-    if [[ $f = *conkyrc ]] || [[ $f = *conky ]];then
-        # filename ends with *conky or *conkyrc
+    if [[ $f = *conkyrc ]] || [[ $f = *conky ]];then    # filename ends with *conky or *conkyrc
         # get directory/conkyname to display in list
         CONKY=$( echo "$x" | awk -F"/" '{print $(NF-1)"/"$NF}')
         fillArrays $num "$x" "$CONKY"
@@ -182,9 +210,10 @@ for ((j=0; j<${#conkysArr[*]}; j++));do
 done
 
 ## Populate zenity dialog from array, get return value(s)
-RET=$(zenity --list --title "BunsenLabs Conky Chooser" --text "Session will be saved to:\n $SESSIONFILE"\
- --checklist --width=400 --height=500 \
-    --column "Select" --column "Conky Name" --separator=":"\
+RET=$(zenity --list --title "BunsenLabs Conky Chooser" \
+    --text "Session will be saved to:\n $SESSIONFILE"\
+    --checklist --width=400 --height=500 \
+    --column "Select" --column "Conky Name" --separator=":" \
     $msg)
 
 if [[ $? == 1 ]]; then # cancel button pressed
@@ -214,7 +243,7 @@ else
                 if [[ $display = $name ]];then
                     echo -e "conky -c $f & sleep 1s" >> "$SESSIONFILE"
                     #start the conky (adjust the sleep time if required)
-                    conky -c "$f" & sleep 0.5s
+                    conky -c "$f" & sleep 1s
                 fi
             done
         done

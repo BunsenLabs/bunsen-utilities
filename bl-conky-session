@@ -34,26 +34,32 @@ findArgs(){     # get command args (switches & sessionfile paths)
             arg="$SESSIONFILE"
         fi
         if [[ $arg = "--autostart" ]];then
-            arg="$SESSIONFILE"
             NOKILL=1    # run from autostart, so don't ask to kill conkys
         fi
-        if test -f  "$arg" &>/dev/null;then # sessionfile exists
+        if [ -f  "$arg" ] &>/dev/null;then # sessionfile exists
             rawArr[$i]="$arg"       # add sessionfiles to array
             i=$(($i+1))
-        else
-            echo -e "ERROR: sessionfile \"$arg\" not found. Using default" >&2
-            conky -q 
-            exit 0
         fi
     done
-    # remove duplicate args
-    sessArr=(`printf "%s\n" "${rawArr[@]}" | sort -u`)
-    if [[ $NOKILL == 0 ]];then
-        killConkys
+    # check if sessionfiles were passed to bl-conky-session
+    if ! [ ${#rawArr[@]} -eq 0 ]; then
+        # remove duplicate args
+        sessArr=(`printf "%s\n" "${rawArr[@]}" | sort -u`)
+        if [[ $NOKILL == 0 ]];then
+            killConkys
+        fi
+        for SESSION in "${sessArr[@]}";do # run the conkys in the sessionfiles
+            source "$SESSION"
+        done
+    else    # --autostart used, but no sessionfiles passed to bl-conkyzen
+        if [ -f "$SESSIONFILE" ] && [[ $NOKILL = 1 ]];then
+            source "$SESSIONFILE"   # use conky-sessionfile
+        else
+            echo -e "ERROR: sessionfile \"$SESSIONFILE\" not found. Using default" >&2
+            conky -c $HOME/.conkyrc     # run default conky
+            exit 0
+        fi
     fi
-    for SESSION in "${sessArr[@]}";do # run the conkys in the sessionfiles
-        source "$SESSION"
-    done
 }
 
 killConkys(){

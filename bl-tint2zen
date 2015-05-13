@@ -28,11 +28,21 @@ TEMPFILE="$TINT2PATH/tint2-temp"
 SESSIONFILE="$TINT2PATH/tint2-sessionfile"
 
 tintRunning(){
-    > $TEMPFILE #make blank tempfile
+    > "$TEMPFILE" # make blank tempfile, to save running tint2 paths
     if [ "$(pidof tint2)" ];then
-        # get last field of output = tint2 filepath; write to tempfile
-        ps aux | grep [t]int2" -c" |  awk  '{print $NF}' >> $TEMPFILE
+        # test if default tint2 was started (exclude dialog in this script from list)
+        for FIELD in $(ps aux | grep -v 'zenity' | grep  [t]int2 | awk '{print $NF}');do
+            if [[ $FIELD = "tint2" ]]; then
+                echo "$TINT2PATH/tint2rc" >> "$TEMPFILE"  # 'tint2' command was used
+            elif    # make sure this script doesn't appear in list
+                ! [[ $(echo "$FIELD" | awk -F '/' '{print $NF}') = "bl-tint2zen" ]];then
+                echo "$FIELD" >> "$TEMPFILE"    # send tint2 filepath to tempfile
+            fi
+        done
     fi
+    # remove any duplicates in tempfile
+    TEMP2="$TINT2PATH/tint2-temp2"
+    awk '!x[$0]++' "$TEMPFILE" > "$TEMP2" && mv "$TEMP2" "$TEMPFILE"
 }
 
 fillArrays(){
@@ -71,7 +81,8 @@ for ((j=0; j<${#tintsArr[*]}; j++));do
 done
 
 ## Populate zenity dialog from array, get return value(s)
-RET=$(zenity --list --title "BunsenLabs Tint2 chooser" --text "Select Tint2s from the list:" --checklist --width=300 --height=300 \
+RET=$(zenity --list --title "BunsenLabs Tint2 chooser" \
+    --text "Select Tint2s from the list:" --checklist --width=350 --height=300 \
     --column "Select" --column "tint2 Name" --separator=":"\
     $msg)
 
