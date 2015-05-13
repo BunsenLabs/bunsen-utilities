@@ -14,5 +14,7 @@ made for CrunchBang Linux and subsequently modified for BunsenLabs.
 
 bl-conkyzen     :
 bl-conky-session:
+bl-conkyedit    :
 bl-tint2zen     :
-bl-tint-session :       Conky and Tint2 Chooser scripts
+bl-tint-session :
+bl-tin2edit     :       Conky and Tint2 Chooser and Editor scripts
