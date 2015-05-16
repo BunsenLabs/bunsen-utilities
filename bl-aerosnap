@@ -32,9 +32,9 @@ if os.path.exists(history) == False:
 
 def print_usage():
     print "bl-aerosnap: usage:"
-    print "  --help          show this message and exit"
-    print "  --aero-left     attempt to snap active window to left of screen"
-    print "  --aero-right    attempt to snap active window to right of screen"
+    print "  --help     show this message and exit"
+    print "  --left     attempt to snap active window to left of screen"
+    print "  --right    attempt to snap active window to right of screen"
     print ""
     exit()
 
