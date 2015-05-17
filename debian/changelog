@@ -1,3 +1,10 @@
+bunsen-utilities (0.3-6) unstable; urgency=low
+
+  * Remove bl-gvim, now in bunsen-configs.
+  * Remove dependency on bunsen-configs.
+
+ -- John Crawley <john@rafflesnagoya.com>  Sun, 17 May 2015 22:51:00 +0900
+
 bunsen-utilities (0.3-5) unstable; urgency=low
 
   * Remove bl-alternatives, it is now in bunsen-configs.
