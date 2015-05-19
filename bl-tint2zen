@@ -70,6 +70,7 @@ findTint(){
         fi
     done
 }
+
 # get tint2 directories in .tint2, add to array
 tintRunning
 findTint
@@ -113,9 +114,9 @@ else
                 # see if it matches the returned name
                 if [[ $display = $name ]];then
                     fpath="$f"
-                    echo -e "tint2 -c $f & sleep 1s" >> $SESSIONFILE
-                    tint2 -c "$f" & #start the tint2
-                    sleep 0.5s
+                    echo -e "tint2 -c $f && sleep 1s &" >> $SESSIONFILE
+                    tint2 -c "$f" && sleep 1s &  #start the tint2
+                    bl-compositor --restart &   # restart compositor
                 fi
             done
         done
