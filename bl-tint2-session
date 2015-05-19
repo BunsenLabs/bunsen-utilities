@@ -68,5 +68,6 @@ if [ $# -eq 0 ];then    # if no args, then run default sessionfile
 else
     findArgs "$@"
 fi
-
+# restart compositor in case of rendering problems
+sleep 1s && bl-compositor --restart
 exit 0
