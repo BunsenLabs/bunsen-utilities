@@ -1,3 +1,9 @@
+bunsen-utilities (0.3-7) unstable; urgency=low
+
+  * Add compositing restart in tint2 scripts.
+
+ -- John Crawley <john@rafflesnagoya.com>  Wed, 20 May 2015 12:37:08 +0900
+
 bunsen-utilities (0.3-6) unstable; urgency=low
 
   * Remove bl-gvim, now in bunsen-configs.
