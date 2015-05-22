@@ -108,29 +108,30 @@ fillArrays(){
 findConky(){
 # search dirs for conkys files - looking for "conky" in the name
 # if "*conky(rc)" then display it
-
-num=0   # added default .conkyrc
-fillArrays $num "$CRC" "$USER/.conkyrc"
-num=1
-# find files in CONKYPATH with conky in the name
-for x in $(find "$CONKYPATH" -type f );do 
-    f=$(basename "$x")    # filename from filepath
-    if [[ $f = *conkyrc ]] || [[ $f = *conky ]];then    # filename ends with *conky or *conkyrc
-        # get directory/conkyname to display in list
-        CONKY=$( echo "$x" | awk -F"/" '{print $(NF-1)"/"$NF}')
-        fillArrays $num "$x" "$CONKY"
-        num=$(($num+1)) 
-    fi
-done
+    num=0   # added default .conkyrc
+    fillArrays $num "$CRC" "$USER/.conkyrc"
+    num=1
+    # find files in CONKYPATH with conky in the name
+    for x in $(find "$CONKYPATH" -type f );do 
+        f=$(basename "$x")    # filename from filepath
+        if [[ $f = *conkyrc ]] || [[ $f = *conky ]];then    # filename ends with *conky or *conkyrc
+            # get directory/conkyname to display in list
+            CONKY=$( echo "$x" | awk -F"/" '{print $(NF-1)"/"$NF}')
+            fillArrays $num "$x" "$CONKY"
+            num=$(($num+1)) 
+        fi
+    done
 }
 
 writeSessions(){    # save a new sessionfile name for use by a menu
-    fullpath=$(readlink -f "$1")    # ensure full filepath is used
-    SESSIONFILE="$fullpath"
+#    fullpath=$(readlink -f "$1")    # ensure full filepath is used
+#    SESSIONFILE="$fullpath"
+    SESSIONFILE="$CONKYPATH/$1"
+    echo "sessionfile= $SESSIONFILE"
     if ! [ -f "$SESSIONS" ];then
         > "$SESSIONS"
     fi
-    if grep -qx "$fullpath" "$SESSIONS";then # session was previously saved
+    if grep -qx "$SESSIONFILE" "$SESSIONS";then # session was previously saved
         if [[ $2 = "-z" ]];then    # input was from input dialog, so ask OK?
             zenity --question --text "Filename already in use!\n\nOverwrite it?"
             if [[ $? = 1 ]];then
@@ -147,7 +148,8 @@ writeSessions(){    # save a new sessionfile name for use by a menu
             esac
         fi
     else
-        echo "$fullpath" >> "$SESSIONS"
+        cp "$SESSIONS" "$SESSIONS.bkp"
+        echo "$SESSIONFILE" >> "$SESSIONS"
     fi
 }
 ######## END FUNCTIONS #################################################
@@ -171,7 +173,7 @@ for arg in "$@";do
                         exit 1
                       fi
                       ;;
-        -z|-Z       ) SPATH=$(zenity --entry --text="Enter filepath for new saved session file")
+        -z|-Z       ) SPATH=$(zenity --entry --text="Enter name for new saved session file\n(File will be saved in conky dir)")
                       if [ -z $SPATH ];then     # entry was empty
                           zenity --error --text="No file specified for new saved session\n\nExiting..."
                           exit 1
@@ -209,47 +211,63 @@ for ((j=0; j<${#conkysArr[*]}; j++));do
     msg="$msg ${checkArr[j]} ${conkysArr[j]}"
 done
 
-## Populate zenity dialog from array, get return value(s)
-RET=$(zenity --list --title "BunsenLabs Conky Chooser" \
-    --text "Session will be saved to:\n $SESSIONFILE"\
-    --checklist --width=400 --height=500 \
-    --column "Select" --column "Conky Name" --separator=":" \
-    $msg)
+while ! [[ $RET ]];do
+    ## Populate zenity dialog from array, get return value(s)
+    RET=$(zenity --list --title "BunsenLabs Conky Chooser" \
+        --text "Session will be saved to:\n $SESSIONFILE"\
+        --checklist --width=400 --height=500 \
+        --column "Select" --column "Conky Name" --separator=":" \
+        $msg)
 
-if [[ $? == 1 ]]; then # cancel button pressed
-    exit 0
-else
-    > "$SESSIONFILE"    # Create new session file
-    # loop through returned choices, add to array
-    i=0
-    OIFS=$IFS   # save Internal Field Separator
-    IFS=":"     # separator is ":" in returned choices
-    for name in $RET; do 
-        retConky[$i]="$name"
-        i=$(($i+1))
-    done
-    IFS=$OIFS   # reset IFS back to default
-    
-    # kill all conkys
-    if [ "$(pidof conky)" ];then
-        killall conky
+    if [[ $? == 1 ]]; then # cancel button pressed
+        # restore previous saved-sessions file
+        mv "$SESSIONS.bkp" "$SESSIONS"
+        rm "$TEMPFILE"
+        exit 0
     fi
-    
-    # Find the chosen conkys and start them
-    for name in ${retConky[*]};do       # loop through checkmarked conky names
-        for ((j=0; j<${#conkysPath[*]}; j++));do  # traverse through elements
-            for f in ${conkysPath[j]};do    # compare with choice from dialog
-                display=$( echo "$f" | awk -F"/" '{print $(NF-1)"/"$NF}')
-                if [[ $display = $name ]];then
-                    echo -e "conky -c $f & sleep 1s" >> "$SESSIONFILE"
-                    #start the conky (adjust the sleep time if required)
-                    conky -c "$f" & sleep 1s
-                fi
+    if ! [[ $RET ]];then  # No conkys chosen
+        MSG="Nothing returned. Try again?"
+        zenity --question --text "$MSG"
+        if [[ $? = 1 ]];then
+            # restore previous saved-sessions file
+            mv "$SESSIONS.bkp" "$SESSIONS"
+            rm "$TEMPFILE"
+            exit 0
+        else
+            continue
+        fi
+    else
+        > "$SESSIONFILE"    # Create new session file
+        # loop through returned choices, add to array
+        i=0
+        OIFS=$IFS   # save Internal Field Separator
+        IFS=":"     # separator is ":" in returned choices
+        for name in $RET; do 
+            retConky[$i]="$name"
+            i=$(($i+1))
+        done
+        IFS=$OIFS   # reset IFS back to default
+        
+        # kill all conkys
+        if [ "$(pidof conky)" ];then
+            killall conky
+        fi
+        
+        # Find the chosen conkys and start them
+        for name in ${retConky[*]};do       # loop through checkmarked conky names
+            for ((j=0; j<${#conkysPath[*]}; j++));do  # traverse through elements
+                for f in ${conkysPath[j]};do    # compare with choice from dialog
+                    display=$( echo "$f" | awk -F"/" '{print $(NF-1)"/"$NF}')
+                    if [[ $display = $name ]];then
+                        echo -e "conky -c $f & sleep 1s" >> "$SESSIONFILE"
+                        #start the conky (adjust the sleep time if required)
+                        conky -c "$f" & sleep 1s
+                    fi
+                done
             done
         done
-    done 
-fi
-
-rm -r "$TEMPFILE"
+    fi
+done
+rm "$TEMPFILE"
 
 exit 0
