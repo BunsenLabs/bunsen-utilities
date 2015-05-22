@@ -1,3 +1,9 @@
+bunsen-utilities (0.3-8) unstable; urgency=low
+
+  * Add bl-conkyzen improvements.
+
+ -- John Crawley <john@rafflesnagoya.com>  Fri, 22 May 2015 11:40:52 +0900
+
 bunsen-utilities (0.3-7) unstable; urgency=low
 
   * Add compositing restart in tint2 scripts.
