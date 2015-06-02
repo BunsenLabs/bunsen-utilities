@@ -2,7 +2,7 @@
 #
 #   BunsenLabs tint2 selection and switcher script
 #
-#   Written by <damo>, April 2015 
+#   Written by <damo>, April 2015
 #
 ########################################################################
 #
@@ -19,30 +19,29 @@
 #   the "tint2-session" script. To start them at login, add the 
 #   following line to autostart:
 #
-#           (sleep 2s && bl-tint2-session --autostart) &
+#           (sleep 2s && bl-tint2-session) &
 #
 ########################################################################
 
 TINT2PATH="$HOME/.config/tint2"
 TEMPFILE="$TINT2PATH/tint2-temp"
 SESSIONFILE="$TINT2PATH/tint2-sessionfile"
+USAGE=$(
+    echo -e "\vUSAGE:  with no command argument, the script uses the chosen"
+    echo -e "\tTint2 session file \"$TINT2PATH/tint2-sessionfile\","
+    echo -e "\tif it exists, otherwise the default tint2rc is used"
+    echo -e "\v\tTo start them at login, add the following line to autostart:"
+    echo -e "\v\t\t(sleep 2s && bl-tint2-session) &"
+)
 
 tintRunning(){
     > "$TEMPFILE" # make blank tempfile, to save running tint2 paths
-    if [ "$(pidof tint2)" ];then
-        # test if default tint2 was started (exclude dialog in this script from list)
-        for FIELD in $(ps aux | grep -v 'zenity' | grep  [t]int2 | awk '{print $NF}');do
-            if [[ $FIELD = "tint2" ]]; then
-                echo "$TINT2PATH/tint2rc" >> "$TEMPFILE"  # 'tint2' command was used
-            elif    # make sure this script doesn't appear in list
-                ! [[ $(echo "$FIELD" | awk -F '/' '{print $NF}') = "bl-tint2zen" ]];then
-                echo "$FIELD" >> "$TEMPFILE"    # send tint2 filepath to tempfile
-            fi
-        done
-    fi
-    # remove any duplicates in tempfile
-    TEMP2="$TINT2PATH/tint2-temp2"
-    awk '!x[$0]++' "$TEMPFILE" > "$TEMP2" && mv "$TEMP2" "$TEMPFILE"
+    pgrep -a tint2 | while read pid cmd; do 
+        if [[ ${cmd%% *} = tint2 ]]; then
+            TPATH=$(echo $cmd | awk '{print $NF}')
+            echo $TPATH >> $TEMPFILE
+        fi     
+    done
 }
 
 fillArrays(){
@@ -71,6 +70,19 @@ findTint(){
     done
 }
 
+# get any commandline arguments
+if ! [ $# -eq 0 ];then    
+    for arg in "$@";do
+        if [[ $1 = "-h" ]] || [[ $1 = "--help" ]];then
+            echo "$USAGE"
+            exit 0
+        else
+            echo -e "\tERROR: sorry I don't understand the input"
+            echo "$USAGE"
+            exit 0
+        fi
+    done
+fi
 # get tint2 directories in .tint2, add to array
 tintRunning
 findTint
@@ -99,33 +111,31 @@ else
         retTint[$i]=$name
         i=$(($i+1))
     done
-    IFS=$IFS    # reset IFS
+    IFS=$OIFS    # reset IFS
     
     # kill all tint2s
-    if [ "$(pidof tint2)" ];then
-        killall tint2
-    fi
+    pgrep -a tint2 | while read pid cmd; do 
+        if [[ ${cmd%% *} = tint2 ]]; then
+            kill "$pid"
+        fi     
+    done
     
     for name in ${retTint[*]};do       # loop through checkmarked tint2 names
-    echo "name= $name"
         for ((j=0; j<${#tintsPath[*]}; j++));do  # traverse through elements
             for f in ${tintsPath[j]};do
                 display=$( echo $f | awk -F"/" '{print $(NF-1)"/"$NF}')
                 # see if it matches the returned name
                 if [[ $display = $name ]];then
-                    fpath="$f"
-                    echo -e "tint2 -c $f && sleep 1s &" >> $SESSIONFILE
-                    tint2 -c "$f" && sleep 1s &  #start the tint2
-                    bl-compositor --restart &   # restart compositor
+                    echo -e "$f" >> $SESSIONFILE
+                    tint2 -c "$f" &  #start the tint2
+                    sleep 1s
                 fi
             done
         done
-    done 
+    done
+    bl-compositor --restart &   # restart compositor 
 fi
 
 rm -r $TEMPFILE
 
 exit 0
-
-
-
