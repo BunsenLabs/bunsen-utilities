@@ -1,0 +1,16 @@
+#!/bin/bash
+#
+# bl-tint2restart to be used by bl-tint2-pipemenu
+# Written for BunsenLabs Linux by <damo> June 2015
+
+pgrep -a tint2 | while read pid cmd; do 
+    if [[ ${cmd%% *} = tint2 ]]; then
+        kill "$pid"
+        sleep 1s
+        $cmd &
+    fi     
+done
+
+bl-compositor --restart &   # restart compositor
+
+exit 0
