@@ -1,8 +1,8 @@
-bunsen-utilities (0.3-10) UNRELEASED; urgency=low
+bunsen-utilities (0.3-10) unstable; urgency=low
 
   * Add missing scripts to debian/bunsen-utilities.install.
 
- -- John Crawley <john@rafflesnagoya.com>  Wed, 03 Jun 2015 17:23:29 +0900
+ -- John Crawley <john@rafflesnagoya.com>  Wed, 03 Jun 2015 17:26:00 +0900
 
 bunsen-utilities (0.3-9) unstable; urgency=low
 
