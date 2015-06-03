@@ -1,3 +1,10 @@
+bunsen-utilities (0.3-9) unstable; urgency=low
+
+  * Add bl-tint2restart to restart tint2s from the pipemenu.
+  * Add bugfixes and improvements to getting/killing tint2 processes.
+
+ -- John Crawley <john@rafflesnagoya.com>  Wed, 03 Jun 2015 14:27:33 +0900
+
 bunsen-utilities (0.3-8) unstable; urgency=low
 
   * Add bl-conkyzen improvements.
