@@ -41,9 +41,10 @@ testSessionfile(){
             sleep 1s
         done < "$1"
     else
-        echo "ERROR: sessionfile \"$1\" not found. Using default" >&2
+        echo -e "Created sessionfile \"$1\"\nRunning default tint2rc" 2>&1
+        echo "$TINT2PATH/tint2rc" > "$SESSIONFILE"
         killTints
-        tint2 &>/dev/null
+        tint2 -c "$TINT2PATH/tint2rc" &>/dev/null
     fi
 }
 
