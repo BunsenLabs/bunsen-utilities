@@ -2,15 +2,26 @@
 #
 # bl-tint2restart to be used by bl-tint2-pipemenu
 # Written for BunsenLabs Linux by <damo> June 2015
+# and <johnraff> July 2015
 
-pgrep -a tint2 | while read pid cmd; do 
+declare -A commands # associative array
+while read pid cmd; do
     if [[ ${cmd%% *} = tint2 ]]; then
         kill "$pid"
-        sleep 1s
-        $cmd &
-    fi     
+        sleep 0.5
+        kill -KILL "$pid" >/dev/null 2>&1
+        commands[$cmd]=1 # duplicate commands will be launched only once
+    fi
+done <<< "$(pgrep -a tint2)"
+
+sleep 1
+for i in "${!commands[@]}" # go through the indexes
+do
+    (setsid $i &)
+    sleep 0.1
 done
 
-bl-compositor --restart &   # restart compositor
+sleep 1
+bl-compositor --restart  # restart compositor
 
 exit 0

@@ -1,3 +1,9 @@
+bunsen-utilities (0.3-12) unstable; urgency=low
+
+  * bl-tint2restart avoid starting duplicate processes, use SIGKILL if needed.
+
+ -- John Crawley <john@rafflesnagoya.com>  Thu, 09 Jul 2015 17:23:28 +0900
+
 bunsen-utilities (0.3-11) unstable; urgency=low
 
   *  bl-tint2-session: Create sessionfile when no file specified.
