@@ -5,12 +5,21 @@
 # and <johnraff> July 2015
 
 declare -A commands # associative array
+
 while read pid cmd; do
     if [[ ${cmd%% *} = tint2 ]]; then
         kill "$pid"
-        sleep 0.5
-        kill -KILL "$pid" >/dev/null 2>&1
         commands[$cmd]=1 # duplicate commands will be launched only once
+    fi
+done <<< "$(pgrep -a tint2)"
+
+sleep 1
+
+# any processes still running will be killed with SIGKILL
+while read pid cmd; do
+    if [[ ${cmd%% *} = tint2 ]]; then
+        kill -KILL "$pid"
+        commands[$cmd]=1
     fi
 done <<< "$(pgrep -a tint2)"
 
