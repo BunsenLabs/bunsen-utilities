@@ -54,7 +54,7 @@ class bl_exit:
         self.window.stick
         self.window.set_position(1)
         self.window.connect("delete_event", gtk.main_quit)
-        windowicon = self.window.render_icon(gtk.STOCK_QUIT, gtk.ICON_SIZE_MENU)
+        windowicon = self.window.render_icon(gtk.STOCK_QUIT, gtk.ICON_SIZE_DIALOG)
         self.window.set_icon(windowicon)
 
 
