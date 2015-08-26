@@ -1,3 +1,9 @@
+bunsen-utilities (8.1-1) bunsen-hydrogen; urgency=low
+
+  * bl-lock switch to light-locker and amend dependencies.
+
+ -- John Crawley <john@rafflesnagoya.com>  Wed, 26 Aug 2015 18:05:05 +0900
+
 bunsen-utilities (8.0-1) bunsen-hydrogen; urgency=low
 
   * bl-exit improve icon rendition.
