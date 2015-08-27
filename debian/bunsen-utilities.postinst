@@ -1,0 +1,17 @@
+#!/bin/sh
+set -e
+
+#DEBHELPER#
+
+if dpkg -s xscreensaver >/dev/null 2>&1;
+then
+    echo "
+This package uses light-locker in the bl-lock script.
+You seem to have xscreensaver installed.
+To avoid conflicts, please remove xscreensaver from your
+openbox autostart file, and consider uninstalling it.
+(Alternatively, uninstall light-locker and edit /usr/bin/bl-lock.)
+
+"
+    sleep 2
+fi
