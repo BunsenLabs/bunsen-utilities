@@ -1,10 +1,51 @@
 README imported from bunsen-wmhacks
 ===================================
 
-Scripts for adding hot corners and aero style window snapping
-to Openbox.
+Scripts for adding hot corners and aero style window snapping to Openbox,
+or any somewhat EWMH-compliant, reparenting window manager.
 Based on cb-wmhacks, written for CrunchBang Linux.
-Repackaged for BunsenLabs Linux.
+Repackaged and rewritten for BunsenLabs Linux.
+
+### bl-aerosnap usage:
+This script intends to add aero style window snapping to Openbox, or any
+somewhat EWMH-compliant, reparenting window manager. The EWMH hints required for
+proper operation are:
+
+* _NET_ACTIVE_WINDOW
+* _NET_WM_PID
+* _NET_WM_STATE
+ * _NET_WM_STATE_MAXIMIZED
+ * _NET_WM_STATE_MAXIMIZED_VERT
+ * _NET_WM_STATE_MAXIMIZED_HORZ
+* _NET_MOVERESIZE_WINDOW
+* _NET_WORKAREA
+* _NET_FRAME_EXTENTS
+
+This script is designed to be called via Openbox keyboard shortucts.
+Edit Openbox's rc.xml file to add new shortcuts. Example shortcuts to
+bind snapping to Super+Alt+Left/Right key combinations:
+<keybind key="W-A-Left">
+  <action name="Execute">
+    <command>bl-aerosnap --left</command>
+  </action>
+</keybind>
+<keybind key="W-A-Right">
+  <action name="Execute">
+    <command>bl-aerosnap --right</command>
+  </action>
+</keybind>
+
+#### Command line usage:
+bl-aerosnap: usage:
+  --help     show this message and exit
+  --left     attempt to snap the active window to the left of the screen
+  --right    attempt to snap the active window to the right of the screen
+  --top      attempt to snap the active window to the top of the screen
+  --bottom   attempt to snap the active window to the bottom of the screen
+
+All flags function as a toggle, meaning that passing --left twice
+first snaps the active window to the left of the screen and then
+restores it to its original position.
 
 ### bl-hotcorner usage:
 This script is designed to be started automatically on login via
@@ -12,6 +53,7 @@ Openbox's autostart file:
 
 # Start hotcorner detection:
 bl-hotcorners --daemon &
+
 Once started, the script will detect when the mouse cursor enters
 the corners of your screen. If the corner has an associated command,
 it will get executed.
@@ -28,33 +70,14 @@ On first use, a config file will be created
 self-explanatory.
 
 ### bl-aerosnap usage:
-This script is designed to be called via Openbox keyboard shortucts.
-Edit Openbox's rc.xml file to add new shortcuts. Example shortcuts to
-bind snapping to Super+Alt+Left/Right key combinations:
-<keybind key="W-A-Left">
-<action name="Execute">
-<command>bl-aerosnap --left</command>
-</action>
-</keybind>
-<keybind key="W-A-Right">
-<action name="Execute">
-<command>bl-aerosnap --right</command>
-</action>
-</keybind>
-
-#### Command line usage:
-bl-aerosnap: usage:
---help show this message and exit
---left attempt to snap active window to left of screen
---right attempt to snap active window to right of screen
 
 ### Dependencies
 * python
 * python-xlib
-* wmctrl
 * xdotool (>=2.20110530)
+
 On Debian systems:
-sudo apt-get update && sudo apt-get install python python-xlib wmctrl xdotool
+sudo apt-get update && sudo apt-get install python python-xlib xdotool
 
 ### License
 GPL3

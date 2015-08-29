@@ -1,139 +1,299 @@
-#!/usr/bin/env python2.7
-#
-#    bl-aerosnap: a script for adding aero style window snapping to Openbox.
-#    Copyright (C) 2012 Philip Newborough   <corenominal@corenominal.org>
-#
-#    This program is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
-#
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
-#
-#    You should have received a copy of the GNU General Public License
-#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-#    Renamed for BunsenLabs
+#!/usr/bin/env python
 
-from subprocess import Popen, PIPE, STDOUT
-import sys, time, os, re
-import argparse
+"""bl-aerosnap intends to add aero style window snapping to Openbox, or any
+somewhat EWMH-compliant, reparenting window manager. The EWMH hints required
+for proper operation are:
+    * _NET_ACTIVE_WINDOW
+    * _NET_WM_PID
+    * _NET_WM_STATE
+      * _NET_WM_STATE_MAXIMIZED
+      * _NET_WM_STATE_MAXIMIZED_VERT
+      * _NET_WM_STATE_MAXIMIZED_HORZ
+    * _NET_MOVERESIZE_WINDOW
+    * _NET_WORKAREA
+    * _NET_FRAME_EXTENTS
 
-history = '/tmp/bl-aerosnap-'+str(os.getuid())
-windows = {}
-check_intervall = 0.2
+bl-aerosnap was originally written for CrunchBang Linux <http://crunchbang.org/>
+by Philip Newborough <corenominal@corenominal.org>. It is repackaged for
+BunsenLabs by John Crawley and rewritten for BunsenLabs to use Xlib/EWMH instead
+of subprocesses by Jente Hidskes <hjdskes@gmail.com>."""
 
-p = Popen(['xdotool','getdisplaygeometry'], stdout=PIPE, stderr=STDOUT)
-Dimensions = p.communicate()
-Dimensions = Dimensions[0].replace('\n', '')
-Dimensions = Dimensions.split(' ')
-width = int(Dimensions[0])
-height = int(Dimensions[1])
-hw = width / 2
-rt = width - 1
-bt = height - 1
-aeroLcommand="wmctrl -r :ACTIVE: -b add,maximized_vert && wmctrl -r :ACTIVE: -b remove,maximized_horz && wmctrl -r :ACTIVE: -e 0,0,0,"+str(hw)+",-1"
-aeroRcommand="wmctrl -r :ACTIVE: -b add,maximized_vert && wmctrl -r :ACTIVE: -b remove,maximized_horz && wmctrl -r :ACTIVE: -e 0,"+str(hw)+",0,"+str(hw)+",-1"
+# TODO:
+# 1. windows with an originally negative position will not be able to be
+#    restored, see https://gist.github.com/Unia/df288b42c2d60504256b1674af810749
+#    for a traceback.
 
+from Xlib import X, display, protocol
+import argparse, os, sys, tempfile
 
-if os.path.exists(history) == False:
-    f = open(history,'w')
-    f.close()
+# A dict mapping window IDs (see get_window_id below) to that window's geometry
+# and snap direction, if any.
+WINDOWS = {}
 
-def is_root_window():
-    p = Popen(['xdotool', 'getactivewindow'], stdout=PIPE, stderr=STDOUT)
-    ID = p.communicate()
-    if len(ID[0]) > 50:
-        return True
+# TODO(Python3): replace with an actual enum.
+class Snap(object):
+    """This class is here to mimic an enum, which is absent in python 2."""
+    Left, Right, Top, Bottom = range(4)
 
-def window_id():
-    p = Popen(['xdotool', 'getactivewindow'], stdout=PIPE)
-    ID = p.communicate()
-    ID = int(ID[0])
-    p = Popen(['xdotool', 'getwindowpid', str(ID)], stdout=PIPE)
-    PID = p.communicate()
-    PID = int(PID[0])
-    return str(ID)+'-'+str(PID)
+# This class is based on code from the pyewmh project. The library itself is not
+# being used directly because it is not packaged in Debian and we, the
+# BunsenLabs authors, want to stay as close to vanilla Debian as possible. Below
+# follows an excerpt from pyewmh's documentation.
+class EWMH(object):
+    """This module intends to provide an implementation of Extended Window Manager Hints, based on
+    the Xlib modules for python. It provides the ability to get and set properties defined by the
+    EWMH spec.
 
-def window_lookup():
-    ID = window_id()
-    windows = history_load()
-    if windows.has_key(ID):
-        return True
+    :param _dpy: the display to use. If not given, Xlib.display.Display() is used."""
 
-def window_geometry(ID):
-    ID = ID.split('-')
-    p = Popen(['xdotool', 'getwindowgeometry', ID[0]], stdout=PIPE)
-    p = p.communicate()
-    Pos = re.search(r'\d+,\d+', p[0])
-    Size = re.search(r'\d+x\d+', p[0])
-    if Pos and Size:
-        Pos = Pos.group().split(',')
-        Size = Size.group().split('x')
-        return Pos[0]+'|'+Pos[1]+'|'+Size[0]+'|'+Size[1]
+    def __init__(self, _dpy=None):
+        self.dpy = _dpy or display.Display()
+        self.root = self.dpy.screen().root
 
-def window_store():
-    ID = window_id()
-    windows[ID] = window_geometry(ID)
-    s = ID +'|'+window_geometry(ID)+'\n'
-    f = open(history,'a')
-    f.write(s)
-    f.close()
+    def _get_property(self, win, prop):
+        """Gets an X Window's property, or None."""
+        atom = win.get_full_property(self.dpy.intern_atom(prop), X.AnyPropertyType)
+        if atom:
+            return atom.value
+        return None
 
-def window_restore(width):
-    ID = window_id()
-    G = windows[ID].split('|')
-    command = 'wmctrl -r :ACTIVE: -b remove,maximized_vert && '
-    #FIXME: adjust horizontal placement, not sure where this discrepancy comes from?
-    AdjustT = int(G[1]) - 40
-    command += 'wmctrl -r :ACTIVE: -e 0,'+G[0]+','+str(AdjustT)+','+G[2]+','+G[3]
-    del windows[ID]
-    if len(windows) == 0:
-        o = ''
+    def _set_property(self, win, prop, data, mask=None):
+        """Sends a ClientMessage event to an X Window."""
+        if isinstance(data, str):
+            datasize = 8
+        else:
+            data = (data+[0]*(5-len(data)))[:5]
+            datasize = 32
+
+        event = protocol.event.ClientMessage(window=win,
+                                             client_type=self.dpy.intern_atom(prop),
+                                             data=(datasize, data))
+
+        if not mask:
+            mask = (X.SubstructureRedirectMask|X.SubstructureNotifyMask)
+        self.dpy.screen().root.send_event(event, event_mask=mask)
+        self.dpy.flush()
+
+    def set_window_state(self, win, action, state, state2=0):
+        """Sets or unsets one or two state(s) for the given window. (property _NEW_WM_STATE)
+
+        :param win: the X Window object whose state to set
+        :param action: 0 to remove, 1 to add or 2 to toggle state(s)
+        :param state: a state
+        :type state: int or str (see the EWMH spec)
+        :param state2: a state or 0
+        :type state2: int or str (see the EWMH spec)"""
+        if isinstance(state, int) is False:
+            state = self.dpy.intern_atom(state, 1)
+        if isinstance(state2, int) is False:
+            state2 = self.dpy.intern_atom(state2, 1)
+        self._set_property(win, '_NET_WM_STATE', [action, state, state2, 1])
+
+    def set_move_resize_window(self, win, gravity=0, x=None, y=None, width=None, height=None):
+        """Set the property _NET_MOVERESIZE_WINDOW to move or resize the given window.
+        Flags are automatically calculated if x, y, w or h are defined.
+
+        :param win: the X Window object to move and resize
+        :param gravity: gravity (one of the Xlib.X.*Gravity constant or 0)
+        :param x: int or None
+        :param y: int or None
+        :param w: int or None
+        :param h: int or None"""
+        gravity_flags = gravity | 0b0000100000000000 # indicate source (application)
+        if x is None:
+            x = 0
+        else:
+            gravity_flags = gravity_flags | 0b0000010000000000 # indicate presence of x
+        if y is None:
+            y = 0
+        else:
+            gravity_flags = gravity_flags | 0b0000001000000000 # indicate presence of y
+        if width is None:
+            width = 0
+        else:
+            gravity_flags = gravity_flags | 0b0000000100000000 # indicate presence of w
+        if height is None:
+            height = 0
+        else:
+            gravity_flags = gravity_flags | 0b0000000010000000 # indicate presence of h
+        self._set_property(win, '_NET_MOVERESIZE_WINDOW',
+                           [gravity_flags, int(x), int(y), int(width), int(height)])
+
+    def get_active_window(self):
+        """Returns the currently active window, or None. (property _NET_ACTIVE_WINDOW)"""
+        window = self._get_property(self.dpy.screen().root, '_NET_ACTIVE_WINDOW')
+        if window is None:
+            return None
+        return self.dpy.create_resource_object('window', window[0])
+
+    def get_window_pid(self, win):
+        """Returns the PID of the process owning the X Window, or 0. (property _NET_WM_PID)
+
+        :param win: the X Window object whose owning proces' PID to retrieve"""
+        prop = self._get_property(win, '_NET_WM_PID')
+        if prop:
+            return prop[0]
+        return 0
+
+    def get_workarea(self):
+        """Returns the work area, which is the size of the screen minus panels and docks and the like."""
+        workarea = self._get_property(self.dpy.screen().root, '_NET_WORKAREA')
+        return workarea[0], workarea[1], workarea[2], workarea[3]
+
+    def get_frame_extents(self, win):
+        """Returns the frame extents of the window's frame.
+
+        :param win: the X Window object whose frame to retrieve"""
+        extents = self._get_property(win, '_NET_FRAME_EXTENTS')
+        return extents[0], extents[1], extents[2], extents[3]
+
+def write_history(history):
+    """Writes the WINDOWS dictionary to history.
+
+    :param history: the file path to write to"""
+    with open(history, 'w') as hist_file:
+        hist_file.write(str(WINDOWS))
+
+def load_history(history):
+    """Loads the history file into the WINDOWS dictionary.
+
+    :param history: the file path to read"""
+    if os.path.exists(history) == False:
+        return
+
+    with open(history, 'r') as hist_file:
+        global WINDOWS
+        WINDOWS = eval(hist_file.read())
+
+def window_restore(ewmh, win):
+    """Restores the passed-in window's geometry from the WINDOWS dictionary.
+
+    :param ewmh: the :class:`EWMH` module to restore the window
+    :param win: the X Window object whose geometry to restore"""
+    win_id = get_window_id(ewmh, win)
+    geom = WINDOWS[win_id]
+    del WINDOWS[win_id]
+
+    ewmh.set_window_state(win, 0, '_NET_WM_STATE_MAXIMIZED_VERT')
+    ewmh.set_window_state(win, 0, '_NET_WM_STATE_MAXIMIZED_HORZ')
+    ewmh.set_move_resize_window(win, x=geom[0], y=geom[1], width=geom[2], height=geom[3])
+
+    print ("Restoring to: " + str(geom[0]) + ' ' + str(geom[1]) + ' ' + str(geom[2]) + ' ' + str(geom[3]))
+
+def window_snap(ewmh, win, snap):
+    """Snaps a window to a position on the screen.
+
+    :param ewmh: the :class:`EWMH` module to snap the window
+    :param win: the X Window object to snap
+    :param snap: the :class:`Snap` value, deciding which direction to snap to"""
+    x, y, width, height = ewmh.get_workarea()
+    frame_left, frame_right, frame_top, frame_bottom = ewmh.get_frame_extents(win)
+
+    geom = get_window_geometry(win)
+    print ("Snapping window from: " + str(geom[0]) + ' ' + str(geom[1]) + ' ' + str(geom[2]) + ' ' + str(geom[3]))
+    ewmh.set_window_state(win, 0, '_NET_WM_STATE_MAXIMIZED_VERT')
+    ewmh.set_window_state(win, 0, '_NET_WM_STATE_MAXIMIZED_HORZ')
+    ewmh.set_window_state(win, 0, '_NET_WM_STATE_MAXIMIZED')
+
+    # TODO(Python3): replace with switch.
+    if snap is Snap.Left:
+        print ("Snapping window to: " + str(x) + " " + str(y) + " " + str(width / 2 - frame_left - frame_right))
+        ewmh.set_window_state(win, 1, '_NET_WM_STATE_MAXIMIZED_VERT')
+        ewmh.set_window_state(win, 0, '_NET_WM_STATE_MAXIMIZED_HORZ')
+        ewmh.set_move_resize_window(win, x=x, y=y, width=width / 2 - frame_left - frame_right)
+    elif snap is Snap.Right:
+        print ("Snapping window to: " + str(width / 2) + ' ' + str(y) + ' ' + str(width / 2 - frame_left - frame_right))
+        ewmh.set_window_state(win, 1, '_NET_WM_STATE_MAXIMIZED_VERT')
+        ewmh.set_window_state(win, 0, '_NET_WM_STATE_MAXIMIZED_HORZ')
+        ewmh.set_move_resize_window(win, x=width / 2, y=y, width=width / 2 - frame_left - frame_right)
+    elif snap is Snap.Top:
+        print ("Snapping window to: " + str(x) + " " + str(y) + " " + str(height / 2 - frame_top - frame_bottom))
+        ewmh.set_window_state(win, 0, '_NET_WM_STATE_MAXIMIZED_VERT')
+        ewmh.set_window_state(win, 1, '_NET_WM_STATE_MAXIMIZED_HORZ')
+        ewmh.set_move_resize_window(win, x=x, y=y, height=height / 2 - frame_top - frame_bottom)
+    elif snap is Snap.Bottom:
+        print ("Snapping window to: " + str(x) + " " + str(height / 2) + ' ' + str(height / 2 - frame_top - frame_bottom))
+        ewmh.set_window_state(win, 0, '_NET_WM_STATE_MAXIMIZED_VERT')
+        ewmh.set_window_state(win, 1, '_NET_WM_STATE_MAXIMIZED_HORZ')
+        ewmh.set_move_resize_window(win, x=x, y=height / 2, height=height / 2 - frame_top - frame_bottom)
+
+def get_window_geometry(win):
+    """Returns a list containing the window's x, y, width and height coordinates in that order.
+
+    :param win: the X Window object"""
+    window_geom = win.get_geometry()
+    parent_geom = win.query_tree().parent.get_geometry()
+    return [parent_geom.x, parent_geom.y, window_geom.width, window_geom.height]
+
+def get_window_id(ewmh, win):
+    """Returns a unique identifier for an X Window, made up of its "to string" and process' PID.
+
+    :param ewmh: the :class:`EWMH` class to retrieve the X Window's process' PID
+    :param win: the X Window object whose identifier to return"""
+    pid = ewmh.get_window_pid(win)
+    return str(win) + "-" + str(pid)
+
+def convert(opts):
+   """Converts the options into the correct enumeration value.
+
+   :param opts: the options resulting from `ap.parse_args`"""
+   if opts.left:
+       return Snap.Left
+   elif opts.right:
+       return Snap.Right
+   elif opts.top:
+       return Snap.Top
+   elif opts.bottom:
+       return Snap.Bottom
+   raise ValueError("Argument must be one of `--left`, `--right`, `--top` or `--bottom`")
+
+def parse_args(argv):
+    """Parses the command line arguments using argparse."""
+    ap = argparse.ArgumentParser(description="Add aero style window snapping to " \
+            "Openbox, or any EWMH compliant, reparenting window manager")
+    ap.add_argument("-l", "--left",
+            help="attempt to snap the active window to the left of the screen",
+            action="store_true")
+    ap.add_argument("-r", "--right",
+            help="attempt to snap the active window to the right of the screen",
+            action="store_true")
+    ap.add_argument("-t", "--top",
+            help="attempt to snap the active window to the top of the screen",
+            action="store_true")
+    ap.add_argument("-b", "--bottom",
+            help="attempt to snap the active window to the bottom of the screen",
+            action="store_true")
+    return ap.parse_args(argv)
+
+def main():
+    opts = parse_args(sys.argv[1:])
+
+    dpy = display.Display()
+    ewmh = EWMH(dpy)
+    active_win = ewmh.get_active_window()
+
+    if dpy.screen().root == active_win:
+        sys.exit(0)
+
+    history = tempfile.gettempdir() + '/bl-aerosnap-' + str(os.getuid())
+    load_history(history)
+
+    snap = convert(opts)
+    wid = get_window_id(ewmh, active_win)
+    if wid in WINDOWS:
+        # The snap direction is the same; restore the window.
+        if snap == WINDOWS[wid][4]:
+            window_restore(ewmh, active_win)
+        # The snap direction is new; overwrite the remembered snap direction and snap to it.
+        else:
+            WINDOWS[wid][4] = snap
+            window_snap(ewmh, active_win, snap)
     else:
-        for key in windows:
-            h = windows[key].split('|')
-            o = key+'|'+h[0]+'|'+h[1]+'|'+h[2]+'|'+h[3]+'\n'
-    f = open(history,'w')
-    f.write(o)
-    f.close()
-    os.system(command)
+        WINDOWS[wid] = get_window_geometry(active_win) + [snap]
+        window_snap(ewmh, active_win, snap)
 
-def history_load():
-    f = open(history,'r')
-    i = 0
-    for line in f:
-        h = line.split('|')
-        h[4] = h[4].replace('\n', '')
-        windows[h[0]] = h[1]+'|'+h[2]+'|'+h[3]+'|'+h[4]
-    f.close()
-    return windows
+    write_history(history)
 
-ap = argparse.ArgumentParser(description="Add aero style window snapping to Openbox")
-ap.add_argument("-l", "--left", help="attempt to snap active window to left of screen",
-            action="store_true")
-ap.add_argument("-r", "--right", help="attempt to snap active window to right of screen",
-            action="store_true")
-opts = ap.parse_args(sys.argv[1:])
+if __name__ == "__main__":
+    main()
 
-# if len(sys.argv) < 2 or sys.argv[1] == "--help":
-#     print_usage()
-
-if opts.left:
-    if is_root_window != True:
-        if window_lookup():
-            window_restore(width)
-        else:
-            window_store()
-            os.system(aeroLcommand)
-
-elif opts.right:
-    if is_root_window != True:
-        if window_lookup():
-            window_restore(width)
-        else:
-            window_store()
-            os.system(aeroRcommand)
