@@ -5,16 +5,18 @@ A collection of small scripts to provide various functions
 which might be useful to BunsenLinux users.
 bl-exit: Logout dialog box with various options.
 bl-lock: Script to lock the display.
-bl-user-setup: Script to install user config files in ~/
 bl-aerosnap: Script to add aero style window snapping to Openbox.
 bl-hotcorners: Script to add hot corners to Openbox.
 
-Originally imported from cb-exit, cb-lock, cb-slim and cb-wmhacks,
+Originally imported from cb-exit, cb-lock and cb-wmhacks,
 made for CrunchBang Linux and subsequently modified for BunsenLabs.
 
-bl-conkyzen     :
+bl-kb: Script to read openbox keyboard shortcuts and write them to a text file.
+
 bl-conky-session:
 bl-conkyedit    :
-bl-tint2zen     :
+bl-conkyzen     :
 bl-tint-session :
-bl-tin2edit     :       Conky and Tint2 Chooser and Editor scripts
+bl-tint2edit     :
+bl-tint2-restart:
+bl-tint2zen     :       Conky and Tint2 Chooser and Editor scripts

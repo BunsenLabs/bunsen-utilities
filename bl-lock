@@ -5,20 +5,19 @@
 # If running in live mode, offer up a prompt detailing the live session password.
 # Else, run light-locker-command -l.
 
-LOCK_COMMAND='light-locker-command -l'
+LOCK_COMMAND=(light-locker-command -l)
 
-cmd=($LOCK_COMMAND)
-which ${cmd[0]} >/dev/null 2>&1 || {
-    echo "$0: ${cmd[0]} no such command." >&2
+which ${LOCK_COMMAND[0]} >/dev/null 2>&1 || {
+    echo "$0: ${LOCK_COMMAND[0]} no such command." >&2
     exit 1
 }
 
-if [ -d /live/overlay ] && [ ! -f /home/$USER/.config/bunsen/bl-lock ]; then
+if [ -d /live-build ] && [ ! -f /home/$USER/.config/bunsen/bl-lock ]; then
     zenity --info --title="Lock screen info:" --text="Lock screen has detected you are running a live session.\nThe password needed to unlock the screen is \"live\".\nThis notice will only be displayed once per live session."
     mkdir -p /home/$USER/.config/bunsen
     touch /home/$USER/.config/bunsen/bl-lock
 fi
 
-$LOCK_COMMAND
+"${LOCK_COMMAND[@]}"
 
 exit 0
