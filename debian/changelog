@@ -1,3 +1,11 @@
+bunsen-utilities (8.3-1) bunsen-hydrogen; urgency=low
+
+  * Adjust python shebangs to call python2.7.
+  * Adjust dependency to python2.7
+  * bl-lock: check existence of /var/lib/live to detect live session.
+
+ -- John Crawley <john@rafflesnagoya.com>  Wed, 09 Sep 2015 12:29:45 +0900
+
 bunsen-utilities (8.2-2) bunsen-hydrogen; urgency=low
 
   * Remove dependency on lightdm.

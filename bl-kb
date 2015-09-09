@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 # -*- coding: utf-8 -*-
 
 # This script reads the keybinds configuration file ("$HOME/.config/openbox/rc.xml")
@@ -12,7 +12,7 @@
 # rc.xml, and passed them to Conkys to display on screen
 #
 # April 2015
-#   : This script outputs the keyboard keybinds to terminal or, with 
+#   : This script outputs the keyboard keybinds to terminal or, with
 #     a "--gui" argument will display the output in a text window as well
 #
 #   : Written for use by BunsenLabs Linux bl-kb-pipemenu by <damo>
@@ -20,7 +20,7 @@
 ########################################################################
 #
 #   ****If Openbox xml version changes then the xml root will need
-#        changing as well (line 55)********
+#        changing as well (line 56)********
 #
 ########################################################################
 import sys,os
