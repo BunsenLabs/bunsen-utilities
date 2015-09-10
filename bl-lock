@@ -12,8 +12,8 @@ which ${LOCK_COMMAND[0]} >/dev/null 2>&1 || {
     exit 1
 }
 
-if [ -d /var/lib/live ] && [ ! -f /home/$USER/.config/bunsen/bl-lock ]; then
-    zenity --info --title="Lock screen info:" --text="Lock screen has detected you are running a live session.\nThe password needed to unlock the screen is \"live\".\nThis notice will only be displayed once per live session."
+if [ -d /lib/live ] && [ ! -f /home/$USER/.config/bunsen/bl-lock ]; then
+    zenity --info --title="Lock screen info:" --text="Lock screen has detected you are running a live session.\nThe username needed to unlock the screen is \"user\" and the password is \"live\".\nThis notice will only be displayed once per live session."
     mkdir -p /home/$USER/.config/bunsen
     touch /home/$USER/.config/bunsen/bl-lock
 fi
