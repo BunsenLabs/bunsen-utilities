@@ -10,3 +10,5 @@ bl-tint2-session usr/bin
 bl-tint2edit usr/bin
 bl-tint2restart usr/bin
 bl-kb usr/bin
+bl-github-upgrade usr/bin
+bl-pkg-versions usr/bin

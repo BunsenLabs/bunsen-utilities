@@ -1,0 +1,72 @@
+#!/bin/bash
+
+HELP="Just run the script - no options (except -h|--help to see this message).
+It will check the versions of bunsen packages
+on the Debian and GitHub repositories."
+
+# base url for GitHub repository names
+readonly GITHUB_ROOT=https://github.com/BunsenLabs
+readonly GITHUB_CONTENT_ROOT=https://raw.githubusercontent.com/BunsenLabs
+readonly BUNSEN_PACKAGE_LIST=http://pkg.bunsenlabs.org/debian/dists/bunsen-hydrogen/main/binary-i386/Packages
+required_commands='curl awk sed tput printf'
+
+missing_commands=
+for i in $required_commands
+do
+    hash $i || missing_commands+=" $i"
+done
+[[ $missing_commands ]] && error_exit "This script requires the following commands: $missing_commands
+Please install the packages containing the missing commands
+and rerun the script."
+
+case $1 in
+--help|-h)
+    echo "$HELP"
+    exit
+    ;;
+esac
+
+# Associative array: packages whose names differ from the repository they are built by
+# format: [packagename]=repositoryname
+# Edit as necessary.
+declare -A REPOS=([bunsen-meta-printer-support]=bunsen-welcome [bunsen-meta-java]=bunsen-welcome [bunsen-meta-libreoffice]=bunsen-welcome [bunsen-meta-vcs]=bunsen-welcome [bunsen-meta-ssh]=bunsen-welcome [bunsen-meta-lamp]=bunsen-welcome [bunsen-meta-packaging]=bunsen-welcome [bunsen-images-extra]=bunsen-images)
+readonly REPOS
+
+# get name of repository which builds package
+# default is same as package name, unless listed in REPOS
+get_repo() {
+    printf '%s' "${REPOS[$1]:-$1}"
+}
+
+# get version of GitHub repo from packagename
+lookup_github() {
+    reponame=$(get_repo "$1")
+    chlog="${GITHUB_CONTENT_ROOT}/${reponame}/master/debian/changelog"
+    remote_version="$(curl -s "$chlog" | sed -rn "0,/${reponame}/s/.+\(([0-9]+[a-zA-Z0-9.+~:-]*)\).*/\1/p;")"
+    printf '%s' "$remote_version"
+}
+
+repo_list=$( curl -s "$BUNSEN_PACKAGE_LIST" | awk '
+BEGIN{RS="";FS="\n"}
+/\n[ \t]*Source:/ {next}
+/Package:[ \t]*bunsen-/ {
+    for(i=1;i<=NF;i++) {
+        split($i,F,":")
+        A[F[1]] = F[2]
+    }
+    print A["Package"], A["Version"]
+}
+')
+
+tput bold
+printf '%-30s %-12s %-12s\n\n' 'Package' 'apt version' 'git version'
+tput sgr0
+while read -r pkgname apt_version
+do
+    git_version=$(lookup_github "$pkgname")
+    [[ $git_version != $apt_version ]] && tput bold
+    printf '%-30s %-12s %-12s\n' "$pkgname" "$apt_version" "$git_version"
+    tput sgr0
+done <<<"$repo_list"
+
+exit

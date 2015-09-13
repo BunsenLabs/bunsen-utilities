@@ -29,6 +29,8 @@ Description: Small scripts to use with BunsenLabs.
   - bl-tint2edit: Script to find and edit tint2 config files.
   - bl-tint2restart: Script to restart all running tint2 processes.
   - bl-tint2zen: Zenity-based tint2 manager.
+  - bl-package-versions: Utility to display the versions of BunsenLabs packages.
+  - bl-github-upgrade: Script to upgrade the BunsenLabs packages from GitHub.
  .
- Originally imported from cb-exit, cb-lock, cb-slim and cb-wmhacks,
+ Originally imported from cb-exit, cb-lock and cb-wmhacks,
  made for CrunchBang Linux and subsequently modified for BunsenLabs.

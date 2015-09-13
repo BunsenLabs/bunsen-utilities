@@ -1,3 +1,9 @@
+bunsen-utilities (8.4-1) bunsen-hydrogen; urgency=low
+
+  * Add bl-pkg-versions and bl-github-upgrade.
+
+ -- John Crawley <john@rafflesnagoya.com>  Sun, 13 Sep 2015 16:04:52 +0900
+
 bunsen-utilities (8.3.1-1) bunsen-hydrogen; urgency=low
 
   * bl-lock: Add "username" to live reminder message.
