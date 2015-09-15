@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # bl-tint2restart to be used by bl-tint2-pipemenu
-# Written for BunsenLabs Linux by <damo> June 2015
+#   Written by damo for BunsenLabs, April 2015   <damo@bunsenlabs.org>
 # and <johnraff> July 2015
 
 declare -A commands # associative array

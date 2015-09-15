@@ -2,7 +2,7 @@
 ##
 #   Read a saved BunsenLabs Tint2 session file and start the tint2s
 #
-#   written by <damo> for BunsenLabs, April 2015
+#   Written by damo for BunsenLabs, April 2015   <damo@bunsenlabs.org>
 #
 #   To start the chosen Tint2 session at login, add the following line
 #   to config/openbox/autostart:
