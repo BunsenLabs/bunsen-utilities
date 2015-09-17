@@ -2,8 +2,7 @@
 #
 #   BunsenLabs tint2 selection and switcher script
 #
-#   Written by damo for BunsenLabs, April 2015   <damo@bunsenlabs.org>
-#
+#   Written by damo <damo@bunsenlabs.org> for BunsenLabs Linux, April 2015
 ########################################################################
 #
 #   Tint2 config files must be in $TINT2PATH

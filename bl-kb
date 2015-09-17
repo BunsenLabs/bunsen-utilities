@@ -15,7 +15,7 @@
 #   : This script outputs the keyboard keybinds to terminal or, with
 #     a "--gui" argument will display the output in a text window as well
 #
-#   Written by damo for BunsenLabs, April 2015   <damo@bunsenlabs.org>
+#   Written by damo <damo@bunsenlabs.org> for BunsenLabs Linux, April 2015
 #
 ########################################################################
 #
