@@ -8,4 +8,4 @@ bunsen-utilities (8.1-1) bunsen-hydrogen; urgency=low
     remove the xscreensaver entry from autostart
     and consider removing xscreensaver from their system.
 
- -- John Crawley <john@rafflesnagoya.com>  Wed, 26 Aug 2015 18:05:05 +0900
+ -- John Crawley <john@bunsenlabs.org>  Wed, 26 Aug 2015 18:05:05 +0900
