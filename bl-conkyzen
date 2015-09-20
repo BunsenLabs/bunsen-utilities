@@ -93,7 +93,7 @@ fillArrays(){
         cARR="$USER/.conkyrc"
     else
         cPATH="$2"   # 2nd arg: full filepath to conky
-        cARR="$3"    # 3rd arg: displayed name: "directory/*conky(rc)" 
+        cARR="$3"    # 3rd arg: displayed name: "directory/*conky(rc)"
     fi
 
     conkysPath[$num]="$cPATH"
@@ -112,13 +112,13 @@ findConky(){
     fillArrays $num "$CRC" "$USER/.conkyrc"
     num=1
     # find files in CONKYPATH with conky in the name
-    for x in $(find "$CONKYPATH" -type f );do 
+    for x in $(find "$CONKYPATH" -type f );do
         f=$(basename "$x")    # filename from filepath
         if [[ $f = *conkyrc ]] || [[ $f = *conky ]];then    # filename ends with *conky or *conkyrc
             # get directory/conkyname to display in list
             CONKY=$( echo "$x" | awk -F"/" '{print $(NF-1)"/"$NF}')
             fillArrays $num "$x" "$CONKY"
-            num=$(($num+1)) 
+            num=$(($num+1))
         fi
     done
 }
@@ -166,7 +166,7 @@ for arg in "$@";do
                         writeSessions "$SESSIONFILE"    # if sessionfile is new, write name to saved-sessions
                         break
                       else
-                        echo 
+                        echo
                         echo -e "\tNo saved-session file specified!"
                         echo "$USAGE1"
                         echo
@@ -242,17 +242,17 @@ while ! [[ $RET ]];do
         i=0
         OIFS=$IFS   # save Internal Field Separator
         IFS=":"     # separator is ":" in returned choices
-        for name in $RET; do 
+        for name in $RET; do
             retConky[$i]="$name"
             i=$(($i+1))
         done
         IFS=$OIFS   # reset IFS back to default
-        
+
         # kill all conkys
         if [ "$(pidof conky)" ];then
             killall conky
         fi
-        
+
         # Find the chosen conkys and start them
         for name in ${retConky[*]};do       # loop through checkmarked conky names
             for ((j=0; j<${#conkysPath[*]}; j++));do  # traverse through elements
