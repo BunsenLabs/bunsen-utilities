@@ -75,7 +75,13 @@ killConkys(){
 NOKILL=0
 if [ $# -eq 0 ];then    # if no args, then run default sessionfile
     killConkys
-    source "$SESSIONFILE"
+    if ! [ -f "$SESSIONFILE" ];then     # run default conky
+        echo -e "ERROR: sessionfile \"$SESSIONFILE\" not found. Using default" >&2
+        conky -c $HOME/.conkyrc
+        exit 0
+    else
+        source "$SESSIONFILE"
+    fi
 elif [[ $1 = "-h" ]] || [[ $1 = "--help" ]];then
     echo "$USAGE"
     exit 0
