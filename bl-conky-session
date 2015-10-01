@@ -30,29 +30,29 @@ USAGE=$(echo -e "\vUSAGE:\tbl-conky-session [OPTION(S)]...FILES"
 findArgs(){     # get command args (switches & sessionfile paths)
     i=0
     for arg in "$@";do
-        if [[ $arg = "--default" ]];then
+        if [[ $arg = "--default" ]]; then
             arg="$SESSIONFILE"
         fi
-        if [[ $arg = "--autostart" ]];then
+        if [[ $arg = "--autostart" ]]; then
             NOKILL=1    # run from autostart, so don't ask to kill conkys
         fi
-        if [ -f  "$arg" ] &>/dev/null;then # sessionfile exists
+        if [[ -f  "$arg" ]]; then # sessionfile exists
             rawArr[$i]="$arg"       # add sessionfiles to array
             i=$(($i+1))
         fi
     done
     # check if sessionfiles were passed to bl-conky-session
-    if ! [ ${#rawArr[@]} -eq 0 ]; then
+    if (( ${#rawArr[@]} != 0 )); then
         # remove duplicate args
         sessArr=(`printf "%s\n" "${rawArr[@]}" | sort -u`)
-        if [[ $NOKILL == 0 ]];then
+        if (( $NOKILL == 0 )); then
             killConkys
         fi
         for SESSION in "${sessArr[@]}";do # run the conkys in the sessionfiles
             source "$SESSION"
         done
     else    # --autostart used, but no sessionfiles passed to bl-conkyzen
-        if [ -f "$SESSIONFILE" ] && [[ $NOKILL = 1 ]];then
+        if [[ -f "$SESSIONFILE" ]] && (( $NOKILL == 1 )); then
             source "$SESSIONFILE"   # use conky-sessionfile
         else
             echo -e "ERROR: sessionfile \"$SESSIONFILE\" not found. Using default" >&2
@@ -63,26 +63,26 @@ findArgs(){     # get command args (switches & sessionfile paths)
 }
 
 killConkys(){
-    if [ "$(pidof conky)" ];then
+    if pidof conky &>/dev/null; then
         msg="Kill running conkys first?"
         zenity --question --text="$msg"
-        if [[ $? == 0 ]];then            # kill all conkys
+        if (( $? == 0 )); then            # kill all conkys
             killall conky && sleep 0.2s
         fi
     fi
 }
 
 NOKILL=0
-if [ $# -eq 0 ];then    # if no args, then run default sessionfile
+if [[ $# -eq 0 ]]; then    # if no args, then run default sessionfile
     killConkys
-    if ! [ -f "$SESSIONFILE" ];then     # run default conky
+    if [[ ! -f "$SESSIONFILE" ]]; then     # run default conky
         echo -e "ERROR: sessionfile \"$SESSIONFILE\" not found. Using default" >&2
         conky -c $HOME/.conkyrc
         exit 0
     else
         source "$SESSIONFILE"
     fi
-elif [[ $1 = "-h" ]] || [[ $1 = "--help" ]];then
+elif [[ $1 = "-h" ]] || [[ $1 = "--help" ]]; then
     echo "$USAGE"
     exit 0
 else 
