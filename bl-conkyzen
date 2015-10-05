@@ -173,7 +173,9 @@ for arg in "$@";do
                         exit 1
                       fi
                       ;;
-        -z|-Z       ) SPATH=$(zenity --entry --text="Enter name for new saved session file\n(File will be saved in conky dir)")
+        -z|-Z       ) SPATH=$(zenity --entry \
+                        --text="Enter name for new saved session file\n(File will be saved in conky dir)" \
+                        --title="Conky sessionfile") 
                       if [ -z $SPATH ];then     # entry was empty
                           zenity --error --text="No file specified for new saved session\n\nExiting..."
                           exit 1
@@ -213,10 +215,10 @@ done
 
 while ! [[ $RET ]];do
     ## Populate zenity dialog from array, get return value(s)
-    RET=$(zenity --list --title "BunsenLabs Conky Chooser" \
-        --text "Session will be saved to:\n $SESSIONFILE"\
+    RET=$(zenity --list --title="BunsenLabs Conky Chooser" \
+        --text="Session will be saved to:\n $SESSIONFILE"\
         --checklist --width=400 --height=500 \
-        --column "Select" --column "Conky Name" --separator=":" \
+        --column="Select" --column="Conky Name" --separator=":" \
         $msg)
 
     if [[ $? == 1 ]]; then # cancel button pressed
