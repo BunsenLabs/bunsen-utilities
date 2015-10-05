@@ -45,7 +45,7 @@ def cmdargs():
             gui=True
             return gui
         else:
-            msg = "\n\n\tUSAGE: to display keybinds in a text window use 'bl-kb.py --gui'\n\n"
+            msg = "\n\n\tUSAGE: to display keybinds in a text window use 'bl-kb --gui'\n\n"
             msg = msg + "\tRunning the script without args will send output to the terminal\n\n"
             print(msg)
             sys.exit()
@@ -128,7 +128,7 @@ if __name__ == "__main__":
     check_txtfile(kb_fpath)
     if gui:      # output formatted keybinds text in text window
         write_file(str(datetime.date.today()) + "\trc.xml KEYBINDS")
-        write_file("---------------------------------------\n")
+        write_file("----------------------------------------------------\n")
 
     if check_rcfile(rc_fpath,"r"):
         keyboard()
