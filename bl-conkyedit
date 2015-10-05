@@ -53,10 +53,10 @@ for ((j=0; j<${#conkysArr[*]}; j++));do
 done
 
 ## Populate zenity dialog from array, get return value(s)
-RET=$(zenity --list --title "Conky Edit" \
-    --text "Select Conkys to edit from the list\nMultiple Conkys can be chosen" \
+RET=$(zenity --list --title="Conky Edit" \
+    --text="Select Conkys to edit from the list\nMultiple Conkys can be chosen" \
     --checklist --width=400 --height=500 \
-    --column "Select" --column "Conky Name" --separator=":"\
+    --column="Select" --column="Conky Name" --separator=":"\
     $msg)
 
 if [[ $? == 1 ]]; then # cancel button pressed
