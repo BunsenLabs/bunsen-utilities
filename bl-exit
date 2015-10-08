@@ -7,7 +7,7 @@ pygtk.require('2.0')
 
 import getopt
 import getpass
-import os
+import subprocess
 import sys
 
 class bl_exit(gtk.Window):
@@ -91,15 +91,21 @@ class bl_exit(gtk.Window):
         self._status.set_label("Shutting down, please standby...")
         poweroff()
 
+def call(command):
+    try:
+        subprocess.call(command)
+    except OSError as e:
+        print >>sys.stderr, "Execution failed: ", e
+
 def send_dbus(string):
     dbus_send = "dbus-send --print-reply --system --dest=org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager.{} boolean:true"
-    os.system(dbus_send.format(string))
+    call(dbus_send.format(string))
 
 def logout():
     os.system("openbox --exit")
 
 def suspend():
-    os.system("bl-lock")
+    call("bl-lock")
     send_dbus("Suspend")
 
 def reboot():
