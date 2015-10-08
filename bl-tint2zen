@@ -93,9 +93,10 @@ for ((j=0; j<${#tintsArr[*]}; j++));do
 done
 
 ## Populate zenity dialog from array, get return value(s)
-RET=$(zenity --list --title "BunsenLabs Tint2 chooser" \
-    --text "Select Tint2s from the list:" --checklist --width=350 --height=300 \
-    --column "Select" --column "tint2 Name" --separator=":"\
+RET=$(zenity --list --title="BunsenLabs Tint2 chooser" \
+    --text="Select Tint2s from the list:" \
+    --checklist --width=350 --height=300 \
+    --column="Select" --column="tint2 Name" --separator=":"\
     $msg)
 
 if [[ $? == 1 ]]; then # cancel button pressed

@@ -133,7 +133,7 @@ writeSessions(){    # save a new sessionfile name for use by a menu
     fi
     if grep -qx "$SESSIONFILE" "$SESSIONS";then # session was previously saved
         if [[ $2 = "-z" ]];then    # input was from input dialog, so ask OK?
-            zenity --question --text "Filename already in use!\n\nOverwrite it?"
+            zenity --question --title="Conky sessionfile" --text="Filename already in use\n\nOverwrite it?"
             if [[ $? = 1 ]];then
                 exit 0
             fi
@@ -173,9 +173,11 @@ for arg in "$@";do
                         exit 1
                       fi
                       ;;
-        -z|-Z       ) SPATH=$(zenity --entry --text="Enter name for new saved session file\n(File will be saved in conky dir)")
+        -z|-Z       ) SPATH=$(zenity --entry \
+                        --text="Enter name for new saved session file\n(File will be saved in conky dir)" \
+                        --title="Conky sessionfile") 
                       if [ -z $SPATH ];then     # entry was empty
-                          zenity --error --text="No file specified for new saved session\n\nExiting..."
+                          zenity --error --title="Conky sessionfile" --text="No file specified for new saved session\n\nExiting..."
                           exit 1
                       else
                           writeSessions "$SPATH" "-z"   # saved session file from input dialog
@@ -213,10 +215,10 @@ done
 
 while ! [[ $RET ]];do
     ## Populate zenity dialog from array, get return value(s)
-    RET=$(zenity --list --title "BunsenLabs Conky Chooser" \
-        --text "Session will be saved to:\n $SESSIONFILE"\
+    RET=$(zenity --list --title="BunsenLabs Conky Chooser" \
+        --text="Session will be saved to:\n $SESSIONFILE" \
         --checklist --width=400 --height=500 \
-        --column "Select" --column "Conky Name" --separator=":" \
+        --column="Select" --column="Conky Name" --separator=":" \
         $msg)
 
     if [[ $? == 1 ]]; then # cancel button pressed
@@ -226,15 +228,16 @@ while ! [[ $RET ]];do
         exit 0
     fi
     if ! [[ $RET ]];then  # No conkys chosen
-        MSG="Nothing returned. Try again?"
-        zenity --question --text "$MSG"
+        MSG="Nothing chosen. Kill Conkys?"
+        zenity --question --title="Conky Chooser" --text="$MSG"
         if [[ $? = 1 ]];then
             # restore previous saved-sessions file
             mv "$SESSIONS.bkp" "$SESSIONS"
             rm "$TEMPFILE"
-            exit 0
-        else
             continue
+        else
+            killall conky
+            exit 0
         fi
     else
         > "$SESSIONFILE"    # Create new session file

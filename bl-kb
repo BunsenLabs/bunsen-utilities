@@ -3,7 +3,7 @@
 
 # This script reads the keybinds configuration file ("$HOME/.config/openbox/rc.xml")
 # and writes them to a text file ("$HOME/.config/openbox/kbinds.txt").
-# The script is used by bl-kb-pipemenu to pipe the output to the Openbox menu
+# The script is used by bl-kb-pipemenu to pipe the output to the Openbox menu, or to display keybinds in a separate window
 #
 # Based on a script by wlourf 07/03/2010
 # <http://u-scripts.blogspot.com/2010/03/how-to-display-openboxs-shortcuts.html>
@@ -45,7 +45,7 @@ def cmdargs():
             gui=True
             return gui
         else:
-            msg = "\n\n\tUSAGE: to display keybinds in a text window use 'bl-kb.py --gui'\n\n"
+            msg = "\n\n\tUSAGE: to display keybinds in a text window use 'bl-kb --gui &>/dev/null'\n\n"
             msg = msg + "\tRunning the script without args will send output to the terminal\n\n"
             print(msg)
             sys.exit()
@@ -94,10 +94,10 @@ def output_keybinds(arrShortcut,gui):
         if gui:     #format output for text window
             if len(execute)>80 :
                 execute=execute[:75]+"....."
-            line = "{:2}".format(i) + "\t" + "{:<15}".format(keybinding)\
+            line = "{:2}".format(i) + "\t" + "{:<16}".format(keybinding)\
             + "\t" + execute
         else:   #format text for pipemenu
-            line = exe + "{:<15}".format(keybinding) + "\t" + execute
+            line = exe + "{:<16}".format(keybinding) + "\t" + execute
         print(line)
         write_file(line)
 
@@ -128,7 +128,7 @@ if __name__ == "__main__":
     check_txtfile(kb_fpath)
     if gui:      # output formatted keybinds text in text window
         write_file(str(datetime.date.today()) + "\trc.xml KEYBINDS")
-        write_file("---------------------------------------\n")
+        write_file("----------------------------------------------------\n")
 
     if check_rcfile(rc_fpath,"r"):
         keyboard()
@@ -140,5 +140,5 @@ if __name__ == "__main__":
         sys.exit(1)
 
     if gui:     # output formatted keybinds text in text window
-        os.system("zenity --text-info --filename=$HOME/.config/openbox/kbinds.txt --width=700 --height=700")
+        os.system("zenity --text-info --title='Openbox Keybinds' --filename=$HOME/.config/openbox/kbinds.txt --width=700 --height=700 --font=Monospace")
 
