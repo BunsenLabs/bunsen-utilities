@@ -1,13 +1,13 @@
 #!/usr/bin/env python2.7
 # -*- coding: utf-8 -*-
 
-import pygtk
-pygtk.require('2.0')
+import getopt
+import getpass
 import gtk
 import os
-import getpass
-
-dbus_send = "dbus-send --print-reply --system --dest=org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager.{} boolean:true"
+import pygtk
+pygtk.require('2.0')
+import sys
 
 class bl_exit:
     def disable_buttons(self):
@@ -24,24 +24,24 @@ class bl_exit:
     def logout_action(self,btn):
         self.disable_buttons()
         self.status.set_label("Exiting Openbox, please standby...")
-        os.system("openbox --exit")
+        logout()
+        gtk.main_quit()
 
     def suspend_action(self,btn):
         self.disable_buttons()
         self.status.set_label("Suspending, please standby...")
-        os.system("bl-lock")
-        os.system(dbus_send.format("Suspend"))
+        suspend()
         gtk.main_quit()
 
     def reboot_action(self,btn):
         self.disable_buttons()
         self.status.set_label("Rebooting, please standby...")
-        os.system(dbus_send.format("Reboot"))
+        reboot()
 
     def shutdown_action(self,btn):
         self.disable_buttons()
         self.status.set_label("Shutting down, please standby...")
-        os.system(dbus_send.format("PowerOff"))
+        poweroff()
 
     def create_window(self):
         self.window = gtk.Window()
@@ -57,17 +57,14 @@ class bl_exit:
         windowicon = self.window.render_icon(gtk.STOCK_QUIT, gtk.ICON_SIZE_DIALOG)
         self.window.set_icon(windowicon)
 
-
         #Create HBox for buttons
         self.button_box = gtk.HBox()
-        self.button_box.show()
 
         #Cancel button
         self.cancel = gtk.Button(stock = gtk.STOCK_CANCEL)
         self.cancel.set_border_width(4)
         self.cancel.connect("clicked", self.cancel_action)
         self.button_box.pack_start(self.cancel)
-        self.cancel.show()
 
         #Cancel key (Escape)
         accelgroup = gtk.AccelGroup()
@@ -80,52 +77,89 @@ class bl_exit:
         self.logout.set_border_width(4)
         self.logout.connect("clicked", self.logout_action)
         self.button_box.pack_start(self.logout)
-        self.logout.show()
 
         #Suspend button
         self.suspend = gtk.Button("_Suspend")
         self.suspend.set_border_width(4)
         self.suspend.connect("clicked", self.suspend_action)
         self.button_box.pack_start(self.suspend)
-        self.suspend.show()
 
         #Reboot button
         self.reboot = gtk.Button("_Reboot")
         self.reboot.set_border_width(4)
         self.reboot.connect("clicked", self.reboot_action)
         self.button_box.pack_start(self.reboot)
-        self.reboot.show()
 
         #Shutdown button
         self.shutdown = gtk.Button("_Power off")
         self.shutdown.set_border_width(4)
         self.shutdown.connect("clicked", self.shutdown_action)
         self.button_box.pack_start(self.shutdown)
-        self.shutdown.show()
 
         #Create HBox for status label
         self.label_box = gtk.HBox()
-        self.label_box.show()
         self.status = gtk.Label()
-        self.status.show()
         self.label_box.pack_start(self.status)
 
         #Create VBox and pack the above HBox's
         self.vbox = gtk.VBox()
         self.vbox.pack_start(self.button_box)
         self.vbox.pack_start(self.label_box)
-        self.vbox.show()
 
         self.window.add(self.vbox)
-        self.window.show()
+        self.window.show_all()
 
     def __init__(self):
         self.create_window()
 
+def send_dbus(string):
+    dbus_send = "dbus-send --print-reply --system --dest=org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager.{} boolean:true"
+    os.system(dbus_send.format(string))
 
-def main():
+def logout():
+    os.system("openbox --exit")
+
+def suspend():
+    os.system("bl-lock")
+    send_dbus("Suspend")
+
+def reboot():
+    send_dbus("Reboot")
+
+def poweroff():
+    send_dbus("PowerOff")
+
+def print_usage(status):
+    print ("bl-exit: usage:\n" \
+        "  -h, --help      show this message and exit\n" \
+        "  -l, --logout    log out from openbox\n" \
+        "  -s, --suspend   suspend the system\n" \
+        "  -r, --reboot    reboot the system\n" \
+        "  -p, --poweroff  power the system down")
+    sys.exit(status)
+
+def main(argv):
+    try:
+        opts, args = getopt.getopt(argv, "hlsrp", ["help","logout","suspend","reboot","poweroff"])
+    except getopt.GetoptError:
+        print_usage(1)
+    for opt, arg in opts:
+        if opt in ("-h", "--help"):
+            print_usage(0)
+        elif opt in ("-l", "--logout"):
+            logout()
+            sys.exit(0)
+        elif opt in ("-s", "--suspend"):
+            suspend()
+            sys.exit(0)
+        elif opt in ("-r", "--reboot"):
+            reboot()
+            sys.exit(0)
+        elif opt in ("-p", "--poweroff"):
+            poweroff()
+            sys.exit(0)
+    go = bl_exit()
     gtk.main()
 
 if __name__ == "__main__":
-    go = bl_exit()
-    main()
+    main(sys.argv[1:])
