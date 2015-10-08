@@ -1,113 +1,95 @@
 #!/usr/bin/env python2.7
 # -*- coding: utf-8 -*-
 
+import gtk
+import pygtk
+pygtk.require('2.0')
+
 import getopt
 import getpass
 import os
 import sys
 
-class bl_exit:
-    def disable_buttons(self):
-        self.cancel.set_sensitive(False)
-        self.logout.set_sensitive(False)
-        self.suspend.set_sensitive(False)
-        self.reboot.set_sensitive(False)
-        self.shutdown.set_sensitive(False)
+class bl_exit(gtk.Window):
+    """A dialog offering the user to log out, suspend, reboot or shut down."""
 
-    def cancel_action(self,btn):
-        self.disable_buttons()
+    def __init__(self):
+        gtk.Window.__init__(self)
+        self.set_title("Log out" + getpass.getuser() + "? Choose an option:")
+        self.set_border_width(5)
+        self.set_size_request(500, 80)
+        self.set_resizable(False)
+        self.set_keep_above(True)
+        self.stick
+        self.set_position(gtk.WIN_POS_CENTER)
+        self.connect("delete_event", gtk.main_quit)
+        windowicon = self.render_icon(gtk.STOCK_QUIT, gtk.ICON_SIZE_DIALOG)
+        self.set_icon(windowicon)
+
+        # Cancel key (Escape)
+        accelgroup = gtk.AccelGroup()
+        key, mod = gtk.accelerator_parse('Escape')
+        accelgroup.connect_group(key, mod, gtk.ACCEL_VISIBLE, gtk.main_quit)
+        self.add_accel_group(accelgroup)
+
+        self._construct_ui()
+
+    def _construct_ui(self):
+        self._button_box = gtk.HBox()
+        self._add_button(stock=gtk.STOCK_CANCEL, action=self._cancel_action)
+        self._add_button(label="_Log out", action=self._logout_action)
+        self._add_button(label="_Suspend", action=self._suspend_action)
+        self._add_button(label="_Reboot", action=self._reboot_action)
+        self._add_button(label="_Power off", action=self._shutdown_action)
+
+        self._status = gtk.Label()
+        label_box = gtk.HBox()
+        label_box.pack_start(self._status)
+
+        vbox = gtk.VBox()
+        vbox.pack_start(self._button_box)
+        vbox.pack_start(label_box)
+
+        self.add(vbox)
+        self.show_all()
+
+    def _add_button(self, action, label=None, stock=None):
+        if stock is not None:
+            button = gtk.Button(stock=stock)
+        else:
+            button = gtk.Button(label=label)
+        button.set_border_width(4)
+        button.connect("clicked", action)
+        self._button_box.pack_start(button)
+
+    def _disable_buttons(self):
+        self._button_box.foreach(lambda button: button.set_sensitive(False))
+
+    def _cancel_action(self, button):
+        self._disable_buttons()
         gtk.main_quit()
 
-    def logout_action(self,btn):
-        self.disable_buttons()
-        self.status.set_label("Exiting Openbox, please standby...")
+    def _logout_action(self, button):
+        self._disable_buttons()
+        self._status.set_label("Exiting Openbox, please standby...")
         logout()
         gtk.main_quit()
 
-    def suspend_action(self,btn):
-        self.disable_buttons()
-        self.status.set_label("Suspending, please standby...")
+    def _suspend_action(self, button):
+        self._disable_buttons()
+        self._status.set_label("Suspending, please standby...")
         suspend()
         gtk.main_quit()
 
-    def reboot_action(self,btn):
-        self.disable_buttons()
-        self.status.set_label("Rebooting, please standby...")
+    def _reboot_action(self, button):
+        self._disable_buttons()
+        self._status.set_label("Rebooting, please standby...")
         reboot()
 
-    def shutdown_action(self,btn):
-        self.disable_buttons()
-        self.status.set_label("Shutting down, please standby...")
+    def _shutdown_action(self, button):
+        self._disable_buttons()
+        self._status.set_label("Shutting down, please standby...")
         poweroff()
-
-    def create_window(self):
-        self.window = gtk.Window()
-        title = "Log out " + getpass.getuser() + "? Choose an option:"
-        self.window.set_title(title)
-        self.window.set_border_width(5)
-        self.window.set_size_request(500, 80)
-        self.window.set_resizable(False)
-        self.window.set_keep_above(True)
-        self.window.stick
-        self.window.set_position(1)
-        self.window.connect("delete_event", gtk.main_quit)
-        windowicon = self.window.render_icon(gtk.STOCK_QUIT, gtk.ICON_SIZE_DIALOG)
-        self.window.set_icon(windowicon)
-
-        #Create HBox for buttons
-        self.button_box = gtk.HBox()
-
-        #Cancel button
-        self.cancel = gtk.Button(stock = gtk.STOCK_CANCEL)
-        self.cancel.set_border_width(4)
-        self.cancel.connect("clicked", self.cancel_action)
-        self.button_box.pack_start(self.cancel)
-
-        #Cancel key (Escape)
-        accelgroup = gtk.AccelGroup()
-        self.key, self.mod = gtk.accelerator_parse('Escape')
-        accelgroup.connect_group(self.key, self.mod, gtk.ACCEL_VISIBLE, gtk.main_quit)
-        self.window.add_accel_group(accelgroup)
-
-        #Logout button
-        self.logout = gtk.Button("_Log out")
-        self.logout.set_border_width(4)
-        self.logout.connect("clicked", self.logout_action)
-        self.button_box.pack_start(self.logout)
-
-        #Suspend button
-        self.suspend = gtk.Button("_Suspend")
-        self.suspend.set_border_width(4)
-        self.suspend.connect("clicked", self.suspend_action)
-        self.button_box.pack_start(self.suspend)
-
-        #Reboot button
-        self.reboot = gtk.Button("_Reboot")
-        self.reboot.set_border_width(4)
-        self.reboot.connect("clicked", self.reboot_action)
-        self.button_box.pack_start(self.reboot)
-
-        #Shutdown button
-        self.shutdown = gtk.Button("_Power off")
-        self.shutdown.set_border_width(4)
-        self.shutdown.connect("clicked", self.shutdown_action)
-        self.button_box.pack_start(self.shutdown)
-
-        #Create HBox for status label
-        self.label_box = gtk.HBox()
-        self.status = gtk.Label()
-        self.label_box.pack_start(self.status)
-
-        #Create VBox and pack the above HBox's
-        self.vbox = gtk.VBox()
-        self.vbox.pack_start(self.button_box)
-        self.vbox.pack_start(self.label_box)
-
-        self.window.add(self.vbox)
-        self.window.show_all()
-
-    def __init__(self):
-        self.create_window()
 
 def send_dbus(string):
     dbus_send = "dbus-send --print-reply --system --dest=org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager.{} boolean:true"
@@ -156,12 +138,9 @@ def main(argv):
             poweroff()
             sys.exit(0)
 
-    import gtk
-    import pygtk
-    pygtk.require('2.0')
-
     go = bl_exit()
     gtk.main()
 
 if __name__ == "__main__":
     main(sys.argv[1:])
+
