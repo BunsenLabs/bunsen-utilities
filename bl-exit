@@ -3,10 +3,7 @@
 
 import getopt
 import getpass
-import gtk
 import os
-import pygtk
-pygtk.require('2.0')
 import sys
 
 class bl_exit:
@@ -158,6 +155,11 @@ def main(argv):
         elif opt in ("-p", "--poweroff"):
             poweroff()
             sys.exit(0)
+
+    import gtk
+    import pygtk
+    pygtk.require('2.0')
+
     go = bl_exit()
     gtk.main()
 
