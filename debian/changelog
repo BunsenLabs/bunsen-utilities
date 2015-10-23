@@ -1,3 +1,12 @@
+bunsen-utilities (8.5-1) UNRELEASED; urgency=medium
+
+  * bl-exit: add command line flags.
+  * Add general script corrections and enhancements.
+  * Add Zenity GUI tweaks.
+  * Update author email addresses.
+
+ -- John Crawley <john@bunsenlabs.org>  Fri, 23 Oct 2015 11:35:46 +0900
+
 bunsen-utilities (8.4-1) bunsen-hydrogen; urgency=low
 
   * Add bl-pkg-versions and bl-github-upgrade.
