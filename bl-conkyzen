@@ -228,7 +228,7 @@ while ! [[ $RET ]];do
         exit 0
     fi
     if ! [[ $RET ]];then  # No conkys chosen
-        MSG="Nothing chosen. Kill Conkys?"
+        MSG="Nothing chosen.\n\nKill any running Conkys\nand exit?"
         zenity --question --title="Conky Chooser" --text="$MSG"
         if [[ $? = 1 ]];then
             # restore previous saved-sessions file
