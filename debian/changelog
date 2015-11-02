@@ -1,4 +1,4 @@
-bunsen-utilities (8.5-1) UNRELEASED; urgency=medium
+bunsen-utilities (8.5-1) bunsen-hydrogen; urgency=medium
 
   * bl-exit: add command line flags.
   * Add general script corrections and enhancements.
