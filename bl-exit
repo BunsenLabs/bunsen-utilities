@@ -91,18 +91,19 @@ class bl_exit(gtk.Window):
         self._status.set_label("Shutting down, please standby...")
         poweroff()
 
-def call(command):
+def call(*args):
     try:
-        subprocess.call(command)
+        subprocess.call(args)
     except OSError as e:
         print >>sys.stderr, "Execution failed: ", e
 
 def send_dbus(string):
-    dbus_send = "dbus-send --print-reply --system --dest=org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager.{} boolean:true"
-    call(dbus_send.format(string))
+    call("dbus-send", "--print-reply", "--system", "--dest=org.freedesktop.login1",
+            "/org/freedesktop/login1", "org.freedesktop.login1.Manager.{}".format(string),
+            "boolean:true")
 
 def logout():
-    os.system("openbox --exit")
+    call("openbox", "--exit")
 
 def suspend():
     call("bl-lock")
