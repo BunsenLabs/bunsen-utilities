@@ -15,7 +15,7 @@ class bl_exit(gtk.Window):
 
     def __init__(self):
         gtk.Window.__init__(self)
-        self.set_title("Log out" + getpass.getuser() + "? Choose an option:")
+        self.set_title("Log out " + getpass.getuser() + "? Choose an option:")
         self.set_border_width(5)
         self.set_size_request(500, 80)
         self.set_resizable(False)
