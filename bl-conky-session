@@ -12,20 +12,28 @@
 ########################################################################
 CONKYPATH="$HOME/.config/conky"
 SESSIONFILE="$CONKYPATH/conky-sessionfile"
-USAGE=$(echo -e "\vUSAGE:\tbl-conky-session [OPTION(S)]...FILES"
-         echo -e "\n\tWith no command argument, the script uses the default"
-         echo -e "\t\"\$CONKYPATH/conky-session\" sessionfile"
-         echo -e "\vOPTIONS:\n\t--default\t: specify default sessionfile"
-         echo -e "\t--autostart\t: no \"kill conky\" option asked for"
-         echo -e "\tpath/to/sessionfile1  /path/to/sessionfile2 etc"
-         echo -e "\vEXAMPLES:"
-         echo -e "\tRun specified sessionfile at login:"
-         echo -e "\t\"bl-conky-session --autostart /path/to/sessionfile\""
-         echo -e "\v\tRun default sessionfile, without killing running conkys:"
-         echo -e "\t\"bl-conky-session --autostart\""
-         echo -e "\v\tRun several conky sessionfiles (option to kill conkys first):"
-         echo -e "\t\"bl-conky-session --default sessionfile1 sessionfile2 etc\""
-)
+USAGE="\vUSAGE:\tbl-conky-session [OPTION(S)]...FILES
+\n\tWith no command argument, the script uses the default
+\t\"\$CONKYPATH/conky-session\" sessionfile
+\vOPTIONS:\n\t--default\t: specify default sessionfile
+\t--autostart\t: no \"kill conky\" option asked for
+\tpath/to/sessionfile1  /path/to/sessionfile2 etc
+\vEXAMPLES:
+\tRun specified sessionfile at login:
+\t\"bl-conky-session --autostart /path/to/sessionfile\"
+\v\tRun default sessionfile, without killing running conkys:
+\t\"bl-conky-session --autostart\"
+\v\tRun several conky sessionfiles (option to kill conkys first):
+\t\"bl-conky-session --default sessionfile1 sessionfile2 etc\""
+
+### DIALOG VARIABLES
+DLG="yad --center --undecorated --borders=20 "
+TITLE="BunsenLabs Conky Session"
+WINICON="--window-icon=/usr/share/pixmaps/Bunsenlabs-flame-256.svg"
+OK="--button=OK:0"
+CANCEL="--button=gtk-cancel:1"
+
+########################################################################
 
 findArgs(){     # get command args (switches & sessionfile paths)
     i=0
@@ -36,7 +44,7 @@ findArgs(){     # get command args (switches & sessionfile paths)
         if [[ $arg = "--autostart" ]]; then
             NOKILL=1    # run from autostart, so don't ask to kill conkys
         fi
-        if [[ -f  "$arg" ]]; then # sessionfile exists
+        if [[ -f  $arg ]]; then # sessionfile exists
             rawArr[$i]="$arg"       # add sessionfiles to array
             i=$(($i+1))
         fi
@@ -52,7 +60,7 @@ findArgs(){     # get command args (switches & sessionfile paths)
             source "$SESSION"
         done
     else    # --autostart used, but no sessionfiles passed to bl-conkyzen
-        if [[ -f "$SESSIONFILE" ]] && (( $NOKILL == 1 )); then
+        if [[ -f $SESSIONFILE ]] && (( $NOKILL == 1 )); then
             source "$SESSIONFILE"   # use conky-sessionfile
         else
             echo -e "ERROR: sessionfile \"$SESSIONFILE\" not found. Using default" >&2
@@ -64,8 +72,8 @@ findArgs(){     # get command args (switches & sessionfile paths)
 
 killConkys(){
     if pidof conky &>/dev/null; then
-        msg="Kill running conkys first?"
-        zenity --question --title="Conky sessionfile" --text="$msg"
+        MSG="Kill running conkys first?"
+        $DLG $WINICON --title="$TITLE" --text="$MSG"
         if (( $? == 0 )); then            # kill all conkys
             killall conky && sleep 0.2s
         fi
@@ -73,7 +81,7 @@ killConkys(){
 }
 
 NOKILL=0
-if [[ $# -eq 0 ]]; then    # if no args, then run default sessionfile
+if (( $# == 0 )); then    # if no args, then run default sessionfile
     killConkys
     if [[ ! -f "$SESSIONFILE" ]]; then     # run default conky
         echo -e "ERROR: sessionfile \"$SESSIONFILE\" not found. Using default" >&2
@@ -83,7 +91,7 @@ if [[ $# -eq 0 ]]; then    # if no args, then run default sessionfile
         source "$SESSIONFILE"
     fi
 elif [[ $1 = "-h" ]] || [[ $1 = "--help" ]]; then
-    echo "$USAGE"
+    echo -e "$USAGE"
     exit 0
 else 
     findArgs $@    # get the sessionfile paths from the command args
