@@ -62,7 +62,7 @@ USAGE2="\v\tUSAGE:\tbl-conkyzen [OPTION]...FILES
 DLG="yad --center --undecorated --borders=20 "
 DLGDEC="yad --center  --borders=20 "
 TITLE="BunsenLabs Conky Manager"
-WINICON="--window-icon=/usr/share/pixmaps/Bunsenlabs-flame-256.svg"
+WINICON="--window-icon=distributor-logo-bunsenlabs"
 OK="--button=OK:0"
 CANCEL="--button=gtk-cancel:1"
 

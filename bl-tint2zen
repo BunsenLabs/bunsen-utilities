@@ -33,7 +33,7 @@ USAGE="\v\tUSAGE:\n\tWith no command argument, the script uses the chosen
 ### DIALOG VARIABLES
 DLGDEC="yad --center --borders=20 "
 TITLE="BunsenLabs Tint2 Manager"
-WINICON="--window-icon=/usr/share/pixmaps/Bunsenlabs-flame-256.svg"
+WINICON="--window-icon=distributor-logo-bunsenlabs"
 OK="--button=OK:0"
 CANCEL="--button=gtk-cancel:1"
 ########################################################################

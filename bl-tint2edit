@@ -18,7 +18,7 @@ TINT2PATH="$HOME/.config/tint2"
 ### DIALOG VARIABLES
 DLGDEC="yad --center  --borders=20 --width=400 --height=400 " 
 TITLE="BunsenLabs Tint2 Edit"
-WINICON="--window-icon=/usr/share/pixmaps/Bunsenlabs-flame-256.svg"
+WINICON="--window-icon=distributor-logo-bunsenlabs"
 OK="--button=OK:0"
 CANCEL="--button=gtk-cancel:1"
 
