@@ -6,7 +6,7 @@
 #   with major contributions by @xaos52
 
 DIALOG="yad --center --undecorated --borders=20 \
---window-icon=/usr/share/pixmaps/Bunsenlabs-flame-256.svg"
+--window-icon=distributor-logo-bunsenlabs"
 
 unset CONKYPATH posX_1 posY_1 posX_2 posY_2 OFFSET_X OFFSET_Y gapX gapY
 

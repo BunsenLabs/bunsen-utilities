@@ -141,7 +141,7 @@ if __name__ == "__main__":
 
     if gui:     # output formatted keybinds text in text window
         dlg = "yad --text-info --title='Openbox Keybinds' "
-        dlg = dlg + "--window-icon=/usr/share/pixmaps/Bunsenlabs-flame-256.svg "
+        dlg = dlg + "--window-icon=distributor-logo-bunsenlabs "
         dlg = dlg + "--filename=$HOME/.config/openbox/kbinds.txt "
         dlg = dlg + "--width=700 --height=700 --fontname=Monospace "
         dlg = dlg + "--button=gtk-close"
