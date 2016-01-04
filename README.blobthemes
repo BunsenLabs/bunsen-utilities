@@ -1,0 +1,46 @@
+BLOB - a BunsenLabs Openbox Configuration Manager
+
+README
+
+blobthemes: script to save or restore openbox gui configurations
+
+(Requires yad, wmctrl, xdotool, xrandr, nitrogen|feh, scrot)
+
+Save options are for  Conky(s)
+                      Tint2(s)
+                      Openbox theme
+                      GTK theme
+                      Background (uses Nitrogen or feh, depending which
+                                  has the newer saved bg config file)
+                      Alt Menu (dmenu)
+                      Lightdm login gtk greeter
+                      Terminator config
+
+Paths are assumed to be BunsenLabs defaults.
+
+WARNING: It is assumed that the conkys are not being run via a script, so 
+they will appear on all desktops. If you usually use a script, then you 
+may have to make your own arrangements! Conkys in non-default directories
+can be saved, but will not be seen when running bl-conkyzen.
+
+A Screenshot is saved (Windows are hidden briefly so the image
+                       is the bare desktop, with any Tint2s 
+                       or Conkys which are running, and a representive
+                       menu and lxappearance open)
+
+A time-stamped backup of rc.xml is saved "just in case". 
+
+The dialog icon is "Bunsenlabs-flame-256.svg": put it in /usr/share/pixmaps.
+
+xdotool is used to move the mouse pointer, and assumes the root-menu is shown.
+with "Super + Space" keys, and the right mouse button is set for r-click.
+If you have set these to something else, then edit the "MENUMODIFIER" and
+MOUSECMD variables. Set the variable "KEYDOWN" to where "Preferences" is
+in the root-menu (or anything else you might want displayed).
+
+****************************************************************************
+KNOWN ISSUES:
+Virtualbox does not allow the guest to move the host mouse cursor, using xdotool,
+so the screenshot may produce an incorrect theme displayed and/or poor positioning.
+A workaround is to move the cursor to some free space, and use the "Enter" key in the
+"Configurations to be saved:" dialog.
