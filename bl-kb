@@ -128,7 +128,7 @@ if __name__ == "__main__":
     check_txtfile(kb_fpath)
     if gui:      # output formatted keybinds text in text window
         write_file(str(datetime.date.today()) + "\trc.xml KEYBINDS")
-        write_file("----------------------------------------------------\n")
+        write_file("-------------------------------\n")
 
     if check_rcfile(rc_fpath,"r"):
         keyboard()
@@ -140,5 +140,10 @@ if __name__ == "__main__":
         sys.exit(1)
 
     if gui:     # output formatted keybinds text in text window
-        os.system("zenity --text-info --title='Openbox Keybinds' --filename=$HOME/.config/openbox/kbinds.txt --width=700 --height=700 --font=Monospace")
+        dlg = "yad --text-info --title='Openbox Keybinds' "
+        dlg = dlg + "--window-icon=distributor-logo-bunsenlabs "
+        dlg = dlg + "--filename=$HOME/.config/openbox/kbinds.txt "
+        dlg = dlg + "--width=700 --height=700 --fontname=Monospace "
+        dlg = dlg + "--button=gtk-close"
+        os.system(dlg)
 
