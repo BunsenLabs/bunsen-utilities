@@ -1,3 +1,9 @@
+bunsen-utilities (8.6-2) bunsen-hydrogen; urgency=medium
+
+  * Add bl-conkypin and bl-obthemes to debian/bunsen-utilities.install
+
+ -- John Crawley <john@bunsenlabs.org>  Thu, 07 Jan 2016 17:30:03 +0900
+
 bunsen-utilities (8.6-1) bunsen-hydrogen; urgency=medium
 
   * Replace zenity with yad in all scripts.
