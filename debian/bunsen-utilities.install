@@ -1,16 +1,1 @@
-bl-exit usr/bin
-bl-lock usr/bin
-bl-aerosnap usr/bin
-bl-hotcorners usr/bin
-bl-conkyzen usr/bin
-bl-conky-session usr/bin
-bl-conkyedit usr/bin
-bl-conkypin usr/bin
-bl-tint2zen usr/bin
-bl-tint2-session usr/bin
-bl-tint2edit usr/bin
-bl-tint2restart usr/bin
-bl-kb usr/bin
-bl-github-upgrade usr/bin
-bl-pkg-versions usr/bin
-bl-obthemes usr/bin
+bin usr
