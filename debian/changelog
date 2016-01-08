@@ -1,3 +1,12 @@
+bunsen-utilities (8.6-3) bunsen-hydrogen; urgency=low
+
+  * debian/control: Add dependency on bunsen-common, add new scripts to description.
+  * Update README.
+  * bl-*: Move all to directory bin.
+  * debian/copyright: Edit year.
+
+ -- John Crawley <john@bunsenlabs.org>  Fri, 08 Jan 2016 14:03:08 +0900
+
 bunsen-utilities (8.6-2) bunsen-hydrogen; urgency=medium
 
   * Add bl-conkypin and bl-obthemes to debian/bunsen-utilities.install
