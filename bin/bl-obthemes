@@ -2,7 +2,7 @@
 #
 # blobthemes: script to save or restore openbox gui configurations
 #
-# (Requires yad, wmctrl, xdotool, xrandr, scrot, nitrogen|feh)
+# (Requires yad, wmctrl, xdotool, scrot, nitrogen|feh, x11-xserver-utils)
 #
 # Written for BunsenLabs by damo <damo@bunsenlabs.org> October 2015
 #
