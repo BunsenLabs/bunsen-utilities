@@ -1,6 +1,6 @@
 bunsen-utilities (8.6-3) bunsen-hydrogen; urgency=low
 
-  * debian/control: Add dependency on bunsen-common, add new scripts to description.
+  * debian/control: Add dependency on bunsen-common, edit description.
   * Update README.
   * bl-*: Move all to directory bin.
   * debian/copyright: Edit year.
