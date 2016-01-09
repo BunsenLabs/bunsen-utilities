@@ -1,3 +1,10 @@
+bunsen-utilities (8.6.1-1) bunsen-hydrogen; urgency=medium
+
+  * Non-maintainer upload.
+  * New upstream version.
+
+ -- Jens John <dev@2ion.de>  Sat, 09 Jan 2016 04:43:46 +0100
+
 bunsen-utilities (8.6-3) bunsen-hydrogen; urgency=low
 
   * debian/control: Add dependency on bunsen-common, edit description.
