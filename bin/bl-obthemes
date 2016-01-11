@@ -2,7 +2,7 @@
 #
 # blobthemes: script to save or restore openbox gui configurations
 #
-# (Requires yad, wmctrl, xdotool, scrot, nitrogen|feh, x11-xserver-utils)
+# (Requires yad, wmctrl, xdotool, xrandr, scrot, nitrogen|feh)
 #
 # Written for BunsenLabs by damo <damo@bunsenlabs.org> October 2015
 #
@@ -60,6 +60,7 @@ CZEN=0
 TZEN=0
 NUMDIRS=0
 CONKYCMD=""
+COLS=0
 ### CONFIGS VARIABLES
 TERMDIR="$HOME/.config/terminator"
 TERMFILE="$TERMDIR/config"
@@ -77,6 +78,8 @@ LDMDIR="/etc/lightdm"
 LDM="lightdm-gtk-greeter.conf"
 DMENUDIR="$HOME/.config/dmenu"
 DMENU="dmenu-bind.sh"
+XFILE=".Xresources"
+BASHFILE=".bashrc"
 PICKOBCFGS="OB menu.xml rc.xml autostart"
 PICKOB="OB theme"
 PICKGTK="GTK theme"
@@ -87,14 +90,14 @@ PICKDMENU="dmenu (Alt menu)"
 PICKLDM="Lightdm Login theme"
 PICKSCROT="Save screenshot"
 PICKTERM="Terminator"
+PICKX="X configs"
 ### END CONFIGS VARIABLES
 
 ### DIALOG VARIABLES
-DIALOG="yad --center --undecorated --borders=20 --window-icon=/usr/share/pixmaps/Bunsenlabs-flame-256.svg"
-DIALOGDEC="yad --center  --borders=20 --window-icon=/usr/share/pixmaps/Bunsenlabs-flame-256.svg"
+DIALOG="yad --center --undecorated --borders=20 --window-icon=distributor-logo-bunsenlabs"
+DIALOGDEC="yad --center  --borders=20 --window-icon=distributor-logo-bunsenlabs"
 TITLE="BLOB Config Manager"
-IMG="--image="
-IMGPATH="/usr/share/pixmaps/Bunsenlabs-flame-256.svg"
+IMG="--image=bunsenlabs-flame"
 T="--text="
 OK="--button=OK:0"
 CANCEL="--button=gtk-cancel:1"
@@ -102,14 +105,16 @@ EXIT="--button=gtk-quit:1"
 CLOSE="--button=gtk-close:1"
 TXTINTRO="<big><b>BunsenLabs\n\nOpenbox Configuration Manager</b></big>\n\n\n \
 <b>Save or Restore settings for:</b>\n\n \
-\t\tOpenbox theme\n \
-\t\tGTK theme\n \
-\t\tConkys\n \
-\t\tTint2\n \
-\t\tDesktop Background\n \
-\t\tAlt Menu (dmenu)\n \
-\t\tLightDM theme\n \
-\t\t+ Screenshot\n\n"
+\tOpenbox theme\n \
+\tGTK theme\n \
+\tConkys\n \
+\tTint2\n \
+\tDesktop Background\n \
+\tAlt Menu (dmenu)\n \
+\tLightDM theme\n \
+\tX configs (.bashrc, .Xresources)\n \
+\tTerminator (if default term)\n \
+\t+ Screenshot\n\n"
 ### END DIALOG VARIABLES
 
 ### USER SETTINGS
@@ -126,19 +131,17 @@ function Intro(){
     getSet
     #  If blob/ is empty, then don't display "Save Settings" option in Intro dialog
     if (( $NUMDIRS > 0 ));then
-        INTRO=$($DIALOGDEC $IMG$IMGPATH "$T$TXTINTRO" \
+        INTRO=$($DIALOGDEC $IMG "$T$TXTINTRO" \
         --title="$TITLE" \
         --button="Save Settings:0" --button="View Saved:2" $CLOSE \
         --borders=30 \
-        --width=520 --height=500 \
         2>/dev/null )
     else
-        INTRO=$($DIALOGDEC $IMG$IMGPATH \
+        INTRO=$($DIALOGDEC $IMG \
         --title="$TITLE" \
         "$T$TXTINTRO" \
         --button="Save Settings:0" --button="gtk-close:1" \
         --borders=30 \
-        --width=520 --height=500 \
         2>/dev/null )
     fi
     RET=$?
@@ -285,7 +288,7 @@ function getBg(){    # find if feh or nitrogen was used. Save config file(s)
             BGSET="FEH"
         fi
     elif [[ -e $FEHFILE ]] && [[ ! -e $NITROFILE ]];then  # use feh for background
-        BGSET="FEH"
+        BGSET="FEH" 
     elif [[ -e $NITROFILE ]] &&  [[ ! -e $FEHFILE ]];then    # use nitrogen for background
         BGSET="NITROGEN"
     else
@@ -320,11 +323,11 @@ function bgFeh(){    # get Feh saved backgrounds
         BG=""
         # get fields between single quotes
         for F in $(grep -o "'.*'" $FFILE | sed "s/'//g" 2>/dev/null);do
-            BG="$BG$F;\n"
+            BG="$BG$F;\n\t"
         done
         echo -e "\n  Backgrounds set with Feh, using:\n\
         \t$FEHFILE\n\t$BG"
-        echo "Background set with feh:\n\t$BG$F" >> "$LISTMSG"
+        echo "Background set with feh:\n\t$BG" >> "$LISTMSG"
     else
         echo "\n  $FFILE not found" 2>&1
     fi
@@ -517,6 +520,21 @@ function getTerminator(){
     fi
 }
 
+function getXconfig(){
+    XFILE="$HOME/.Xresources"
+    BASHFILE="$HOME/.bashrc"
+    if [[ -f $XFILE ]];then
+        cp "$XFILE" "$CONFIGDIR"
+    fi
+    if [[ -f $BASHFILE ]];then
+        cp "$BASHFILE" "$CONFIGDIR"
+    fi
+    TXT="X terminal config:  $BASHFILE;$XFILE\n"
+    echo -e "\n  Saved $TXT"
+    echo "[XFILES]" >> "$SETTINGS"
+    echo "$TXT" >> "$LISTMSG"
+}
+
 function checkTint2(){   # kill or restart tint2s for screenshot, if necessary
     if [[ $1 = stop ]];then
         if ! cat "$SETTINGS" | grep "TINT2" &>/dev/null;then
@@ -586,7 +604,7 @@ function getScrot(){
 
     i=1
     while (( $i <= $KEYDOWN ));do
-        xdotool key --delay 30 Down
+        xdotool key --delay 50 Down
         i=$(( $i+1 ))
     done
     xdotool key --delay 20 Right && sleep 0.3
@@ -608,7 +626,7 @@ function getScrot(){
         WINDOW=$(echo $line | awk '{print $1}') # Window_ID is first field
         DTOP=$(echo $line | awk '{print $2}' )  # Desktop number is second field
         if (( $DTOP == $CURRDTOP )) &>/dev/null;then
-            xdotool windowactivate "$WINDOW" 2>/dev/null
+            xdotool windowactivate "$WINDOW"
         fi
     done < "$TMPSCROT"
     # restore any hidden Conkys
@@ -716,6 +734,21 @@ function restoreLightdm(){   # need sudo to restore lightdm-gtk-greeter.conf
     done
 }
 
+function restoreXsettings(){
+    XBKP=""
+    for var in "$@";do
+        if [[ -e $var ]];then        # backup .bashrc & .Xresources first
+            XBKP="$HOME/$var.bkp"
+            cp "$HOME/$var" "$XBKP"
+            cp "$var" "$HOME/" &>/dev/null
+            echo -e "\n  $var backed up and restored"
+        else
+            cp "$var" "$HOME/" &>/dev/null
+            echo -e "\n  $var restored"
+        fi
+    done
+}
+
 function restoreTerminator(){
     TFILE="$1"
     if [[ -e $TERMDIR ]];then        # backup terminator/config first
@@ -760,31 +793,45 @@ function cleanup(){
 }
 
 function saveSettings(){
+    SHOW=0
+    if (( $COLS == 0 ));then
+        SELECT="FALSE"
+    else
+        SELECT="TRUE"
+    fi
     COLUMNS=(\
-        "FALSE" "$PICKOB" \
-        "FALSE" "$PICKGTK" \
-        "FALSE" "$PICKCONKY" \
-        "FALSE" "$PICKTINT" \
-        "FALSE" "$PICKBG" \
-        "FALSE" "$PICKDMENU" \
-        "FALSE" "$PICKLDM" \
+        $SELECT "$PICKOB" \
+        $SELECT "$PICKGTK" \
+        $SELECT "$PICKCONKY" \
+        $SELECT "$PICKTINT" \
+        $SELECT "$PICKBG" \
+        $SELECT "$PICKDMENU" \
+        $SELECT "$PICKLDM" \
+        $SELECT "$PICKX" \
         )
     # add terminator to array if set as default
     if  echo $(readlink -f /usr/bin/x-terminal-emulator ) | grep terminator &>/dev/null;then
-        COLUMNS=("${COLUMNS[@]}" "FALSE" "$PICKTERM")
+        COLUMNS=("${COLUMNS[@]}" $SELECT "$PICKTERM")
     fi
 
     SLOOP=1
     while (( $SLOOP == 1 ));do
-        CHOICE=$($DIALOG --list --checklist --title \
-            --text="Choose the configs you want to save..." \
+        CHOICE=$($DIALOGDEC --list --checklist \
+            --title="Choose the configs to save..." \
+            --button="Select All:2" \
             $CANCEL $OK \
-            --width=340 --height=340 \
+            --height=340 \
             --column="Select" --column="Config" "${COLUMNS[@]}" \
             2>/dev/null )
-        if (( $? == 1 )); then # cancel button pressed
+            ret=$?
+        if (( $ret == 1 )); then # cancel button pressed
+            COLS=0
             cleanup all
             restoreSettings
+        elif (( $ret == 2 ));then
+            COLS=1
+            saveSettings
+            SHOW=1
         else
             if [[ ! $CHOICE ]] ; then # entry field is empty, so try again
                 RET=$($DIALOG  --image="dialog-question" \
@@ -829,6 +876,8 @@ function saveSettings(){
                                         ;;
                         "$PICKTERM" )   getTerminator
                                         ;;
+                        "$PICKX"    )   getXconfig
+                                        ;;
                         *           )   echo -e "\n  Unknown value!" 2>&1
                                         exit 1
                                         ;;
@@ -838,15 +887,18 @@ function saveSettings(){
             fi
         fi
     done
-    TXT="<big><b><u>Openbox Configurations to be saved:</u></b></big>\n\n"
-    TXT2=$(cat "$LISTMSG")
-    NEW=$($DIALOG --text="$TXT$TXT2")
-    ret=$?
-    if (( $ret == 1 ));then
-        cleanup all
-        restoreSettings
-    else
-        echo "$ANS" > "$CURSESSION"     # replace entry in saved config flag file
+    if (( $SHOW == 0 ));then
+        COLS=0      # reset columns unselected
+        TXT="<big><b><u>Openbox Configurations to be saved:</u></b></big>\n\n"
+        TXT2=$(cat "$LISTMSG")
+        NEW=$($DIALOG --text="$TXT$TXT2") 2>/dev/null
+        ret=$?
+        if (( $ret == 1 ));then
+            cleanup all
+            restoreSettings
+        else
+            echo "$ANS" > "$CURSESSION"     # replace entry in saved config flag file
+        fi
     fi
 }
 
@@ -899,8 +951,9 @@ function restoreSettings(){
     LOOP=1
     while [[ $LOOP ]] ;do
         CONFIG=$($DIALOGDEC --list --title="$TITLE" \
-            --text="Double-click selection, or \"Enter\", or \"Restore\" to restore settings\n" \
+            --text="Double-click selection, or \"Enter\", or use the \"Restore\" button to restore settings\n" \
             --separator=" " \
+            --button="About:5" \
             --button="View image:4" --button="Add New:3" \
             --button="Delete:2" --button="Restore:0" --button="gtk-quit:1" \
             --always-print-result \
@@ -928,8 +981,8 @@ function restoreSettings(){
                 ;;
             1)  exit 0
                 ;;
-            2)   if [[ ! $CONFIG ]];then
-                    $DIALOG --text="Make a selection before trying to delete" "$EXIT" "$OK"
+            2)  if [[ ! $CONFIG ]];then
+                    $DIALOG --text="Make a selection before trying to delete" "$EXIT" "$OK" 2>/dev/null
                     if (( $? == 0 ));then
                         continue
                     else
@@ -956,7 +1009,7 @@ function restoreSettings(){
             3)  setName
                 saveSettings
                 getScrot
-                $DIALOG --text="Settings were saved as <b>$ANS</b>" --image="gtk-save" "$OK"
+                $DIALOG --text="Settings were saved as <b>$ANS</b>" --image="gtk-save" "$OK" 2>/dev/null
                 if [[ -d $CONFIGDIR-BKP ]];then
                     rm -rf "$CONFIGDIR-BKP"
                     echo -e "\n  Temporary $CONFIGDIR deleted\n"
@@ -966,12 +1019,14 @@ function restoreSettings(){
             4)  # show screenshot in image viewer
                 SEL=$(echo "$CONFIG" | awk -F'[>|<]' '{print $3}' )
                 if [[ $SEL ]];then
-                    IMG="$CONFIGPATH/$SEL.jpg"
-                    $IMGCMD "$IMG"
+                    img="$CONFIGPATH/$SEL.jpg"
+                    $IMGCMD "$img"
                 else
-                    $DIALOG --text="Make a selection"
+                    $DIALOG --text="Make a selection" 2>/dev/null
                 fi
                 restoreSettings
+                ;;
+            5)  Intro
                 ;;
             *)  if (( $RET == 252 ));then
                     echo -e "\n  Exited with \"ESC\" key"
@@ -1028,6 +1083,8 @@ function restoreSettings(){
             "[DMENU]"       )   restoreDmenu "$FPATH/$DMENU"
                                 ;;
             "[LIGHTDM]"     )   restoreLightdm "$FPATH/$LDM"
+                                ;;
+            "[XFILES]"      )   restoreXsettings "$FPATH/.bashrc" "$FPATH/.Xresources"
                                 ;;
             "[TERMINATOR]"  )   restoreTerminator "$FPATH/config"
                                 ;;
