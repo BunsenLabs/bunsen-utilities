@@ -12,7 +12,7 @@ Package: bunsen-utilities
 Architecture: all
 Depends: ${misc:Depends}, bunsen-common, python2.7, python-gtk2, python-xlib, upower, yad, wmctrl, xdotool (>=1:2.20110530.1-3), scrot, nitrogen | feh
 Conflicts: bunsen-exit, bunsen-lock, bunsen-user-setup, bunsen-wmhacks
-Recommends: gmrun, light-locker
+Recommends: gmrun, light-locker, openbox
 Description: Small scripts to use with BunsenLabs.
  A collection of small scripts to provide various functions
  which might be useful to BunsenLinux users.
