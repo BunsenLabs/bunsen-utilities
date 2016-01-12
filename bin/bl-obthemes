@@ -1,8 +1,6 @@
 #!/bin/bash
 #
-# blobthemes: script to save or restore openbox gui configurations
-#
-# (Requires yad, wmctrl, xdotool, xrandr, scrot, nitrogen|feh)
+# bl-obthemes: script to save or restore openbox gui configurations
 #
 # Written for BunsenLabs by damo <damo@bunsenlabs.org> October 2015
 #
@@ -14,6 +12,7 @@
 #                                   has the newer saved bg config file)
 #                       Alt Menu (dmenu)
 #                       Lightdm login gtk greeter
+#                       X configs (.bashrc, .Xresources)
 #                       Terminator config
 #
 # Paths are assumed to be BunsenLabs defaults
@@ -24,8 +23,6 @@
 #                        menu and window open)
 #
 # A time-stamped backup of rc.xml is saved "just in case".
-#
-# The dialog icon is "Bunsenlabs-flame-256.svg": put it in /usr/share/pixmaps.
 #
 # USER VARIABLE: xdotool is used to move the mouse pointer, and assumes the
 # root-menu is shown with "Super + Space" keys, and the right mouse button is
