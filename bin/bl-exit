@@ -106,7 +106,6 @@ def logout():
     call("openbox", "--exit")
 
 def suspend():
-    call("bl-lock")
     send_dbus("Suspend")
 
 def reboot():

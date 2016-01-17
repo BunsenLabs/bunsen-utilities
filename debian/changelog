@@ -1,3 +1,9 @@
+bunsen-utilities (8.6.2-1) bunsen-hydrogen; urgency=high
+
+  * bl-exit: Remove superfluous call to bl-lock in suspend().
+
+ -- John Crawley <john@bunsenlabs.org>  Sun, 17 Jan 2016 16:37:20 +0900
+
 bunsen-utilities (8.6.1-1) bunsen-hydrogen; urgency=medium
 
   * Non-maintainer upload.
