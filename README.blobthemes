@@ -2,9 +2,7 @@ BLOB - a BunsenLabs Openbox Configuration Manager
 
 README
 
-blobthemes: script to save or restore openbox gui configurations
-
-(Requires yad, wmctrl, xdotool, xrandr, nitrogen|feh, scrot)
+bl-obthemes: script to save or restore openbox gui configurations
 
 Save options are for  Conky(s)
                       Tint2(s)
@@ -14,6 +12,7 @@ Save options are for  Conky(s)
                                   has the newer saved bg config file)
                       Alt Menu (dmenu)
                       Lightdm login gtk greeter
+                      X configs (.bashrc, .Xresources)
                       Terminator config
 
 Paths are assumed to be BunsenLabs defaults.
@@ -29,8 +28,6 @@ A Screenshot is saved (Windows are hidden briefly so the image
                        menu and lxappearance open)
 
 A time-stamped backup of rc.xml is saved "just in case". 
-
-The dialog icon is "Bunsenlabs-flame-256.svg": put it in /usr/share/pixmaps.
 
 xdotool is used to move the mouse pointer, and assumes the root-menu is shown.
 with "Super + Space" keys, and the right mouse button is set for r-click.
