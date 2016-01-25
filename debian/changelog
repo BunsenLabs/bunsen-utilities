@@ -1,3 +1,11 @@
+bunsen-utilities (8.6.3-1) bunsen-hydrogen; urgency=low
+
+  * README: Reformat tabs.
+  * bin/bl-github-upgrade bin/bl-pkg-versions: add bunsen-python-apt-template.
+  * Move nitrogen | feh and scrot from Depends to Recommends.
+
+ -- John Crawley <john@bunsenlabs.org>  Mon, 25 Jan 2016 14:28:06 +0900
+
 bunsen-utilities (8.6.2-1) bunsen-hydrogen; urgency=high
 
   * bl-exit: Remove superfluous call to bl-lock in suspend().
