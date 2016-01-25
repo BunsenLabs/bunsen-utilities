@@ -175,22 +175,52 @@ function getSet(){      # get name of currently set BLOB config
     fi
 }
 
-function countMonitors(){ #test for more than 2 monitors connected.
+# stdout: width of root window
+# $@: passed to xwininfo
+xwininfo_get_size() {
+    local -x LC_ALL=C
+    xwininfo "$@" |
+        sed -n '
+    $q1
+    /^  Width: \([0-9]\+\)$/!d
+    s//\1/; h; n
+    /^  Height: \([0-9]\+\)$/!q1
+    s//\1/; H; x; s/\n/x/; p; q'
+}
+
+# stdout: width of  root window - default is 600x600
+fallbackOnNoPrimary() {
+    local root{,_default}_w_dims=800x600
+    read -r root_w_dims < <(xwininfo_get_size -root)
+    [[ "$root_w_dims" ]] && { echo "$root_w_dims"; exit 0; } || { echo $root_default_w_dims; return 1; }
+}
+
+function countMonitors() { #test for more than 2 monitors connected.
     MON=$(xrandr -q | grep -c " connected")
     PRIMARY=$(xrandr -q | awk '/ connected/ {if ($3=="primary") print $4}')
     PSIZE=${PRIMARY%%x*}    # Primary monitor width
+    [[ -z "$PSIZE" ]] && {
+        printf 'Could not determine primary monitor.\n' >&2
+        printf 'Falling back to root window dimensions.\n' >&2
+        # fall back to  width of root window
+        local root_w_dims="$(fallbackOnNoPrimary)"
+        PSIZE="${root_w_dims%x*}"
+    }
     case $MON in
         1|2|3)  getScreenDims $MON $PSIZE
                 ;;
         * )     W=600
                 H=600
-                echo -e "\n  Script cannot deal with these monitors.\
+                echo -e "\n  Script cannot deal with $MON monitors.\
                 \n  Setting dialog width height = 600 x 600" 2>&1
     esac
 }
 
 function getScreenDims(){   # Set width and height for View dialog
-    # param $1 = num screens; param $2 = primary screen width
+    #  param $1 = num screens; param $2 = primary screen width or
+    #+ rootwindow screen width
+    #+ set defaults
+    desktopW=800; desktopH=600
     desktopW=$(xrandr -q | awk '/Screen/ {print $8}')  # total desktop width
     desktopH=$(xrandr -q | awk '/Screen/ {print $10}') # desktop height
     desktopH=${desktopH%%,*}    # remove trailing comma
