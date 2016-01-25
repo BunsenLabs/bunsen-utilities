@@ -10,9 +10,9 @@ Vcs-Browser: https://github.com/BunsenLabs/bunsen-utilities.git
 
 Package: bunsen-utilities
 Architecture: all
-Depends: ${misc:Depends}, python2.7, python-gtk2, python-xlib, upower, zenity, wmctrl, xdotool (>=1:2.20110530.1-3)
+Depends: ${misc:Depends}, bunsen-common, python2.7, python-gtk2, python-xlib, upower, yad, wmctrl, xdotool (>=1:2.20110530.1-3)
 Conflicts: bunsen-exit, bunsen-lock, bunsen-user-setup, bunsen-wmhacks
-Recommends: gmrun, light-locker
+Recommends: gmrun, light-locker, openbox, nitrogen | feh, scrot
 Description: Small scripts to use with BunsenLabs.
  A collection of small scripts to provide various functions
  which might be useful to BunsenLinux users.
@@ -20,15 +20,17 @@ Description: Small scripts to use with BunsenLabs.
   - bl-aerosnap: Script to add aero style window snapping to Openbox.
   - bl-conky-session: Script to handle multiple conky sessions.
   - bl-conkyedit: Script to find and edit conky config files.
-  - bl-conkyzen: Zenity-based conky manager.
+  - bl-conkypin: Script to assist the relocation of conky windows.
+  - bl-conkyzen: Yad-based conky manager.
   - bl-exit: Logout dialog box with various options.
   - bl-hotcorners: Script to add hot corners to Openbox.
   - bl-kb: Script to manage keyboard shortcuts.
   - bl-lock: Script to lock the display.
+  - bl-obthemes: Script to save or restore openbox gui configurations.
   - bl-tint2-session: Script to handle multiple tint2 sessions.
   - bl-tint2edit: Script to find and edit tint2 config files.
   - bl-tint2restart: Script to restart all running tint2 processes.
-  - bl-tint2zen: Zenity-based tint2 manager.
+  - bl-tint2zen: Yad-based tint2 manager.
   - bl-package-versions: Utility to display the versions of BunsenLabs packages.
   - bl-github-upgrade: Script to upgrade the BunsenLabs packages from GitHub.
  .

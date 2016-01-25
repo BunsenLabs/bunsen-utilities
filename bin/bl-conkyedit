@@ -16,6 +16,13 @@
 
 CONKYPATH="$HOME/.config/conky"
 
+### DIALOG VARIABLES
+DLGDEC="yad --center  --borders=20 --width=400 --height=500 "
+TITLE="BunsenLabs Conky Edit"
+WINICON="--window-icon=distributor-logo-bunsenlabs"
+OK="--button=OK:0"
+CANCEL="--button=gtk-cancel:1"
+
 ########## FUNCTIONS ###################################################
 
 fillArrays(){
@@ -46,18 +53,19 @@ done
 # get conky directories in .conky, add to array
 findConky
 
-# loop through arrays, and build msg text for zenity dialog
-msg=""
+# loop through arrays, and build msg text for yad dialog
+unset LISTCONKY
 for ((j=0; j<${#conkysArr[*]}; j++));do
-    msg="$msg FALSE ${conkysArr[j]}"
+    LISTCONKY="$LISTCONKY FALSE ${conkysArr[j]}"
 done
 
-## Populate zenity dialog from array, get return value(s)
-RET=$(zenity --list --title "Conky Edit" \
-    --text "Select Conkys to edit from the list\nMultiple Conkys can be chosen" \
-    --checklist --width=400 --height=500 \
-    --column "Select" --column "Conky Name" --separator=":"\
-    $msg)
+## Populate yad dialog from array, get return value(s)
+RET=$($DLGDEC $WINICON --list --title="$TITLE" \
+    --text="Select Conkys to edit from the list\nMultiple Conkys can be chosen" \
+    --checklist \
+    --column="Select:CHK" --column="Conky Name:TXT" $LISTCONKY --separator=":"\
+    $OK $CANCEL \
+    )
 
 if [[ $? == 1 ]]; then # cancel button pressed
     exit 0

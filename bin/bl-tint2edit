@@ -15,6 +15,13 @@
 
 TINT2PATH="$HOME/.config/tint2"
 
+### DIALOG VARIABLES
+DLGDEC="yad --center  --borders=20 --width=400 --height=400 " 
+TITLE="BunsenLabs Tint2 Edit"
+WINICON="--window-icon=distributor-logo-bunsenlabs"
+OK="--button=OK:0"
+CANCEL="--button=gtk-cancel:1"
+
 ########## FUNCTIONS ###################################################
 
 fillArrays(){
@@ -41,20 +48,20 @@ findTint(){
 # get tint2 directories, add to array
 findTint
 
-# loop through arrays, and build msg text for zenity dialog
-msg=""
+# loop through arrays, and build msg text for yad dialog
+unset LISTINT
 for ((j=0; j<${#tintsArr[*]}; j++));do
-    msg="$msg FALSE ${tintsArr[j]}"
+    LISTINT="$LISTINT FALSE ${tintsArr[j]} "
 done
+## Populate dialog from array, get return value(s)
+RET=$($DLGDEC $WINICON --list --title="$TITLE" \
+    --text="Select Tint2s to edit from the list\nMultiple Tint2s can be chosen\n" \
+    --checklist \
+    --column="Select:CHK" --column="Tint2 Name:TXT" $LISTINT --separator=":" \
+    $OK $CANCEL \
+    )
 
-## Populate zenity dialog from array, get return value(s)
-RET=$(zenity --list --title "Tint2 Edit" \
-    --text "Select Tint2s to edit from the list\nMultiple Tint2s can be chosen" \
-    --checklist --width=400 --height=500 \
-    --column "Select" --column "Tint2 Name" --separator=":"\
-    $msg)
-
-if [[ $? == 1 ]]; then # cancel button pressed
+if (( $? == 1 )); then # cancel button pressed
     exit 0
 else
     i=0

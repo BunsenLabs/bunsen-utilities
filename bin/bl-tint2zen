@@ -23,18 +23,24 @@
 ########################################################################
 
 TINT2PATH="$HOME/.config/tint2"
-TEMPFILE="$TINT2PATH/tint2-temp"
 SESSIONFILE="$TINT2PATH/tint2-sessionfile"
-USAGE=$(
-    echo -e "\vUSAGE:  with no command argument, the script uses the chosen"
-    echo -e "\tTint2 session file \"$TINT2PATH/tint2-sessionfile\","
-    echo -e "\tif it exists, otherwise the default tint2rc is used"
-    echo -e "\v\tTo start them at login, add the following line to autostart:"
-    echo -e "\v\t\t(sleep 2s && bl-tint2-session) &"
-)
+USAGE="\v\tUSAGE:\n\tWith no command argument, the script uses the chosen
+\tTint2 session file \"$TINT2PATH/tint2-sessionfile\",
+\tif it exists, otherwise the default tint2rc is used
+\v\tTo start them at login, add the following line to autostart:
+\v\t\t(sleep 2s && bl-tint2-session) &"
+
+### DIALOG VARIABLES
+DLGDEC="yad --center --borders=20 "
+TITLE="BunsenLabs Tint2 Manager"
+WINICON="--window-icon=distributor-logo-bunsenlabs"
+OK="--button=OK:0"
+CANCEL="--button=gtk-cancel:1"
+########################################################################
 
 tintRunning(){
-    > "$TEMPFILE" # make blank tempfile, to save running tint2 paths
+    # make blank tempfile, to save running tint2 paths
+    TEMPFILE=$(mktemp --tmpdir tint2.XXXX)
     pgrep -a tint2 | while read pid cmd; do 
         if [[ ${cmd%% *} = tint2 ]]; then
             TPATH=$(echo $cmd | awk '{print $NF}')
@@ -70,14 +76,14 @@ findTint(){
 }
 
 # get any commandline arguments
-if ! [ $# -eq 0 ];then    
+if ! (( $# == 0 ));then    
     for arg in "$@";do
         if [[ $1 = "-h" ]] || [[ $1 = "--help" ]];then
-            echo "$USAGE"
+            echo -e "$USAGE"
             exit 0
         else
             echo -e "\tERROR: sorry I don't understand the input"
-            echo "$USAGE"
+            echo -e "$USAGE"
             exit 0
         fi
     done
@@ -86,19 +92,21 @@ fi
 tintRunning
 findTint
 
-# loop through arrays, and build msg text for zenity dialog
-msg=""
+# loop through arrays, and build msg text for yad dialog
+unset LISTTINT
 for ((j=0; j<${#tintsArr[*]}; j++));do
-    msg="$msg ${checkArr[j]} ${tintsArr[j]}"
+    LISTTINT="$LISTTINT ${checkArr[j]} ${tintsArr[j]}"
 done
 
-## Populate zenity dialog from array, get return value(s)
-RET=$(zenity --list --title "BunsenLabs Tint2 chooser" \
-    --text "Select Tint2s from the list:" --checklist --width=350 --height=300 \
-    --column "Select" --column "tint2 Name" --separator=":"\
-    $msg)
+## Populate dialog from array, get return value(s)
+RET=$($DLGDEC $WINICON --list --title="$TITLE" \
+    --text="Select Tint2s from the list:" \
+    --checklist --width=350 --height=300 \
+    --column="Select" --column="tint2 Name" $LISTTINT --separator=":" \
+    $OK $CANCEL \
+    )
 
-if [[ $? == 1 ]]; then # cancel button pressed
+if (( $? == 1 )); then # cancel button pressed
     exit 0
 else
     > $SESSIONFILE    # Create new session file

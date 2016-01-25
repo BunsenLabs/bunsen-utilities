@@ -1,0 +1,152 @@
+#!/usr/bin/env python2.7
+# -*- coding: utf-8 -*-
+
+import gtk
+import pygtk
+pygtk.require('2.0')
+
+import getopt
+import getpass
+import subprocess
+import sys
+
+class bl_exit(gtk.Window):
+    """A dialog offering the user to log out, suspend, reboot or shut down."""
+
+    def __init__(self):
+        gtk.Window.__init__(self)
+        self.set_title("Log out " + getpass.getuser() + "? Choose an option:")
+        self.set_border_width(5)
+        self.set_size_request(500, 80)
+        self.set_resizable(False)
+        self.set_keep_above(True)
+        self.stick
+        self.set_position(gtk.WIN_POS_CENTER)
+        self.connect("delete_event", gtk.main_quit)
+        windowicon = self.render_icon(gtk.STOCK_QUIT, gtk.ICON_SIZE_DIALOG)
+        self.set_icon(windowicon)
+
+        # Cancel key (Escape)
+        accelgroup = gtk.AccelGroup()
+        key, mod = gtk.accelerator_parse('Escape')
+        accelgroup.connect_group(key, mod, gtk.ACCEL_VISIBLE, gtk.main_quit)
+        self.add_accel_group(accelgroup)
+
+        self._construct_ui()
+
+    def _construct_ui(self):
+        self._button_box = gtk.HBox()
+        self._add_button(stock=gtk.STOCK_CANCEL, action=self._cancel_action)
+        self._add_button(label="_Log out", action=self._logout_action)
+        self._add_button(label="_Suspend", action=self._suspend_action)
+        self._add_button(label="_Reboot", action=self._reboot_action)
+        self._add_button(label="_Power off", action=self._shutdown_action)
+
+        self._status = gtk.Label()
+        label_box = gtk.HBox()
+        label_box.pack_start(self._status)
+
+        vbox = gtk.VBox()
+        vbox.pack_start(self._button_box)
+        vbox.pack_start(label_box)
+
+        self.add(vbox)
+        self.show_all()
+
+    def _add_button(self, action, label=None, stock=None):
+        if stock is not None:
+            button = gtk.Button(stock=stock)
+        else:
+            button = gtk.Button(label=label)
+        button.set_border_width(4)
+        button.connect("clicked", action)
+        self._button_box.pack_start(button)
+
+    def _disable_buttons(self):
+        self._button_box.foreach(lambda button: button.set_sensitive(False))
+
+    def _cancel_action(self, button):
+        self._disable_buttons()
+        gtk.main_quit()
+
+    def _logout_action(self, button):
+        self._disable_buttons()
+        self._status.set_label("Exiting Openbox, please standby...")
+        logout()
+        gtk.main_quit()
+
+    def _suspend_action(self, button):
+        self._disable_buttons()
+        self._status.set_label("Suspending, please standby...")
+        suspend()
+        gtk.main_quit()
+
+    def _reboot_action(self, button):
+        self._disable_buttons()
+        self._status.set_label("Rebooting, please standby...")
+        reboot()
+
+    def _shutdown_action(self, button):
+        self._disable_buttons()
+        self._status.set_label("Shutting down, please standby...")
+        poweroff()
+
+def call(*args):
+    try:
+        subprocess.call(args)
+    except OSError as e:
+        print >>sys.stderr, "Execution failed: ", e
+
+def send_dbus(string):
+    call("dbus-send", "--print-reply", "--system", "--dest=org.freedesktop.login1",
+            "/org/freedesktop/login1", "org.freedesktop.login1.Manager.{}".format(string),
+            "boolean:true")
+
+def logout():
+    call("openbox", "--exit")
+
+def suspend():
+    send_dbus("Suspend")
+
+def reboot():
+    send_dbus("Reboot")
+
+def poweroff():
+    send_dbus("PowerOff")
+
+def print_usage(status):
+    print ("bl-exit: usage:\n" \
+        "  -h, --help      show this message and exit\n" \
+        "  -l, --logout    log out from openbox\n" \
+        "  -s, --suspend   suspend the system\n" \
+        "  -r, --reboot    reboot the system\n" \
+        "  -p, --poweroff  power the system down")
+    sys.exit(status)
+
+def main(argv):
+    try:
+        opts, args = getopt.getopt(argv, "hlsrp", ["help","logout","suspend","reboot","poweroff"])
+    except getopt.GetoptError:
+        print_usage(1)
+    for opt, arg in opts:
+        if opt in ("-h", "--help"):
+            print_usage(0)
+        elif opt in ("-l", "--logout"):
+            logout()
+            sys.exit(0)
+        elif opt in ("-s", "--suspend"):
+            suspend()
+            sys.exit(0)
+        elif opt in ("-r", "--reboot"):
+            reboot()
+            sys.exit(0)
+        elif opt in ("-p", "--poweroff"):
+            poweroff()
+            sys.exit(0)
+
+    go = bl_exit()
+    gtk.main()
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
+
