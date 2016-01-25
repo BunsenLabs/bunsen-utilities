@@ -220,7 +220,7 @@ function getScreenDims(){   # Set width and height for View dialog
     #  param $1 = num screens; param $2 = primary screen width or
     #+ rootwindow screen width
     #+ set defaults
-    desktopW=800; desktopH=600
+    desktopW=600; desktopH=600
     desktopW=$(xrandr -q | awk '/Screen/ {print $8}')  # total desktop width
     desktopH=$(xrandr -q | awk '/Screen/ {print $10}') # desktop height
     desktopH=${desktopH%%,*}    # remove trailing comma
