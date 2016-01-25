@@ -3,7 +3,7 @@ set -e
 
 #DEBHELPER#
 
-if dpkg -s xscreensaver >/dev/null 2>&1;
+if [ "$(dpkg-query --show --showformat='${db:Status-Abbrev;2}' xscreensaver 2>/dev/null)" = 'ii' ]
 then
     echo "
 This package uses light-locker in the bl-lock script.

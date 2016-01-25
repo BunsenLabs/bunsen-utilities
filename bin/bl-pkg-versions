@@ -10,6 +10,12 @@ readonly GITHUB_CONTENT_ROOT=https://raw.githubusercontent.com/BunsenLabs
 readonly BUNSEN_PACKAGE_LIST=http://pkg.bunsenlabs.org/debian/dists/bunsen-hydrogen/main/binary-i386/Packages
 required_commands='curl awk sed tput printf'
 
+# Associative array: packages whose names differ from the repository they are built by
+# format: [packagename]=repositoryname
+# Edit as necessary.
+declare -A REPOS=([bunsen-python-apt-template]=bunsen-os-release [bunsen-images-extra]=bunsen-images [bunsen-meta-printer-support]=bunsen-welcome [bunsen-meta-java]=bunsen-welcome [bunsen-meta-libreoffice]=bunsen-welcome [bunsen-meta-vcs]=bunsen-welcome [bunsen-meta-ssh]=bunsen-welcome [bunsen-meta-lamp]=bunsen-welcome [bunsen-meta-packaging]=bunsen-welcome)
+readonly REPOS
+
 missing_commands=
 for i in $required_commands
 do
@@ -25,12 +31,6 @@ case $1 in
     exit
     ;;
 esac
-
-# Associative array: packages whose names differ from the repository they are built by
-# format: [packagename]=repositoryname
-# Edit as necessary.
-declare -A REPOS=([bunsen-meta-printer-support]=bunsen-welcome [bunsen-meta-java]=bunsen-welcome [bunsen-meta-libreoffice]=bunsen-welcome [bunsen-meta-vcs]=bunsen-welcome [bunsen-meta-ssh]=bunsen-welcome [bunsen-meta-lamp]=bunsen-welcome [bunsen-meta-packaging]=bunsen-welcome [bunsen-images-extra]=bunsen-images)
-readonly REPOS
 
 # get name of repository which builds package
 # default is same as package name, unless listed in REPOS

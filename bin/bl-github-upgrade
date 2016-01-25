@@ -13,41 +13,36 @@ and upgrade with apt-get.
 -a|--add name1 [name2...] - add other repositories and
 place built .deb files in local repository."
 
-set -o nounset # do not accept unset variables
-
-# If not running in terminal, exit with message
-[[ -t 0 && -t 1 && -t 2 ]] || { echo "$0: This script must be run from a terminal" >&2; exit 1; }
-
-readonly LOCAL_REPO='/var/local/debs'
+# Associative array: repositories whose names differ from a package they install
+# format: [packagename]=repositoryname
+# Edit as necessary.
+declare -A REPOS=([bunsen-python-apt-template]=bunsen-os-release [bunsen-images-extra]=bunsen-images [bunsen-meta-printer-support]=bunsen-welcome [bunsen-meta-java]=bunsen-welcome [bunsen-meta-libreoffice]=bunsen-welcome [bunsen-meta-vcs]=bunsen-welcome [bunsen-meta-ssh]=bunsen-welcome [bunsen-meta-lamp]=bunsen-welcome [bunsen-meta-packaging]=bunsen-welcome)
+readonly REPOS
 
 # base url for GitHub repository names
 readonly GITHUB_ROOT=https://github.com/BunsenLabs
 readonly GITHUB_CONTENT_ROOT=https://raw.githubusercontent.com/BunsenLabs
+
 # all installed package names match this (for dpkg-query --show)
 readonly PKGGLOB='bunsen-*'
 
-# Associative array: repositories whose names differ from a package they install
-# format: [packagename]=repositoryname
-# Edit as necessary.
-declare -A REPOS=([bunsen1-wallpapers]=bunsen1-theme [bunsen-meta-printer-support]=bunsen-welcome [bunsen-meta-java]=bunsen-welcome [bunsen-meta-libreoffice]=bunsen-welcome [bunsen-meta-vcs]=bunsen-welcome [bunsen-meta-ssh]=bunsen-welcome [bunsen-meta-lamp]=bunsen-welcome [bunsen-meta-packaging]=bunsen-welcome [bunsen-images-extra]=bunsen-images)
-readonly REPOS
+readonly LOCAL_REPO='/var/local/debs'
+
+# place to build debs before installing
+readonly builddir="$HOME/build"
+
+readonly log_dir="$HOME/.bunsen-netinstall-logs"
+
+readonly user=$USER
+readonly scriptdir="$PWD"
+
+##############################################################
 
 # get name of repository which builds package
 # default is same as package name, unless listed in REPOS
 get_repo() {
     printf '%s' "${REPOS[$1]:-$1}"
 }
-
-# place to build debs before installing
-readonly builddir="$HOME/build"
-
-log_dir="$HOME/.bunsen-netinstall-logs"
-mkdir -p "$log_dir"
-logfile="$log_dir"/upgrade.log
-exec > >( tee -a "$logfile" ) 2>&1
-
-readonly user=$USER
-readonly scriptdir="$PWD"
 
 msg() {
     echo "
@@ -134,8 +129,20 @@ newest ()  {
     echo "$candidate"
 }
 
+#######################################################
+
+set -o nounset # do not accept unset variables
+
+# If not running in terminal, exit with message
+[[ -t 0 && -t 1 && -t 2 ]] || { echo "$0: This script must be run from a terminal" >&2; exit 1; }
+
 trap 'giveup "Script terminated." 1' 1 2 3 15
 trap 'cleanup' EXIT
+
+mkdir -p "$log_dir"
+logfile="$log_dir"/upgrade.log
+exec > >( tee -a "$logfile" ) 2>&1
+
 [[ $user = root ]] && giveup "This script should be run by a normal user, not root" 1
 
 declare -A repo_list=()
