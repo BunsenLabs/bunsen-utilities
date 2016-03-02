@@ -177,7 +177,7 @@ function getSet(){      # get name of currently set BLOB config
 
 function countMonitors(){ #test for more than 2 monitors connected.
     MON=$(xrandr -q | grep -c " connected")
-    PRIMARY=$(xrandr -q | awk '/ connected/ {if ($3=="primary") print $4}')
+    PRIMARY=$(xrandr -q | awk '/ connected/ {if ($3=="primary") print $4; else print $3}')
     PSIZE=${PRIMARY%%x*}    # Primary monitor width
     case $MON in
         1|2|3)  getScreenDims $MON $PSIZE
