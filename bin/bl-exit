@@ -10,7 +10,7 @@ import getpass
 import subprocess
 import sys
 
-class bl_exit(gtk.Window):
+class Blexit(gtk.Window):
     """A dialog offering the user to log out, suspend, reboot or shut down."""
 
     def __init__(self):
@@ -36,11 +36,11 @@ class bl_exit(gtk.Window):
 
     def _construct_ui(self):
         self._button_box = gtk.HBox()
-        self._add_button(stock=gtk.STOCK_CANCEL, action=self._cancel_action)
-        self._add_button(label="_Log out", action=self._logout_action)
-        self._add_button(label="_Suspend", action=self._suspend_action)
-        self._add_button(label="_Reboot", action=self._reboot_action)
-        self._add_button(label="_Power off", action=self._shutdown_action)
+        self._add_button(label='Cancel', action=self._cancel_action)
+        self._add_button(label="Log out", action=self._logout_action)
+        self._add_button(label="Suspend", action=self._suspend_action)
+        self._add_button(label="Reboot", action=self._reboot_action)
+        self._add_button(label="Power off", action=self._shutdown_action)
 
         self._status = gtk.Label()
         label_box = gtk.HBox()
@@ -52,6 +52,9 @@ class bl_exit(gtk.Window):
 
         self.add(vbox)
         self.show_all()
+
+    def main(self):
+        gtk.main()
 
     def _add_button(self, action, label=None, stock=None):
         if stock is not None:
@@ -144,9 +147,7 @@ def main(argv):
             poweroff()
             sys.exit(0)
 
-    go = bl_exit()
-    gtk.main()
+    Blexit().main()
 
 if __name__ == "__main__":
     main(sys.argv[1:])
-
