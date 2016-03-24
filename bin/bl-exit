@@ -36,11 +36,12 @@ class Blexit(gtk.Window):
 
     def _construct_ui(self):
         self._button_box = gtk.HBox()
-        self._add_button(label='Cancel', action=self._cancel_action)
-        self._add_button(label="Log out", action=self._logout_action)
-        self._add_button(label="Suspend", action=self._suspend_action)
-        self._add_button(label="Reboot", action=self._reboot_action)
-        self._add_button(label="Power off", action=self._shutdown_action)
+        self._add_button(stock=gtk.STOCK_CANCEL, action=self._cancel_action)
+        self._add_button(label="_Log out", action=self._logout_action)
+        self._add_button(label="_Suspend", action=self._suspend_action)
+        self._add_button(label="H_ibernate", action=self._hibernate_action)
+        self._add_button(label="Re_boot", action=self._reboot_action)
+        self._add_button(label="_Power off", action=self._shutdown_action)
 
         self._status = gtk.Label()
         label_box = gtk.HBox()
@@ -84,6 +85,12 @@ class Blexit(gtk.Window):
         suspend()
         gtk.main_quit()
 
+    def _hibernate_action(self, button):
+        self._disable_buttons()
+        self._status.set_label("Hibernating, please standby...")
+        hibernate()
+        gtk.main_quit()
+
     def _reboot_action(self, button):
         self._disable_buttons()
         self._status.set_label("Rebooting, please standby...")
@@ -100,10 +107,11 @@ def call(*args):
     except OSError as e:
         print >>sys.stderr, "Execution failed: ", e
 
+
 def send_dbus(string):
-    call("dbus-send", "--print-reply", "--system", "--dest=org.freedesktop.login1",
-            "/org/freedesktop/login1", "org.freedesktop.login1.Manager.{}".format(string),
-            "boolean:true")
+        call("dbus-send", "--print-reply", "--system", "--dest=org.freedesktop.login1",
+             "/org/freedesktop/login1", "org.freedesktop.login1.Manager.{}".format(string),
+             "boolean:true")
 
 def logout():
     call("openbox", "--exit")
@@ -111,6 +119,33 @@ def logout():
 def suspend():
     send_dbus("Suspend")
 
+def show_dialog(string):
+    emDialog = gtk.MessageDialog(parent=None, flags=0, type=gtk.MESSAGE_INFO, buttons=gtk.BUTTONS_OK, message_format=None)
+    if emDialog:
+        emDialog.set_markup(string)
+        emDialog.run()
+        gtk.main_quit()
+
+def get_canhibernate():
+    response = subprocess.check_output(["dbus-send", "--print-reply", "--system", "--dest=org.freedesktop.login1",
+                                     "/org/freedesktop/login1", "org.freedesktop.login1.Manager.CanHibernate"])
+    lines = response.split("\n")
+    words = lines[1].split("\"")
+    return words[1]
+        
+def hibernate():
+    canHibernate = get_canhibernate()
+    if canHibernate == "yes":
+        send_dbus("Hibernate")
+    elif canHibernate == "no":
+        show_dialog("You are not allowed to hibernate the system!")
+    elif canHibernate == "na":
+        show_dialog("Hardware, kernel or drivers do not support system hibernate.")
+    elif canHibernate == "challenge":
+        show_dialog("You are not authorized to hibernate the system.")
+    else:
+        show_dialog("Received unknown response from the CanHibernate login1 method.")
+        
 def reboot():
     send_dbus("Reboot")
 
@@ -122,6 +157,7 @@ def print_usage(status):
         "  -h, --help      show this message and exit\n" \
         "  -l, --logout    log out from openbox\n" \
         "  -s, --suspend   suspend the system\n" \
+        "  -i, --hibernate hibernate the system\n" \
         "  -r, --reboot    reboot the system\n" \
         "  -p, --poweroff  power the system down")
     sys.exit(status)
