@@ -26,6 +26,15 @@ class Blexit(gtk.Window):
         windowicon = self.render_icon(gtk.STOCK_QUIT, gtk.ICON_SIZE_DIALOG)
         self.set_icon(windowicon)
 
+        # Default error_messages dict
+        # key = result from _can_do_it
+        # value = string shown in error_message_dialog
+        self._error_messages = dict(
+            no="Action is not allowed.",
+            na="Action is not available.",
+            challenge="Action is not authorized."
+        )
+
         # Cancel key (Escape)
         accelgroup = gtk.AccelGroup()
         key, mod = gtk.accelerator_parse('Escape')
@@ -76,81 +85,88 @@ class Blexit(gtk.Window):
     def _logout_action(self, button):
         self._disable_buttons()
         self._status.set_label("Exiting Openbox, please standby...")
-        logout()
-        gtk.main_quit()
+        try:
+            subprocess.check_output(["openbox", "--exit"])
+        except subprocess.CalledProcessError as e:
+            emDialog = gtk.MessageDialog(parent=None, flags=0, type=gtk.MESSAGE_INFO,
+                                         buttons=gtk.BUTTONS_OK, message_format=None)
+            if emDialog:
+                emDialog.set_markup(e.output)
+                emDialog.run()
+        finally:
+            gtk.main_quit()
 
     def _suspend_action(self, button):
         self._disable_buttons()
         self._status.set_label("Suspending, please standby...")
-        suspend()
+        self._action_string = "Suspend"
+        self._do_it()
         gtk.main_quit()
 
     def _hibernate_action(self, button):
         self._disable_buttons()
         self._status.set_label("Hibernating, please standby...")
-        hibernate()
+        self._action_string = "Hibernate"
+        self._error_messages["na"] = "Action is not available. Probably because your swap space is inadequate."
+        self._do_it()
         gtk.main_quit()
 
     def _reboot_action(self, button):
         self._disable_buttons()
         self._status.set_label("Rebooting, please standby...")
-        reboot()
+        self._action_string = "Reboot"
+        self._do_it()
+        gtk.main_quit()
 
     def _shutdown_action(self, button):
         self._disable_buttons()
         self._status.set_label("Shutting down, please standby...")
-        poweroff()
-
-def call(*args):
-    try:
-        subprocess.call(args)
-    except OSError as e:
-        print >>sys.stderr, "Execution failed: ", e
-
-
-def send_dbus(string):
-        call("dbus-send", "--print-reply", "--system", "--dest=org.freedesktop.login1",
-             "/org/freedesktop/login1", "org.freedesktop.login1.Manager.{}".format(string),
-             "boolean:true")
-
-def logout():
-    call("openbox", "--exit")
-
-def suspend():
-    send_dbus("Suspend")
-
-def show_dialog(string):
-    emDialog = gtk.MessageDialog(parent=None, flags=0, type=gtk.MESSAGE_INFO, buttons=gtk.BUTTONS_OK, message_format=None)
-    if emDialog:
-        emDialog.set_markup(string)
-        emDialog.run()
+        self._action_string = "PowerOff"
+        self._do_it()
         gtk.main_quit()
 
-def get_canhibernate():
-    response = subprocess.check_output(["dbus-send", "--print-reply", "--system", "--dest=org.freedesktop.login1",
-                                     "/org/freedesktop/login1", "org.freedesktop.login1.Manager.CanHibernate"])
-    lines = response.split("\n")
-    words = lines[1].split("\"")
-    return words[1]
-        
-def hibernate():
-    canHibernate = get_canhibernate()
-    if canHibernate == "yes":
-        send_dbus("Hibernate")
-    elif canHibernate == "no":
-        show_dialog("You are not allowed to hibernate the system!")
-    elif canHibernate == "na":
-        show_dialog("Hardware, kernel or drivers do not support system hibernate.")
-    elif canHibernate == "challenge":
-        show_dialog("You are not authorized to hibernate the system.")
-    else:
-        show_dialog("Received unknown response from the CanHibernate login1 method.")
-        
-def reboot():
-    send_dbus("Reboot")
+    def _can_do_it(self):
+        action_method = "Can{}".format(self._action_string)
+        try:
+            response = subprocess.check_output(["dbus-send", "--print-reply", "--system",
+                                                "--dest=org.freedesktop.login1",
+                                                "/org/freedesktop/login1",
+                                                "org.freedesktop.login1.Manager.{}".format(action_method) ])
+            if response:
+                lines = response.split("\n")
+                if lines:
+                    words = lines[1].split("\"")
+                    if words:
+                        if words[1]:
+                            return words[1]
+                        return None
+        except:
+            pass
 
-def poweroff():
-    send_dbus("PowerOff")
+    def _do_it(self):
+        try:
+            candoit = self._can_do_it()
+            if candoit == "yes":
+                send_dbus(self._action_string)
+            else:
+                emDialog = gtk.MessageDialog(parent=None, flags=0, type=gtk.MESSAGE_INFO,
+                                             buttons=gtk.BUTTONS_OK, message_format=None)
+                emDialog.set_markup(self._error_messages[candoit])
+                emDialog.run()
+        except:
+            pass
+
+def send_dbus(method):
+    try:
+        subprocess.call(["dbus-send", "--print-reply", "--system", "--dest=org.freedesktop.login1",
+                        "/org/freedesktop/login1", "org.freedesktop.login1.Manager.{}".format(method),
+                         "boolean:true"])
+    except subprocess.CalledProcessError as e:
+        emDialog = gtk.MessageDialog(parent=None, flags=0, type=gtk.MESSAGE_INFO,
+                                     buttons=gtk.BUTTONS_OK, message_format=None)
+        if emDialog:
+            emDialog.set_markup(e.output)
+            emDialog.run()
 
 def print_usage(status):
     print ("bl-exit: usage:\n" \
