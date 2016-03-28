@@ -107,7 +107,9 @@ class Blexit(gtk.Window):
         self._disable_buttons()
         self._status.set_label("Hibernating, please standby...")
         self._action_string = "Hibernate"
-        self._error_messages["na"] = "Action is not available. Probably because your swap space is inadequate."
+        self._error_messages["na"] = """Action is not available. 
+
+Probable cause is inadequate swap space."""
         self._do_it()
         gtk.main_quit()
 
