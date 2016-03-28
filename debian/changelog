@@ -1,4 +1,4 @@
-bunsen-utilities (8.6.6.1) bunsen-hydrogen; urgency=low
+bunsen-utilities (8.6.6-1) bunsen-hydrogen; urgency=low
 
   * bl-exit: Restore accelerations
   * bl-exit: Call CanSuspend, CanHibernate, CanReboot, CanPowerOff before calling the corresponding action.
