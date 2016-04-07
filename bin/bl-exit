@@ -36,11 +36,11 @@ class Blexit(gtk.Window):
 
     def _construct_ui(self):
         self._button_box = gtk.HBox()
-        self._add_button(label='Cancel', action=self._cancel_action)
-        self._add_button(label="Log out", action=self._logout_action)
-        self._add_button(label="Suspend", action=self._suspend_action)
-        self._add_button(label="Reboot", action=self._reboot_action)
-        self._add_button(label="Power off", action=self._shutdown_action)
+        self._add_button(stock=gtk.STOCK_CANCEL, action=self._cancel_action)
+        self._add_button(label="_Log out", action=self._logout_action)
+        self._add_button(label="_Suspend", action=self._suspend_action)
+        self._add_button(label="Re_boot", action=self._reboot_action)
+        self._add_button(label="_Power off", action=self._shutdown_action)
 
         self._status = gtk.Label()
         label_box = gtk.HBox()
@@ -100,17 +100,18 @@ def call(*args):
     except OSError as e:
         print >>sys.stderr, "Execution failed: ", e
 
+
 def send_dbus(string):
-    call("dbus-send", "--print-reply", "--system", "--dest=org.freedesktop.login1",
-            "/org/freedesktop/login1", "org.freedesktop.login1.Manager.{}".format(string),
-            "boolean:true")
+        call("dbus-send", "--print-reply", "--system", "--dest=org.freedesktop.login1",
+             "/org/freedesktop/login1", "org.freedesktop.login1.Manager.{}".format(string),
+             "boolean:true")
 
 def logout():
     call("openbox", "--exit")
 
 def suspend():
     send_dbus("Suspend")
-
+        
 def reboot():
     send_dbus("Reboot")
 
