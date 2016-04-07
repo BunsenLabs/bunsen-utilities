@@ -26,15 +26,6 @@ class Blexit(gtk.Window):
         windowicon = self.render_icon(gtk.STOCK_QUIT, gtk.ICON_SIZE_DIALOG)
         self.set_icon(windowicon)
 
-        # Default error_messages dict
-        # key = result from _can_do_it
-        # value = string shown in error_message_dialog
-        self._error_messages = dict(
-            no="Action is not allowed.",
-            na="Action is not available.",
-            challenge="Action is not authorized."
-        )
-
         # Cancel key (Escape)
         accelgroup = gtk.AccelGroup()
         key, mod = gtk.accelerator_parse('Escape')
@@ -45,12 +36,11 @@ class Blexit(gtk.Window):
 
     def _construct_ui(self):
         self._button_box = gtk.HBox()
-        self._add_button(stock=gtk.STOCK_CANCEL, action=self._cancel_action)
-        self._add_button(label="_Log out", action=self._logout_action)
-        self._add_button(label="_Suspend", action=self._suspend_action)
-        self._add_button(label="H_ibernate", action=self._hibernate_action)
-        self._add_button(label="Re_boot", action=self._reboot_action)
-        self._add_button(label="_Power off", action=self._shutdown_action)
+        self._add_button(label='Cancel', action=self._cancel_action)
+        self._add_button(label="Log out", action=self._logout_action)
+        self._add_button(label="Suspend", action=self._suspend_action)
+        self._add_button(label="Reboot", action=self._reboot_action)
+        self._add_button(label="Power off", action=self._shutdown_action)
 
         self._status = gtk.Label()
         label_box = gtk.HBox()
@@ -85,97 +75,53 @@ class Blexit(gtk.Window):
     def _logout_action(self, button):
         self._disable_buttons()
         self._status.set_label("Exiting Openbox, please standby...")
-        try:
-            subprocess.check_output(["openbox", "--exit"])
-        except subprocess.CalledProcessError as e:
-            emDialog = gtk.MessageDialog(parent=None, flags=0, type=gtk.MESSAGE_INFO,
-                                         buttons=gtk.BUTTONS_OK, message_format=None)
-            if emDialog:
-                emDialog.set_markup(e.output)
-                emDialog.run()
-        finally:
-            gtk.main_quit()
+        logout()
+        gtk.main_quit()
 
     def _suspend_action(self, button):
         self._disable_buttons()
         self._status.set_label("Suspending, please standby...")
-        self._action_string = "Suspend"
-        self._do_it()
-        gtk.main_quit()
-
-    def _hibernate_action(self, button):
-        self._disable_buttons()
-        self._status.set_label("Hibernating, please standby...")
-        self._action_string = "Hibernate"
-        self._error_messages["na"] = """Action is not available. 
-
-Probable cause is inadequate swap space."""
-        self._do_it()
+        suspend()
         gtk.main_quit()
 
     def _reboot_action(self, button):
         self._disable_buttons()
         self._status.set_label("Rebooting, please standby...")
-        self._action_string = "Reboot"
-        self._do_it()
-        gtk.main_quit()
+        reboot()
 
     def _shutdown_action(self, button):
         self._disable_buttons()
         self._status.set_label("Shutting down, please standby...")
-        self._action_string = "PowerOff"
-        self._do_it()
-        gtk.main_quit()
+        poweroff()
 
-    def _can_do_it(self):
-        action_method = "Can{}".format(self._action_string)
-        try:
-            response = subprocess.check_output(["dbus-send", "--print-reply", "--system",
-                                                "--dest=org.freedesktop.login1",
-                                                "/org/freedesktop/login1",
-                                                "org.freedesktop.login1.Manager.{}".format(action_method) ])
-            if response:
-                lines = response.split("\n")
-                if lines:
-                    words = lines[1].split("\"")
-                    if words:
-                        if words[1]:
-                            return words[1]
-                        return None
-        except:
-            pass
-
-    def _do_it(self):
-        try:
-            candoit = self._can_do_it()
-            if candoit == "yes":
-                send_dbus(self._action_string)
-            else:
-                emDialog = gtk.MessageDialog(parent=None, flags=0, type=gtk.MESSAGE_INFO,
-                                             buttons=gtk.BUTTONS_OK, message_format=None)
-                emDialog.set_markup(self._error_messages[candoit])
-                emDialog.run()
-        except:
-            pass
-
-def send_dbus(method):
+def call(*args):
     try:
-        subprocess.call(["dbus-send", "--print-reply", "--system", "--dest=org.freedesktop.login1",
-                        "/org/freedesktop/login1", "org.freedesktop.login1.Manager.{}".format(method),
-                         "boolean:true"])
-    except subprocess.CalledProcessError as e:
-        emDialog = gtk.MessageDialog(parent=None, flags=0, type=gtk.MESSAGE_INFO,
-                                     buttons=gtk.BUTTONS_OK, message_format=None)
-        if emDialog:
-            emDialog.set_markup(e.output)
-            emDialog.run()
+        subprocess.call(args)
+    except OSError as e:
+        print >>sys.stderr, "Execution failed: ", e
+
+def send_dbus(string):
+    call("dbus-send", "--print-reply", "--system", "--dest=org.freedesktop.login1",
+            "/org/freedesktop/login1", "org.freedesktop.login1.Manager.{}".format(string),
+            "boolean:true")
+
+def logout():
+    call("openbox", "--exit")
+
+def suspend():
+    send_dbus("Suspend")
+
+def reboot():
+    send_dbus("Reboot")
+
+def poweroff():
+    send_dbus("PowerOff")
 
 def print_usage(status):
     print ("bl-exit: usage:\n" \
         "  -h, --help      show this message and exit\n" \
         "  -l, --logout    log out from openbox\n" \
         "  -s, --suspend   suspend the system\n" \
-        "  -i, --hibernate hibernate the system\n" \
         "  -r, --reboot    reboot the system\n" \
         "  -p, --poweroff  power the system down")
     sys.exit(status)
