@@ -46,7 +46,7 @@ lookup_github() {
     printf '%s' "$remote_version"
 }
 
-repo_list=$( curl -s "$BUNSEN_PACKAGE_LIST" | awk '
+repo_list=$( curl -sL "$BUNSEN_PACKAGE_LIST" | awk '
 BEGIN{RS="";FS="\n"}
 /\n[ \t]*Source:/ {next}
 /Package:[ \t]*bunsen-/ {
