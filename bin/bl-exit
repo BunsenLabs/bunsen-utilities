@@ -1,154 +1,425 @@
 #!/usr/bin/env python2.7
 # -*- coding: utf-8 -*-
+from __future__ import print_function
 
-import gtk
-import pygtk
-pygtk.require('2.0')
+import os
+display = os.environ.get('DISPLAY') is not None
 
+import sys
 import getopt
 import getpass
 import subprocess
-import sys
+import dbus
 
-class Blexit(gtk.Window):
-    """A dialog offering the user to log out, suspend, reboot or shut down."""
+__me__ = 'bl-exit'
+__version__ = '2.0.0'
 
-    def __init__(self):
-        gtk.Window.__init__(self)
-        self.set_title("Log out " + getpass.getuser() + "? Choose an option:")
-        self.set_border_width(5)
-        self.set_size_request(500, 80)
-        self.set_resizable(False)
-        self.set_keep_above(True)
-        self.stick
-        self.set_position(gtk.WIN_POS_CENTER)
-        self.connect("delete_event", gtk.main_quit)
-        windowicon = self.render_icon(gtk.STOCK_QUIT, gtk.ICON_SIZE_DIALOG)
-        self.set_icon(windowicon)
+# Default errorMessages dict
+# key = result from _can_do_action
+# value = string shown in error_message_dialog
+canDoItErrorMessages = dict(
+    no="Action is not allowed.",
+    na="Action is not available.",
+    challenge="Action is not authorized."
+)
 
-        # Cancel key (Escape)
-        accelgroup = gtk.AccelGroup()
-        key, mod = gtk.accelerator_parse('Escape')
-        accelgroup.connect_group(key, mod, gtk.ACCEL_VISIBLE, gtk.main_quit)
-        self.add_accel_group(accelgroup)
+# Translate command-line option to method - command line only
+actionToMethod = dict(
+    logout='Logout', l='Logout',
+    suspend='Suspend', s='Suspend',
+    hybridsleep='HybridSleep', y='HybridSleep',
+    hibernate='Hibernate', i='Hibernate',
+    reboot='Reboot', b='Reboot',
+    poweroff='PowerOff', p='PowerOff'
+)
 
-        self._construct_ui()
 
-    def _construct_ui(self):
-        self._button_box = gtk.HBox()
-        self._add_button(stock=gtk.STOCK_CANCEL, action=self._cancel_action)
-        self._add_button(label="_Log out", action=self._logout_action)
-        self._add_button(label="_Suspend", action=self._suspend_action)
-        self._add_button(label="Re_boot", action=self._reboot_action)
-        self._add_button(label="_Power off", action=self._shutdown_action)
+class CanDoItError(Exception):
+    pass
 
-        self._status = gtk.Label()
-        label_box = gtk.HBox()
-        label_box.pack_start(self._status)
 
-        vbox = gtk.VBox()
-        vbox.pack_start(self._button_box)
-        vbox.pack_start(label_box)
+class BlexitBase(object):
 
-        self.add(vbox)
-        self.show_all()
+    def __init__(self, argv):
+        self.argv = argv
+        self.dbus_iface = None
+
+    def setup_dbus_connection(self):
+        try:
+            bus = dbus.SystemBus()
+            dbus_object = bus.get_object('org.freedesktop.login1',
+                                         '/org/freedesktop/login1')
+            self.dbus_iface = dbus.Interface(dbus_object,
+                                             'org.freedesktop.login1.Manager')
+        except bus.DBusException as e:
+            self.on_error(str(e))
+
+    def can_do_action(self, action):
+        # There is no 'CanLogout' method
+        if action == "Logout":
+            return "yes"
+        if action == "Hibernate":
+            canDoItErrorMessages["na"] = """{} is not available.
+    Probable cause is inadequate swap space.""".format(action)
+        actionMethod = "Can{}".format(action)
+        response = self.send_dbus(actionMethod)
+        return str(response)
+
+    def do_action(self, action):
+        print("do_action: {}".format(action), file=sys.stderr)
+        self.send_dbus(action)
+
+    def send_dbus(self, method):
+        try:
+            if self.dbus_iface is None:
+                self.setup_dbus_connection()
+            if method[:3] == "Can":
+                command = "self.dbus_iface.{}()".format(method)
+            else:
+                command = "self.dbus_iface.{}(['True'])".format(method)
+            response = eval(command)
+            return str(response)
+        except dbus.DBusException as e:
+            self.on_error(str(e))
+
+    def on_error(self, string):
+        print ("{}".format(string), file=sys.stderr)
+        sys.exit(1)
+
+    def openbox_exit(self):
+        subprocess.check_output(["openbox", "--exit"])
+
+    def logout(self):
+        try:
+            self.openbox_exit()
+        except subprocess.CalledProcessError as e:
+            self.on_error(e.output)
+
+    def action_from_command_line(self, action):
+        try:
+            self.do_action(action)
+        except (subprocess.CalledProcessError, CanDoItError, KeyError) as e:
+            self.on_error(str(e))
+
+    def print_usage(self, status):
+        print ("bl-exit version {} usage:".format(__version__),
+               "  -h, --help        show this message and exit", sep='\n',
+               file=sys.stderr)
+        if display:
+            print ("  -l, --logout      log out from openbox", sep='\n',
+                   file=sys.stderr)
+        print ("  -s, --suspend     suspend the system",
+               "  -i, --hibernate   hibernate the system",
+               "  -y, --hybridsleep hibernate + sleep the system",
+               "  -b, --reboot      reboot the system",
+               "  -p, --poweroff    power the system down", sep='\n', end='\n',
+               file=sys.stderr)
+        sys.exit(status)
 
     def main(self):
-        gtk.main()
-
-    def _add_button(self, action, label=None, stock=None):
-        if stock is not None:
-            button = gtk.Button(stock=stock)
+        if display:
+            short_options = "hlsyibp"
+            long_options = ["help", "logout", "suspend", "hybridsleep",
+                            "hibernate", "reboot", "poweroff"]
         else:
-            button = gtk.Button(label=label)
-        button.set_border_width(4)
-        button.connect("clicked", action)
-        self._button_box.pack_start(button)
+            if len(self.argv) == 0:
+                self.on_error('Required action is missing.')
+            short_options = "hsyibp"
+            long_options = ["help", "suspend", "hybridsleep", "hibernate",
+                            "reboot", "poweroff"]
 
-    def _disable_buttons(self):
-        self._button_box.foreach(lambda button: button.set_sensitive(False))
+        try:
+            opts, args = getopt.getopt(self.argv, short_options, long_options)
+        except getopt.GetoptError:
+            self.print_usage(1)
 
-    def _cancel_action(self, button):
-        self._disable_buttons()
-        gtk.main_quit()
+        actions = []
+        for opt, arg in opts:
+            actions.append(opt)
+        # not exactly one argument
+        if not len(actions) == 1:
+            self.on_error("Exactly one argument is required.")
+        if actions[0] in ('-h', '--help'):
+            self.print_usage(0)
+        else:
+            if actions[0] in ("-l", "--logout"):
+                self.logout()
+            else:
+                self.setup_dbus_connection()
+                self.action_from_command_line(
+                    actionToMethod[actions[0].lstrip('-')])
 
-    def _logout_action(self, button):
-        self._disable_buttons()
-        self._status.set_label("Exiting Openbox, please standby...")
-        logout()
-        gtk.main_quit()
+if display:
+    """Testing for display here because we want to be able to run the script
+    in a non-graphical environment as well. Importing gtk.Window on the console
+    spits out some errors and crashes the application."""
+    import gtk
+    import pygtk
+    pygtk.require('2.0')
+    import ConfigParser
 
-    def _suspend_action(self, button):
-        self._disable_buttons()
-        self._status.set_label("Suspending, please standby...")
-        suspend()
-        gtk.main_quit()
+    class BlexitWindow(BlexitBase, gtk.Window):
+        """A dialog offering the user to log out, suspend, reboot or shut down.
+        """
 
-    def _reboot_action(self, button):
-        self._disable_buttons()
-        self._status.set_label("Rebooting, please standby...")
-        reboot()
+        def __init__(self, argv):
+            BlexitBase.__init__(self, argv)
+            gtk.Window.__init__(self)
 
-    def _shutdown_action(self, button):
-        self._disable_buttons()
-        self._status.set_label("Shutting down, please standby...")
-        poweroff()
+        def configure(self):
+            """Determine config directory: first try the environment variable
+            XDG_CONFIG_HOME according to XDG specification and as a fallback
+            use ~/.config/bl-exit. Use /etc/bl-exit/bl-exitrc as a last
+            resort."""
+            config_dirs = []
+            xdg_config_dir = os.getenv('XDG_CONFIG_HOME')
+            if xdg_config_dir:
+                config_dirs.append(xdg_config_dir)
+            user_config_dir = os.path.expanduser('~/.config')
+            try:
+                if not (xdg_config_dir and os.path.samefile(user_config_dir,
+                                                            xdg_config_dir)):
+                    config_dirs.append(user_config_dir)
+            except OSError as e:
+                print ("{}: {}".format(__me__, str(e)), file=sys.stderr)
+                pass
+            config_dirs.append('/etc')
+            config_file = None
+            for config_dir in config_dirs:
+                if config_dir:
+                    config_dir = config_dir + '/bl-exit'
+                    if os.path.isdir(config_dir):
+                        maybe_config_file = config_dir + '/bl-exitrc'
+                        if os.path.isfile(maybe_config_file):
+                            config_file = maybe_config_file
+                            break
+            if config_file:
+                try:
+                    self.config = ConfigParser.RawConfigParser()
+                    self.config.read(config_file)
+                except ConfigParser.ParsingError as e:
+                    print ("{}: {}".format(__me__, str(e)), file=sys.stderr)
+                    self.config = None
+                    pass
+            else:
+                self.config = None
 
-def call(*args):
-    try:
-        subprocess.call(args)
-    except OSError as e:
-        print >>sys.stderr, "Execution failed: ", e
+        def construct_ui(self):
+            self.set_title("Log out " + getpass.getuser()
+                           + "? Choose an option:")
+            self.set_border_width(5)
+            self.set_size_request(-1, 80)
+            self.set_resizable(False)
+            self.set_keep_above(True)
+            self.stick
+            self.set_position(gtk.WIN_POS_CENTER)
+            self.connect("delete_event", gtk.main_quit)
+            windowicon = self.render_icon(gtk.STOCK_QUIT, gtk.ICON_SIZE_DIALOG)
+            self.set_icon(windowicon)
 
+            # Cancel key (Escape)
+            accelgroup = gtk.AccelGroup()
+            key, mod = gtk.accelerator_parse('Escape')
+            accelgroup.connect_group(key, mod, gtk.ACCEL_VISIBLE,
+                                     gtk.main_quit)
+            self.add_accel_group(accelgroup)
+            self.button_box = gtk.HBox()
+            self.add_button(1, self.cancel_action, stock=gtk.STOCK_CANCEL)
+            self.build_button_visibility_array()
+            for button in self.bva:
+                (action, label, actionfunc, method, show, onError) = button
+                if not show == 0:
+                    self.add_button(show, actionfunc, label=label)
+            self.status = gtk.Label()
+            label_box = gtk.HBox()
+            label_box.pack_start(self.status)
 
-def send_dbus(string):
-        call("dbus-send", "--print-reply", "--system", "--dest=org.freedesktop.login1",
-             "/org/freedesktop/login1", "org.freedesktop.login1.Manager.{}".format(string),
-             "boolean:true")
+            vbox = gtk.VBox()
+            vbox.pack_start(self.button_box)
+            vbox.pack_start(label_box)
 
-def logout():
-    call("openbox", "--exit")
+            self.add(vbox)
+            self.show_all()
 
-def suspend():
-    send_dbus("Suspend")
-        
-def reboot():
-    send_dbus("Reboot")
+        def build_button_visibility_array(self):
+            """Determine button visibily using bl-exit configuration file.
+            Build self.bva, an array of tuples, one entry per button,
+            containing (action, label, actionfunction, actionMethod, show,
+            onerror)
+            """
+            self.bva = []
+            bva = [('logout', '_Log out', self.logout_action),
+                   ('suspend', '_Suspend', self.suspend_action),
+                   ('hibernate', 'H_ibernate', self.hibernate_action),
+                   ('hybridsleep', 'H_ybrid sleep', self.hybridsleep_action),
+                   ('reboot', 'Re_boot', self.reboot_action),
+                   ('poweroff', '_Power off', self.shutdown_action)]
+            show_values = dict(never=0, always=1, maybe=2)
+            """Values that the 'show' keyword can take in the configuration
+            file."""
+            onerror_values = dict(novisual=0, visual=1)
+            """Values that the 'onerror' keyword can take in the configuration
+            file."""
+            # Per button default settings
+            per_button_defaults = dict(
+                logout='always',
+                suspend='always',
+                hibernate='never',
+                hybridsleep='never',
+                reboot='always',
+                poweroff='always'
+            )
+            for (action, label, actionfunction) in bva:
+                # Defaults.
+                show = show_values[per_button_defaults[action]]
+                onError = onerror_values['novisual']
+                if self.config:
+                    for section in ['default', action]:
+                        try:
+                            getshow = self.config.get(section, 'show')
+                            if getshow in show_values:
+                                show = show_values[getshow]
+                                if show == 2:
+                                    candoit = self.can_do_action(
+                                        actionToMethod[action])
+                                    if not candoit == 'yes':
+                                        show = 3
+                            else:
+                                pass
+                        except ConfigParser.NoSectionError as e:
+                            pass
+                        except ConfigParser.NoOptionError as e:
+                            pass
+                        except subprocess.CalledProcessError as e:
+                            print ("{}: {}".format(__me__, str(e)),
+                                   file=sys.stderr)
+                            pass
 
-def poweroff():
-    send_dbus("PowerOff")
+                    try:
+                        getonerror = self.config.get(section, 'onerror')
+                        if getonerror in onerror_values:
+                            onError = onerror_values[getonerror]
+                    except ConfigParser.NoSectionError as e:
+                        pass
+                    except ConfigParser.NoOptionError as e:
+                        pass
 
-def print_usage(status):
-    print ("bl-exit: usage:\n" \
-        "  -h, --help      show this message and exit\n" \
-        "  -l, --logout    log out from openbox\n" \
-        "  -s, --suspend   suspend the system\n" \
-        "  -r, --reboot    reboot the system\n" \
-        "  -p, --poweroff  power the system down")
-    sys.exit(status)
+                self.bva.append(tuple([action, label, actionfunction,
+                                       actionToMethod[action], show,
+                                       onError]))
+
+        def main(self):
+            self.configure()
+            self.construct_ui()
+            gtk.main()
+
+        def add_button(self, show, action, label=None, stock=None):
+            if stock is not None:
+                button = gtk.Button(stock=stock)
+            else:
+                button = gtk.Button(label=label)
+            button.set_size_request(100, 40)
+            if show == 3:
+                button.set_sensitive(False)
+            button.set_border_width(4)
+            button.connect("clicked", action)
+            self.button_box.pack_start(button)
+
+        def disable_buttons(self):
+            self.button_box.foreach(lambda button:
+                                    button.set_sensitive(False))
+
+        def cancel_action(self, button):
+            self.disable_buttons()
+            gtk.main_quit()
+
+        def get_onerror(self):
+            for item in self.bva:
+                (action, label, actionfunction, actionMethod, show,
+                 onerror) = item
+                if action == self.selected_action:
+                    return onerror
+
+        def on_error(self, e):
+            onerror = self.get_onerror()
+            if onerror == 0:
+                print ("{}: {}".format(__me__, str(e)), file=sys.stderr)
+                sys.exit(1)
+            else:
+                emDialog = gtk.MessageDialog(parent=None, flags=0,
+                                             type=gtk.MESSAGE_INFO,
+                                             buttons=gtk.BUTTONS_OK,
+                                             message_format=None)
+                if emDialog:
+                    emDialog.set_markup("{}".format(e))
+                    emDialog.run()
+
+        def logout_action(self, button):
+            self.disable_buttons()
+            self.selected_action = 'logout'
+            self.status.set_label("Exiting Openbox, please standby...")
+            self.openbox_exit()
+            gtk.main_quit()
+
+        def suspend_action(self, button):
+            self.disable_buttons()
+            self.selected_action = 'suspend'
+            self.status.set_label("Suspending, please standby...")
+            self.do_action("Suspend")
+            gtk.main_quit()
+
+        def hibernate_action(self, button):
+            self.disable_buttons()
+            self.selected_action = 'hibernate'
+            self.status.set_label("Hibernating, please standby...")
+            self.do_action("Hibernate")
+            gtk.main_quit()
+
+        def hybridsleep_action(self, button):
+            self.disable_buttons()
+            self.selected_action = 'hybridsleep'
+            self.status.set_label("Hibernating + Sleeping, please standby...")
+            self.do_action("HybridSleep")
+            gtk.main_quit()
+
+        def reboot_action(self, button):
+            self.disable_buttons()
+            self.selected_action = 'reboot'
+            self.status.set_label("Rebooting, please standby...")
+            self.do_action("Reboot")
+            gtk.main_quit()
+
+        def shutdown_action(self, button):
+            self.disable_buttons()
+            self.selected_action = 'poweroff'
+            self.status.set_label("Shutting down, please standby...")
+            self.do_action("PowerOff")
+            gtk.main_quit()
+
 
 def main(argv):
-    try:
-        opts, args = getopt.getopt(argv, "hlsrp", ["help","logout","suspend","reboot","poweroff"])
-    except getopt.GetoptError:
-        print_usage(1)
-    for opt, arg in opts:
-        if opt in ("-h", "--help"):
-            print_usage(0)
-        elif opt in ("-l", "--logout"):
-            logout()
-            sys.exit(0)
-        elif opt in ("-s", "--suspend"):
-            suspend()
-            sys.exit(0)
-        elif opt in ("-r", "--reboot"):
-            reboot()
-            sys.exit(0)
-        elif opt in ("-p", "--poweroff"):
-            poweroff()
-            sys.exit(0)
+    '''
+    The script works both in a graphical and a non-graphical environment.
 
-    Blexit().main()
+    In a graphical environment, the BlExitWindow instance is only shown when
+    the script is launched without arguments. The user selects the action she
+    wants by clicking the right button.
+
+    WHen  the script is launched In a graphical environment the requested
+    action should be one of the accepted arguments and the action is executed
+    without asking for confirmation - as if the script was launched from the
+    command line.
+
+    In a non-graphical environment, one of the accepted actions must be
+    specified as an argument.
+    '''
+    if display and len(argv) == 0:
+        blexit = BlexitWindow(argv)
+    else:
+        blexit = BlexitBase(argv)
+    blexit.main()
 
 if __name__ == "__main__":
+    blexit = None
     main(sys.argv[1:])
+    sys.exit(0)

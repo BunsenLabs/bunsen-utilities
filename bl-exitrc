@@ -1,0 +1,43 @@
+# default button configuration for bl-exit
+# CASE:
+#   Use only lowercase
+# WARNING:
+#   Do not overwrite this file.
+#   It is a Debian conf file and may be changed by the package manager when
+#   a new version of bunsen-utilities is released.
+# CONFIGURATION:
+#   To configure bl-exit buttons, copy this file to
+#      $HOME/.config/bl-exitrc
+#   and edit it according to your wishes.
+#   It is possible to group configurations for several buttons by adding a
+#      [default]
+#   section. All buttons that do not have a specific section will take the
+#   show and onerror values from this default section.
+#   show can take the values always | never | maybe
+#   onerror can take the values visual | novisual for feedback on error.
+
+[logout]
+show = always
+onerror = novisual
+
+[suspend]
+show = always
+onerror = novisual
+
+[hibernate]
+show = never
+onerror = novisual
+
+[hybridsleep]
+show = never
+onerror = novisual
+
+[reboot]
+show = always
+onerror = novisual
+
+[poweroff]
+show = always
+onerror = novisual
+
+                                
