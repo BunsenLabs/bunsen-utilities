@@ -1,0 +1,38 @@
+Notes on bl-exit version 2.0
+
+1. This version does not use options any more. It uses one single postional argument.
+
+   This means
+
+        bl-exit --logout
+
+   now becoemes
+
+        bl-exit logout
+
+   Users that have changed thei main menu to call bl-exit directly from the menu
+   will have to remove the two leading dashes when this version is released.
+
+   bl-exit -h
+
+   or
+
+   bl-exit --help
+
+   work as before and explain the new argument usage.
+
+2. I have implemented all remarks from twoion, except splitting the
+   package in a python module and a python executable script.
+
+   Debian has special 'rules' for building such packages.
+   See source package for 'mirage' as an example.
+
+   Now bl-exit is part of bunsenlabs-utilities, which has diffdeerent 'rules'
+   for building the package.
+
+   My suggestion is to cut bl-exit out of bunsenlabs-utilities and make a new package
+   'bunsenlabs-exit', a package containing only bl-exit, or maybe a package
+   'bunsenlabs-python-utilities' to group current and coming python packages.
+
+   What do you think?
+   

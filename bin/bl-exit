@@ -40,8 +40,7 @@ class CanDoItError(Exception):
 
 class BlexitBase(object):
 
-    def __init__(self, argv):
-        self.argv = argv
+    def __init__(self):
         self.dbus_iface = None
 
     def setup_dbus_connection(self):
@@ -101,53 +100,13 @@ class BlexitBase(object):
         except (subprocess.CalledProcessError, CanDoItError, KeyError) as e:
             self.on_error(str(e))
 
-    def print_usage(self, status):
-        print ("bl-exit version {} usage:".format(__version__),
-               "  -h, --help        show this message and exit", sep='\n',
-               file=sys.stderr)
-        if display:
-            print ("  -l, --logout      log out from openbox", sep='\n',
-                   file=sys.stderr)
-        print ("  -s, --suspend     suspend the system",
-               "  -i, --hibernate   hibernate the system",
-               "  -y, --hybridsleep hibernate + sleep the system",
-               "  -b, --reboot      reboot the system",
-               "  -p, --poweroff    power the system down", sep='\n', end='\n',
-               file=sys.stderr)
-        sys.exit(status)
-
     def main(self):
-        if display:
-            short_options = "hlsyibp"
-            long_options = ["help", "logout", "suspend", "hybridsleep",
-                            "hibernate", "reboot", "poweroff"]
+        opts = get_options()
+        if opts.action == 'logout':
+            self.logout()
         else:
-            if len(self.argv) == 0:
-                self.on_error('Required action is missing.')
-            short_options = "hsyibp"
-            long_options = ["help", "suspend", "hybridsleep", "hibernate",
-                            "reboot", "poweroff"]
-
-        try:
-            opts, args = getopt.getopt(self.argv, short_options, long_options)
-        except getopt.GetoptError:
-            self.print_usage(1)
-
-        actions = []
-        for opt, arg in opts:
-            actions.append(opt)
-        # not exactly one argument
-        if not len(actions) == 1:
-            self.on_error("Exactly one argument is required.")
-        if actions[0] in ('-h', '--help'):
-            self.print_usage(0)
-        else:
-            if actions[0] in ("-l", "--logout"):
-                self.logout()
-            else:
-                self.setup_dbus_connection()
-                self.action_from_command_line(
-                    actionToMethod[actions[0].lstrip('-')])
+            self.setup_dbus_connection()
+            self.action_from_command_line(actionToMethod[opts.action])
 
 if display:
     """Testing for display here because we want to be able to run the script
@@ -162,8 +121,8 @@ if display:
         """A dialog offering the user to log out, suspend, reboot or shut down.
         """
 
-        def __init__(self, argv):
-            BlexitBase.__init__(self, argv)
+        def __init__(self):
+            BlexitBase.__init__(self)
             gtk.Window.__init__(self)
 
         def configure(self):
@@ -186,13 +145,13 @@ if display:
             config_dirs.append('/etc')
             config_file = None
             for config_dir in config_dirs:
-                if config_dir:
-                    config_dir = config_dir + '/bl-exit'
-                    if os.path.isdir(config_dir):
-                        maybe_config_file = config_dir + '/bl-exitrc'
-                        if os.path.isfile(maybe_config_file):
-                            config_file = maybe_config_file
-                            break
+                config_dir = config_dir + '/bl-exit'
+                if os.path.isdir(config_dir):
+                    maybe_config_file = config_dir + '/bl-exitrc'
+                    if os.path.isfile(maybe_config_file):
+                        config_file = maybe_config_file
+                        break
+
             if config_file:
                 try:
                     self.config = ConfigParser.RawConfigParser()
@@ -200,7 +159,7 @@ if display:
                 except ConfigParser.ParsingError as e:
                     print ("{}: {}".format(__me__, str(e)), file=sys.stderr)
                     self.config = None
-                    pass
+                    sys.exit(1)
             else:
                 self.config = None
 
@@ -276,33 +235,26 @@ if display:
                 if self.config:
                     for section in ['default', action]:
                         try:
-                            getshow = self.config.get(section, 'show')
-                            if getshow in show_values:
-                                show = show_values[getshow]
-                                if show == 2:
-                                    candoit = self.can_do_action(
-                                        actionToMethod[action])
-                                    if not candoit == 'yes':
-                                        show = 3
-                            else:
+                            try:
+                                getshow = self.config.get(section, 'show')
+                                if getshow in show_values:
+                                    show = show_values[getshow]
+                                    if show == 2:
+                                        candoit = self.can_do_action(
+                                            actionToMethod[action])
+                                        if not candoit == 'yes':
+                                            show = 3
+                            except ConfigParser.NoOptionError as e:
+                                pass
+
+                            try:
+                                getonerror = self.config.get(section, 'onerror')
+                                if getonerror in onerror_values:
+                                    onError = onerror_values[getonerror]
+                            except ConfigParser.NoOptionError as e:
                                 pass
                         except ConfigParser.NoSectionError as e:
                             pass
-                        except ConfigParser.NoOptionError as e:
-                            pass
-                        except subprocess.CalledProcessError as e:
-                            print ("{}: {}".format(__me__, str(e)),
-                                   file=sys.stderr)
-                            pass
-
-                    try:
-                        getonerror = self.config.get(section, 'onerror')
-                        if getonerror in onerror_values:
-                            onError = onerror_values[getonerror]
-                    except ConfigParser.NoSectionError as e:
-                        pass
-                    except ConfigParser.NoOptionError as e:
-                        pass
 
                 self.bva.append(tuple([action, label, actionfunction,
                                        actionToMethod[action], show,
@@ -396,8 +348,20 @@ if display:
             self.do_action("PowerOff")
             gtk.main_quit()
 
+def get_options():
+    result = None
+    import argparse
+    ap = argparse.ArgumentParser(description="Bunsenlabs exit")
+    choices = ['logout', 'suspend', 'hibernate', 'hybridsleep', 'reboot',
+               'poweroff']
+    if not display:
+        choices = choices[1:]
+    ap.add_argument('action', choices=choices)
+    ap.parse_args(sys.argv[1:])
+    result = ap.parse_args()
+    return result
 
-def main(argv):
+def main():
     '''
     The script works both in a graphical and a non-graphical environment.
 
@@ -413,13 +377,11 @@ def main(argv):
     In a non-graphical environment, one of the accepted actions must be
     specified as an argument.
     '''
-    if display and len(argv) == 0:
-        blexit = BlexitWindow(argv)
+    if display and len(sys.argv[1:]) == 0:
+        blexit = BlexitWindow()
     else:
-        blexit = BlexitBase(argv)
+        blexit = BlexitBase()
     blexit.main()
 
 if __name__ == "__main__":
-    blexit = None
-    main(sys.argv[1:])
-    sys.exit(0)
+    sys.exit(main())
