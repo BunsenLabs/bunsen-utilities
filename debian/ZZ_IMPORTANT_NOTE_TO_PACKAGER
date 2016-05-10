@@ -35,4 +35,9 @@ Notes on bl-exit version 2.0
    'bunsenlabs-python-utilities' to group current and coming python packages.
 
    What do you think?
-   
+
+
+FOLLOW UP:
+---------
+Note 1 is obsolete now.
+Using options in stead of arguments for backward compatibility

@@ -6,22 +6,12 @@ import os
 display = os.environ.get('DISPLAY') is not None
 
 import sys
-import getopt
 import getpass
 import subprocess
 import dbus
 
 __me__ = 'bl-exit'
 __version__ = '2.0.0'
-
-# Default errorMessages dict
-# key = result from _can_do_action
-# value = string shown in error_message_dialog
-canDoItErrorMessages = dict(
-    no="Action is not allowed.",
-    na="Action is not available.",
-    challenge="Action is not authorized."
-)
 
 # Translate command-line option to method - command line only
 actionToMethod = dict(
@@ -57,9 +47,6 @@ class BlexitBase(object):
         # There is no 'CanLogout' method
         if action == "Logout":
             return "yes"
-        if action == "Hibernate":
-            canDoItErrorMessages["na"] = """{} is not available.
-    Probable cause is inadequate swap space.""".format(action)
         actionMethod = "Can{}".format(action)
         response = self.send_dbus(actionMethod)
         return str(response)
@@ -102,11 +89,21 @@ class BlexitBase(object):
 
     def main(self):
         opts = get_options()
-        if opts.action == 'logout':
+        if opts.logout:
             self.logout()
         else:
+            if opts.suspend:
+                action = "suspend"
+            elif opts.hibernate:
+                action = "hibernate"
+            elif opts.hybridsleep:
+                action = "hybridsleep"
+            elif opts.reboot:
+                action = "reboot"
+            elif opts.poweroff:
+                action = "poweroff"
             self.setup_dbus_connection()
-            self.action_from_command_line(actionToMethod[opts.action])
+            self.action_from_command_line(actionToMethod[action])
 
 if display:
     """Testing for display here because we want to be able to run the script
@@ -248,7 +245,8 @@ if display:
                                 pass
 
                             try:
-                                getonerror = self.config.get(section, 'onerror')
+                                getonerror = self.config.get(section,
+                                                             'onerror')
                                 if getonerror in onerror_values:
                                     onError = onerror_values[getonerror]
                             except ConfigParser.NoOptionError as e:
@@ -348,18 +346,30 @@ if display:
             self.do_action("PowerOff")
             gtk.main_quit()
 
+
 def get_options():
     result = None
     import argparse
-    ap = argparse.ArgumentParser(description="Bunsenlabs exit")
-    choices = ['logout', 'suspend', 'hibernate', 'hybridsleep', 'reboot',
-               'poweroff']
-    if not display:
-        choices = choices[1:]
-    ap.add_argument('action', choices=choices)
-    ap.parse_args(sys.argv[1:])
-    result = ap.parse_args()
+    parser = argparse.ArgumentParser(description="Bunsenlabs exit")
+    if display:
+        parser.add_argument("-l", "--logout", help="Log out",
+                            action="store_true")
+    parser.add_argument("-s", "--suspend", help="Suspend",
+                        action="store_true")
+    parser.add_argument("-i", "--hibernate", help="Hibernate",
+                        action="store_true")
+    parser.add_argument("-y", "--hybridsleep", help="Hybrid sleep",
+                        action="store_true")
+    parser.add_argument("-b", "--reboot", help="Reboot",
+                        action="store_true")
+    parser.add_argument("-p", "--poweroff", help="Power off",
+                        action="store_true")
+    parser.parse_args(sys.argv[1:])
+    """No check if more than one option was specified. Take the first option and
+    discard the other"""
+    result = parser.parse_args()
     return result
+
 
 def main():
     '''
