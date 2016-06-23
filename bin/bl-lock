@@ -7,6 +7,10 @@
 
 LOCK_COMMAND=(light-locker-command -l)
 
+if [ -f /home/$USER/.config/bunsen/bl-lock ]; then
+    . /home/$USER/.config/bunsen/bl-lock
+fi
+
 which ${LOCK_COMMAND[0]} >/dev/null 2>&1 || {
     echo "$0: ${LOCK_COMMAND[0]} no such command." >&2
     exit 1
