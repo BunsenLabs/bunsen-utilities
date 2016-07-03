@@ -1,3 +1,9 @@
+bunsen-utilities (8.7-2) bunsen-hydrogen; urgency=high
+
+  * Jens John: debian/control: Add dependency on python-dbus.
+
+ -- John Crawley <john@bunsenlabs.org>  Sun, 03 Jul 2016 12:47:44 +0900
+
 bunsen-utilities (8.7-1) bunsen-hydrogen; urgency=medium
 
   * bl-exit: Upgrade to version 2.0 with improvements from xaos52:
