@@ -45,7 +45,7 @@ def cmdargs():
             gui=True
             return gui
         else:
-            msg = "\n\n\tUSAGE: to display keybinds in a text window use 'bl-kb --gui &>/dev/null'\n\n"
+            msg = "\n\n\tUSAGE: to display keybinds in a text window use 'bl-kb --gui'\n\n"
             msg = msg + "\tRunning the script without args will send output to the terminal\n\n"
             print(msg)
             sys.exit()
@@ -98,7 +98,7 @@ def output_keybinds(arrShortcut,gui):
             + "\t" + execute
         else:   #format text for pipemenu
             line = exe + "{:<16}".format(keybinding) + "\t" + execute
-        print(line)
+            print(line)
         write_file(line)
 
 def check_rcfile(fpath,mode):
