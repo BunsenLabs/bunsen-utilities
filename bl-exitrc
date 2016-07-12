@@ -16,6 +16,9 @@
 #   show can take the values always | never | maybe
 #   onerror can take the values visual | novisual for feedback on error.
 
+[cancel]
+show = always
+
 [logout]
 show = always
 onerror = novisual
