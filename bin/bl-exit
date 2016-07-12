@@ -151,16 +151,25 @@ if display:
                         config_file = maybe_config_file
                         break
 
+            self.cp = ConfigParser.RawConfigParser()
             if config_file:
                 try:
-                    self.config = ConfigParser.RawConfigParser()
-                    self.config.read(config_file)
+                    self.cp.read(config_file)
                 except ConfigParser.ParsingError as e:
                     print ("{}: {}".format(__me__, str(e)), file=sys.stderr)
-                    self.config = None
                     sys.exit(1)
             else:
-                self.config = None
+                # No config file present:
+                # self.cp.add_section("Default")
+                # NOTE: add_section raises value error when the section name
+                # evaluates to DEFAULT (or any of its case-insensitive
+                # variants)
+                for section in "hibernate", "hybridsleep":
+                    self.cp.add_section(section)
+                    self.cp.set(section, "show", "never")
+                for section in "cancel", "logout", "suspend", "reboot", "poweroff":
+                    self.cp.add_section(section)
+                    self.cp.set(section, "show", "always")
 
         def construct_ui(self):
             self.set_title("Log out " + getpass.getuser()
@@ -226,7 +235,7 @@ if display:
             file."""
             # Per button default settings
             per_button_defaults = dict(
-                cancel='never',
+                cancel='always',
                 logout='always',
                 suspend='always',
                 hibernate='never',
@@ -238,30 +247,29 @@ if display:
                 # Defaults.
                 show = show_values[per_button_defaults[action]]
                 onError = onerror_values['novisual']
-                if self.config:
-                    for section in ['default', action]:
+                for section in ['default', action]:
+                    try:
                         try:
-                            try:
-                                getshow = self.config.get(section, 'show')
-                                if getshow in show_values:
-                                    show = show_values[getshow]
-                                    if show == 2:
-                                        candoit = self.can_do_action(
-                                            actionToMethod[action])
-                                        if not candoit == 'yes':
-                                            show = 3
-                            except ConfigParser.NoOptionError as e:
-                                pass
-
-                            try:
-                                getonerror = self.config.get(section,
-                                                             'onerror')
-                                if getonerror in onerror_values:
-                                    onError = onerror_values[getonerror]
-                            except ConfigParser.NoOptionError as e:
-                                pass
-                        except ConfigParser.NoSectionError as e:
+                            getshow = self.cp.get(section, 'show')
+                            if getshow in show_values:
+                                show = show_values[getshow]
+                                if show == 2:
+                                    candoit = self.can_do_action(
+                                        actionToMethod[action])
+                                    if not candoit == 'yes':
+                                        show = 3
+                        except ConfigParser.NoOptionError as e:
                             pass
+
+                        try:
+                            getonerror = self.cp.get(section,
+                                                         'onerror')
+                            if getonerror in onerror_values:
+                                onError = onerror_values[getonerror]
+                        except ConfigParser.NoOptionError as e:
+                            pass
+                    except ConfigParser.NoSectionError as e:
+                        pass
 
                 self.bva.append(tuple([action, label, actionfunction,
                                        actionToMethod[action], show,
