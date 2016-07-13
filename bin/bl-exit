@@ -163,13 +163,16 @@ if display:
                 self.config = None
 
         def construct_ui(self):
-            self.set_title("Log out " + getpass.getuser()
-                           + "? Choose an option:")
-            self.set_border_width(5)
-            self.set_size_request(-1, 80)
+            title = "Log out " + getpass.getuser() + "?"
+            self.set_title(title)
+            self.height = 60
+            self.button_width = 100
+            self.button_height = 50
+            self.button_border_width = 4
+            self.set_border_width(self.border_width)
             self.set_resizable(False)
             self.set_keep_above(True)
-            self.stick
+            self.stick()
             self.set_position(gtk.WIN_POS_CENTER)
             self.connect("delete_event", gtk.main_quit)
             windowicon = self.render_icon(gtk.STOCK_QUIT, gtk.ICON_SIZE_DIALOG)
@@ -181,20 +184,26 @@ if display:
             accelgroup.connect_group(key, mod, gtk.ACCEL_VISIBLE,
                                      gtk.main_quit)
             self.add_accel_group(accelgroup)
-            self.button_box = gtk.HBox()
+            self.button_box = gtk.HButtonBox()
             self.build_button_visibility_array()
+            self.visible_button_count = 0
             for button in self.bva:
                 (action, label, actionfunc, method, show, onError) = button
                 if not show == 0:
+                    self.visible_button_count += 1
                     self.add_button(show, actionfunc, label=label)
             self.status = gtk.Label()
             label_box = gtk.HBox()
             label_box.pack_start(self.status)
 
+            # allow for username of about twenty characters: len(title) + 200
+            # approximation: counting characters, not size of rendered string 
+            self.width = max(self.visible_button_count * self.button_width + 10,
+                             len(title) + 200)
+            self.set_size_request(self.width, self.height)
             vbox = gtk.VBox()
             vbox.pack_start(self.button_box)
             vbox.pack_start(label_box)
-
             self.add(vbox)
             self.show_all()
 
@@ -277,10 +286,10 @@ if display:
                 button = gtk.Button(stock=stock)
             else:
                 button = gtk.Button(label=label)
-            button.set_size_request(100, 40)
+            button.set_size_request(self.button_width, self.button_height)
             if show == 3:
                 button.set_sensitive(False)
-            button.set_border_width(4)
+            button.set_border_width(self.button_border_width)
             button.connect("clicked", action)
             self.button_box.pack_start(button)
 
