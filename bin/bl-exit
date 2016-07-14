@@ -174,7 +174,7 @@ if display:
         def construct_ui(self):
             title = "Log out " + getpass.getuser() + "?"
             self.set_title(title)
-            self.height = 60
+            self.height = 80
             self.button_width = 100
             self.button_height = 50
             self.button_border_width = 4
@@ -194,21 +194,30 @@ if display:
                                      gtk.main_quit)
             self.add_accel_group(accelgroup)
             self.button_box = gtk.HButtonBox()
+            self.button_box.set_spacing(0)
+            self.button_box.set_layout(gtk.BUTTONBOX_SPREAD)
             self.build_button_visibility_array()
-            self.visible_button_count = 0
+            visible_button_count = 0
             for button in self.bva:
                 (action, label, actionfunc, method, show, onError) = button
                 if not show == 0:
-                    self.visible_button_count += 1
+                    visible_button_count += 1
                     self.add_button(show, actionfunc, label=label)
             self.status = gtk.Label()
             label_box = gtk.HBox()
             label_box.pack_start(self.status)
 
             # allow for username of about twenty characters: len(title) + 200
-            # approximation: counting characters, not size of rendered string 
-            self.width = max(self.visible_button_count * self.button_width + 10,
-                             len(title) + 200)
+            # approximation: counting characters, not size of rendered string
+            if visible_button_count == 0:
+                self.width = len(title) + 300
+            elif visible_button_count <= 2:
+                self.width = max (
+                    (self.button_width + 10) * visible_button_count,
+                    len(title) + 300
+                )
+            else:
+                self.width = -1
             self.set_size_request(self.width, self.height)
             vbox = gtk.VBox()
             vbox.pack_start(self.button_box)
