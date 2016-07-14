@@ -115,7 +115,8 @@ if display:
     import pygtk
     pygtk.require('2.0')
     import ConfigParser
-
+    from time import sleep
+    
     class BlexitWindow(BlexitBase, gtk.Window):
         """A dialog offering the user to log out, suspend, reboot or shut down.
         """
@@ -125,36 +126,11 @@ if display:
             gtk.Window.__init__(self)
 
         def configure(self):
-            """Determine config directory: first try the environment variable
-            XDG_CONFIG_HOME according to XDG specification and as a fallback
-            use ~/.config/bl-exit. Use /etc/bl-exit/bl-exitrc as a last
-            resort."""
-            config_dirs = []
-            xdg_config_dir = os.getenv('XDG_CONFIG_HOME')
-            if xdg_config_dir:
-                config_dirs.append(xdg_config_dir)
-            user_config_dir = os.path.expanduser('~/.config')
-            try:
-                if not (xdg_config_dir and os.path.samefile(user_config_dir,
-                                                            xdg_config_dir)):
-                    config_dirs.append(user_config_dir)
-            except OSError as e:
-                print ("{}: {}".format(__me__, str(e)), file=sys.stderr)
-                pass
-            config_dirs.append('/etc')
-            config_file = None
-            for config_dir in config_dirs:
-                config_dir = config_dir + '/bl-exit'
-                if os.path.isdir(config_dir):
-                    maybe_config_file = config_dir + '/bl-exitrc'
-                    if os.path.isfile(maybe_config_file):
-                        config_file = maybe_config_file
-                        break
-
+            self.config_file = get_config_file()
             self.cp = ConfigParser.RawConfigParser()
-            if config_file:
+            if self.config_file:
                 try:
-                    self.cp.read(config_file)
+                    self.cp.read(self.config_file)
                 except ConfigParser.ParsingError as e:
                     print ("{}: {}".format(__me__, str(e)), file=sys.stderr)
                     sys.exit(1)
@@ -224,7 +200,7 @@ if display:
             vbox.pack_start(label_box)
             self.add(vbox)
             self.show_all()
-
+            
         def destroy(self):
             self.hide_all()
             gtk.main_quit()
@@ -295,7 +271,10 @@ if display:
 
         def main(self):
             self.configure()
-            self.construct_ui()
+            if self.cp.has_section('theme'):
+                self.construct_ui_merlin
+            else: 
+                self.construct_ui()
             gtk.main()
 
         def add_button(self, show, action, label=None, stock=None):
@@ -384,6 +363,104 @@ if display:
             self.do_action("PowerOff")
             self.destroy()
 
+            
+    class BlexitWindowMerlin(BlexitWindow):
+        """A dialog offering the user to log out, suspend, reboot or shut down.
+        With a graphical UI introduced by MerlinElMagio.
+        """
+
+        def __init__(self):
+            BlexitWindow.__init__(self)
+
+        def configure(self):
+            BlexitWindow.configure(self)
+            self.saved_config_file = self.config_file
+            self.dialogHeight = 120
+            self.dialogBackgroundColor = '#222222'
+            self.buttonColorStateNormal = '#222222'
+            self.buttonColorStateActive = '#222222'
+            self.buttonColorStatePrelight= '#222222'
+            self.buttonSpacing = 10
+            self.sleepDelay = 0.003
+            try:
+                try:
+                    print( 'Loading '+self.cp.get('theme', 'name')+' by ' + self.cp.get('theme', 'author'))
+                    self.dialogHeight = int(self.cp.get('theme', 'dialogHeight'))
+                    self.windowBackgroundColor = self.cp.get('theme', 'windowBackgroundColor')
+                    self.buttonColorStateNormal = self.cp.get('theme', 'buttonColorStateNormal')
+                    self.buttonColorStateActive = self.cp.get('theme', 'buttonColorStateActive')
+                    self.buttonColorStatePrelight = self.cp.get('theme', 'buttonColorStatePrelight')
+                    self.buttonSpacing = int(self.cp.get('theme', 'buttonSpacing'))
+                    self.sleepDelay = float( self.cp.get('theme', 'sleepDelay') )
+                except (ConfigParser.NoOptionError) as e:
+                    print(e)
+            except (ConfigParser.NoSectionError) as e:
+                print(e)
+                sys.exit(1)
+
+        def construct_ui(self):
+            self.modify_bg(gtk.STATE_NORMAL, gtk.gdk.color_parse(self.dialogBackgroundColor))
+            self.set_resizable(False)
+            self.set_keep_above(True)
+            self.stick()
+            self.set_decorated(False)
+            self.set_position(gtk.WIN_POS_CENTER)
+            self.connect("delete_event", gtk.main_quit)
+            self.set_size_request(gtk.gdk.screen_width(), self.dialogHeight)
+            # Cancel key (Escape)
+            accelgroup = gtk.AccelGroup()
+            key, mod = gtk.accelerator_parse('Escape')
+            accelgroup.connect_group(key, mod, gtk.ACCEL_VISIBLE, gtk.main_quit)
+            self.add_accel_group(accelgroup)
+            self.button_box = gtk.HBox()
+            self.button_box.set_size_request(-1, self.dialogHeight)
+            self.button_box.set_spacing(self.buttonSpacing)
+            # self.add_button(1, self.cancel_action, btype='cancel')
+            self.build_button_visibility_array()
+            for button in self.bva:
+                (action, label, actionfunc, method, show, onError) = button
+                if not show == 0:
+                    self.add_button(show, actionfunc, label=label, btype=actionToMethod[action])
+            self.status = gtk.Label()
+            vbox = gtk.VBox()
+            vbox.pack_start(self.button_box)
+            self.add(vbox)
+            self.set_opacity(0)
+            self.show_all()
+            for o in range(1,100):
+                sleep(self.sleepDelay)
+                while gtk.events_pending():
+                    gtk.main_iteration(False)
+                self.set_opacity(float(o)/100)
+            #Don't use anything else!
+            self.set_keep_above(True)
+            
+
+        def main(self):
+            self.configure()
+            self.construct_ui()
+            gtk.main()
+
+        def add_button(self, show, action, label=None, btype=None):
+            button = gtk.ColorButton(gtk.gdk.color_parse(self.dialogBackgroundColor))
+            button.modify_bg(gtk.STATE_NORMAL, gtk.gdk.color_parse(self.buttonColorStateNormal))
+            button.modify_bg(gtk.STATE_ACTIVE, gtk.gdk.color_parse(self.buttonColorStateActive))
+            button.modify_bg(gtk.STATE_PRELIGHT, gtk.gdk.color_parse(self.buttonColorStatePrelight))
+
+            #No borders
+            button.set_relief(gtk.RELIEF_NONE)
+            image = gtk.Image()
+            filename = os.path.join(os.path.dirname(self.config_file),
+                                    (self.cp.get('theme', 'ButtonImage' + str(btype))))
+            image.set_from_file(filename)
+            button.set_image(image)
+
+            if show == 3:
+                button.set_sensitive(False)
+            button.set_border_width(0)
+            button.connect("clicked", action)
+            self.button_box.pack_start(button)
+            
 
 def get_options():
     result = None
@@ -408,6 +485,35 @@ def get_options():
     result = parser.parse_args()
     return result
 
+def get_config_file():
+    """Determine config directory: first try the environment variable
+    XDG_CONFIG_HOME according to XDG specification and as a fallback
+    use ~/.config/bl-exit. Use /etc/bl-exit/bl-exitrc as a last
+    resort."""
+    config_file = None
+    config_dirs = []
+    xdg_config_dir = os.getenv('XDG_CONFIG_HOME')
+    if xdg_config_dir:
+        config_dirs.append(xdg_config_dir)
+    user_config_dir = os.path.expanduser('~/.config')
+    try:
+        if not (xdg_config_dir and os.path.samefile(user_config_dir,
+                                                    xdg_config_dir)):
+            config_dirs.append(user_config_dir)
+    except OSError as e:
+        print ("{}: {}".format(__me__, str(e)), file=sys.stderr)
+        pass
+    config_dirs.append('/etc')
+    config_file = None
+    for config_dir in config_dirs:
+        config_dir = config_dir + '/bl-exit'
+        if os.path.isdir(config_dir):
+            maybe_config_file = config_dir + '/bl-exitrc'
+            if os.path.isfile(maybe_config_file):
+                config_file = maybe_config_file
+                break
+    
+    return config_file
 
 def main():
     '''
@@ -426,10 +532,20 @@ def main():
     specified as an argument.
     '''
     if display and len(sys.argv[1:]) == 0:
-        blexit = BlexitWindow()
+        import ConfigParser
+        cp = ConfigParser.RawConfigParser()
+        config_file = get_config_file()
+        if config_file:
+            cp.read(config_file)
+            if cp.has_section('theme'):
+                blexit = BlexitWindowMerlin()
+            else:
+                blexit = BlexitWindow()
+        else:
+            blexit = BlexitWindow()
     else:
         blexit = BlexitBase()
-    blexit.main()
+    return blexit.main()
 
 if __name__ == "__main__":
     sys.exit(main())
