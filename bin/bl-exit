@@ -382,16 +382,18 @@ if display:
             self.buttonColorStatePrelight= '#222222'
             self.buttonSpacing = 10
             self.sleepDelay = 0.003
+            self.overallOpacity = 1
             try:
                 try:
                     print( 'Loading '+self.cp.get('theme', 'name')+' by ' + self.cp.get('theme', 'author'))
                     self.dialogHeight = int(self.cp.get('theme', 'dialogHeight'))
-                    self.windowBackgroundColor = self.cp.get('theme', 'windowBackgroundColor')
+                    self.dialogBackgroundColor = self.cp.get('theme', 'dialogBackgroundColor')
                     self.buttonColorStateNormal = self.cp.get('theme', 'buttonColorStateNormal')
                     self.buttonColorStateActive = self.cp.get('theme', 'buttonColorStateActive')
                     self.buttonColorStatePrelight = self.cp.get('theme', 'buttonColorStatePrelight')
                     self.buttonSpacing = int(self.cp.get('theme', 'buttonSpacing'))
                     self.sleepDelay = float( self.cp.get('theme', 'sleepDelay') )
+                    self.overallOpacity = int(self.cp.get('theme','overallOpacity'))
                 except (ConfigParser.NoOptionError) as e:
                     print(e)
             except (ConfigParser.NoSectionError) as e:
@@ -431,7 +433,7 @@ if display:
             self.add(vbox)
             self.set_opacity(0)
             self.show_all()
-            for o in range(1,100):
+            for o in range(1,self.overallOpacity):
                 sleep(self.sleepDelay)
                 while gtk.events_pending():
                     gtk.main_iteration(False)
