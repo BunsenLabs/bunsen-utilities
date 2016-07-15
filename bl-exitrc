@@ -53,7 +53,7 @@ dialogHeight=150
 #Delay for the fade in counter
 sleepDelay=0.003
 #Background of the Dialog Window
-windowBackgroundColor=#222222
+dialogBackgroundColor=#222222
 #Background of the buttons (Normal, Active, Prelight)
 buttonColorStateNormal=#222222
 buttonColorStateActive=#222222
