@@ -16,35 +16,31 @@
 #   show can take the values always | never | maybe
 #   onerror can take the values visual | novisual for feedback on error.
 
-# [cancel]
-# show = always
+[cancel]
+show = never
 
-# [logout]
-# show = always
-# onerror = novisual
+[logout]
+show = always
 
-# [suspend]
-# show = always
-# onerror = novisual
+[suspend]
+show = always
 
-# [hibernate]
-# show = never
-# onerror = novisual
+[sleep]
+show = always
 
-# [hybridsleep]
-# show = never
-# onerror = novisual
+[hybridsleep]
+show = always
 
-# [reboot]
-# show = always
-# onerror = novisual
+[reboot]
+show = always
 
-# [poweroff]
-# show = always
-# onerror = novisual
-
+[poweroff]
+show = always
 
 [theme]
+theme = dark
+
+[dark]
 #This is printed to the console... just to satisfy your ego :P
 name=Dark Theme
 author=MerlinElMago
@@ -70,4 +66,8 @@ buttonImageSuspend=Sleep.png
 buttonImageLogout=Session.png
 buttonImageHybridSleep=Hibernate.png
 buttonImageHibernate=Hibernate.png
-                                
+
+
+[light]
+name = Light theme
+# etc...
