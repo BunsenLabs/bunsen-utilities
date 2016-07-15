@@ -11,10 +11,11 @@ import subprocess
 import dbus
 
 __me__ = 'bl-exit'
-__version__ = '2.0.0'
+__version__ = '2.0.1'
 
 # Translate command-line option to method - command line only
 actionToMethod = dict(
+    cancel='Cancel', c='Cancel',
     logout='Logout', l='Logout',
     suspend='Suspend', s='Suspend',
     hybridsleep='HybridSleep', y='HybridSleep',
@@ -107,8 +108,9 @@ class BlexitBase(object):
 
 if display:
     """Testing for display here because we want to be able to run the script
-    in a non-graphical environment as well. Importing gtk.Window on the console
-    spits out some errors and crashes the application."""
+    in a non-graphical environment as well. Without the test, importing 
+    gtk.Window in a non-graphical environment spits out some errors and crashes
+    the application."""
     import gtk
     import pygtk
     pygtk.require('2.0')
@@ -149,25 +151,37 @@ if display:
                         config_file = maybe_config_file
                         break
 
+            self.cp = ConfigParser.RawConfigParser()
             if config_file:
                 try:
-                    self.config = ConfigParser.RawConfigParser()
-                    self.config.read(config_file)
+                    self.cp.read(config_file)
                 except ConfigParser.ParsingError as e:
                     print ("{}: {}".format(__me__, str(e)), file=sys.stderr)
-                    self.config = None
                     sys.exit(1)
             else:
-                self.config = None
+                # No config file present:
+                # self.cp.add_section("Default")
+                # NOTE: add_section raises value error when the section name
+                # evaluates to DEFAULT (or any of its case-insensitive
+                # variants)
+                for section in "hibernate", "hybridsleep":
+                    self.cp.add_section(section)
+                    self.cp.set(section, "show", "never")
+                for section in "cancel", "logout", "suspend", "reboot", "poweroff":
+                    self.cp.add_section(section)
+                    self.cp.set(section, "show", "always")
 
         def construct_ui(self):
-            self.set_title("Log out " + getpass.getuser()
-                           + "? Choose an option:")
-            self.set_border_width(5)
-            self.set_size_request(-1, 80)
+            title = "Log out " + getpass.getuser() + "?"
+            self.set_title(title)
+            self.height = 80
+            self.button_width = 100
+            self.button_height = 50
+            self.button_border_width = 4
+            self.set_border_width(self.border_width)
             self.set_resizable(False)
             self.set_keep_above(True)
-            self.stick
+            self.stick()
             self.set_position(gtk.WIN_POS_CENTER)
             self.connect("delete_event", gtk.main_quit)
             windowicon = self.render_icon(gtk.STOCK_QUIT, gtk.ICON_SIZE_DIALOG)
@@ -179,23 +193,41 @@ if display:
             accelgroup.connect_group(key, mod, gtk.ACCEL_VISIBLE,
                                      gtk.main_quit)
             self.add_accel_group(accelgroup)
-            self.button_box = gtk.HBox()
-            self.add_button(1, self.cancel_action, stock=gtk.STOCK_CANCEL)
+            self.button_box = gtk.HButtonBox()
+            self.button_box.set_spacing(0)
+            self.button_box.set_layout(gtk.BUTTONBOX_SPREAD)
             self.build_button_visibility_array()
+            visible_button_count = 0
             for button in self.bva:
                 (action, label, actionfunc, method, show, onError) = button
                 if not show == 0:
+                    visible_button_count += 1
                     self.add_button(show, actionfunc, label=label)
             self.status = gtk.Label()
             label_box = gtk.HBox()
             label_box.pack_start(self.status)
 
+            # allow for username of about twenty characters: len(title) + 200
+            # approximation: counting characters, not size of rendered string
+            if visible_button_count == 0:
+                self.width = len(title) + 300
+            elif visible_button_count <= 2:
+                self.width = max (
+                    (self.button_width + 10) * visible_button_count,
+                    len(title) + 300
+                )
+            else:
+                self.width = -1
+            self.set_size_request(self.width, self.height)
             vbox = gtk.VBox()
             vbox.pack_start(self.button_box)
             vbox.pack_start(label_box)
-
             self.add(vbox)
             self.show_all()
+
+        def destroy(self):
+            self.hide_all()
+            gtk.main_quit()
 
         def build_button_visibility_array(self):
             """Determine button visibily using bl-exit configuration file.
@@ -204,12 +236,15 @@ if display:
             onerror)
             """
             self.bva = []
-            bva = [('logout', '_Log out', self.logout_action),
-                   ('suspend', '_Suspend', self.suspend_action),
-                   ('hibernate', 'H_ibernate', self.hibernate_action),
-                   ('hybridsleep', 'H_ybrid sleep', self.hybridsleep_action),
-                   ('reboot', 'Re_boot', self.reboot_action),
-                   ('poweroff', '_Power off', self.shutdown_action)]
+            bva = [
+                ('cancel', '_Cancel', self.cancel_action),
+                ('logout', '_Log out', self.logout_action),
+                ('suspend', '_Suspend', self.suspend_action),
+                ('hibernate', 'H_ibernate', self.hibernate_action),
+                ('hybridsleep', 'H_ybrid sleep', self.hybridsleep_action),
+                ('reboot', 'Re_boot', self.reboot_action),
+                ('poweroff', '_Power off', self.shutdown_action)
+            ]
             show_values = dict(never=0, always=1, maybe=2)
             """Values that the 'show' keyword can take in the configuration
             file."""
@@ -218,6 +253,7 @@ if display:
             file."""
             # Per button default settings
             per_button_defaults = dict(
+                cancel='always',
                 logout='always',
                 suspend='always',
                 hibernate='never',
@@ -229,30 +265,29 @@ if display:
                 # Defaults.
                 show = show_values[per_button_defaults[action]]
                 onError = onerror_values['novisual']
-                if self.config:
-                    for section in ['default', action]:
+                for section in ['default', action]:
+                    try:
                         try:
-                            try:
-                                getshow = self.config.get(section, 'show')
-                                if getshow in show_values:
-                                    show = show_values[getshow]
-                                    if show == 2:
-                                        candoit = self.can_do_action(
-                                            actionToMethod[action])
-                                        if not candoit == 'yes':
-                                            show = 3
-                            except ConfigParser.NoOptionError as e:
-                                pass
-
-                            try:
-                                getonerror = self.config.get(section,
-                                                             'onerror')
-                                if getonerror in onerror_values:
-                                    onError = onerror_values[getonerror]
-                            except ConfigParser.NoOptionError as e:
-                                pass
-                        except ConfigParser.NoSectionError as e:
+                            getshow = self.cp.get(section, 'show')
+                            if getshow in show_values:
+                                show = show_values[getshow]
+                                if show == 2:
+                                    candoit = self.can_do_action(
+                                        actionToMethod[action])
+                                    if not candoit == 'yes':
+                                        show = 3
+                        except ConfigParser.NoOptionError as e:
                             pass
+
+                        try:
+                            getonerror = self.cp.get(section,
+                                                         'onerror')
+                            if getonerror in onerror_values:
+                                onError = onerror_values[getonerror]
+                        except ConfigParser.NoOptionError as e:
+                            pass
+                    except ConfigParser.NoSectionError as e:
+                        pass
 
                 self.bva.append(tuple([action, label, actionfunction,
                                        actionToMethod[action], show,
@@ -268,10 +303,10 @@ if display:
                 button = gtk.Button(stock=stock)
             else:
                 button = gtk.Button(label=label)
-            button.set_size_request(100, 40)
+            button.set_size_request(self.button_width, self.button_height)
             if show == 3:
                 button.set_sensitive(False)
-            button.set_border_width(4)
+            button.set_border_width(self.button_border_width)
             button.connect("clicked", action)
             self.button_box.pack_start(button)
 
@@ -304,47 +339,50 @@ if display:
                     emDialog.set_markup("{}".format(e))
                     emDialog.run()
 
+        def cancel_action(self, button):
+            self.destroy()
+
         def logout_action(self, button):
             self.disable_buttons()
             self.selected_action = 'logout'
             self.status.set_label("Exiting Openbox, please standby...")
             self.openbox_exit()
-            gtk.main_quit()
+            self.destroy()
 
         def suspend_action(self, button):
             self.disable_buttons()
             self.selected_action = 'suspend'
             self.status.set_label("Suspending, please standby...")
             self.do_action("Suspend")
-            gtk.main_quit()
+            self.destroy()
 
         def hibernate_action(self, button):
             self.disable_buttons()
             self.selected_action = 'hibernate'
             self.status.set_label("Hibernating, please standby...")
             self.do_action("Hibernate")
-            gtk.main_quit()
+            self.destroy()
 
         def hybridsleep_action(self, button):
             self.disable_buttons()
             self.selected_action = 'hybridsleep'
             self.status.set_label("Hibernating + Sleeping, please standby...")
             self.do_action("HybridSleep")
-            gtk.main_quit()
+            self.destroy()
 
         def reboot_action(self, button):
             self.disable_buttons()
             self.selected_action = 'reboot'
             self.status.set_label("Rebooting, please standby...")
             self.do_action("Reboot")
-            gtk.main_quit()
+            self.destroy()
 
         def shutdown_action(self, button):
             self.disable_buttons()
             self.selected_action = 'poweroff'
             self.status.set_label("Shutting down, please standby...")
             self.do_action("PowerOff")
-            gtk.main_quit()
+            self.destroy()
 
 
 def get_options():
