@@ -385,15 +385,16 @@ if display:
             self.overallOpacity = 1
             try:
                 try:
-                    print( 'Loading '+self.cp.get('theme', 'name')+' by ' + self.cp.get('theme', 'author'))
-                    self.dialogHeight = int(self.cp.get('theme', 'dialogHeight'))
-                    self.dialogBackgroundColor = self.cp.get('theme', 'dialogBackgroundColor')
-                    self.buttonColorStateNormal = self.cp.get('theme', 'buttonColorStateNormal')
-                    self.buttonColorStateActive = self.cp.get('theme', 'buttonColorStateActive')
-                    self.buttonColorStatePrelight = self.cp.get('theme', 'buttonColorStatePrelight')
-                    self.buttonSpacing = int(self.cp.get('theme', 'buttonSpacing'))
-                    self.sleepDelay = float( self.cp.get('theme', 'sleepDelay') )
-                    self.overallOpacity = int(self.cp.get('theme','overallOpacity'))
+                    self.theme = self.cp.get('theme', 'theme')
+                    print( 'Loading '+self.cp.get(self.theme, 'name')+' by ' + self.cp.get('theme', 'author'))
+                    self.dialogHeight = int(self.cp.get(self.theme, 'dialogHeight'))
+                    self.dialogBackgroundColor = self.cp.get(self.theme, 'dialogBackgroundColor')
+                    self.buttonColorStateNormal = self.cp.get(self.theme, 'buttonColorStateNormal')
+                    self.buttonColorStateActive = self.cp.get(self.theme, 'buttonColorStateActive')
+                    self.buttonColorStatePrelight = self.cp.get(self.theme, 'buttonColorStatePrelight')
+                    self.buttonSpacing = int(self.cp.get(self.theme, 'buttonSpacing'))
+                    self.sleepDelay = float( self.cp.get(self.theme, 'sleepDelay') )
+                    self.overallOpacity = int(self.cp.get(self.theme,'overallOpacity'))
                 except (ConfigParser.NoOptionError) as e:
                     print(e)
             except (ConfigParser.NoSectionError) as e:
@@ -456,8 +457,8 @@ if display:
             #No borders
             button.set_relief(gtk.RELIEF_NONE)
             image = gtk.Image()
-            filename = os.path.join(os.path.dirname(self.config_file),
-                                    (self.cp.get('theme', 'ButtonImage' + str(btype))))
+            filename = os.path.join(os.path.dirname(self.config_file), self.theme,
+                                    (self.cp.get(self.theme, 'buttonImage' + str(btype))))
             image.set_from_file(filename)
             button.set_image(image)
 
