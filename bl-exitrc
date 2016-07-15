@@ -68,6 +68,6 @@ buttonImagePoweroff=Poweroff.png
 buttonImageReboot=Reboot.png
 buttonImageSuspend=Sleep.png
 buttonImageLogout=Session.png
-buttonImageHybridSleep=Cancel.png
-buttonImageHibernate=Cancel.png
+buttonImageHybridSleep=Hibernate.png
+buttonImageHibernate=Hibernate.png
                                 
