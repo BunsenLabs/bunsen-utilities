@@ -28,6 +28,9 @@ show = always
 [sleep]
 show = always
 
+[hibernate]
+show = always
+
 [hybridsleep]
 show = always
 
@@ -38,10 +41,11 @@ show = always
 show = always
 
 [theme]
-theme = dark
+# set the theme to be used
+theme = BunsenDark
 
+# theme settings
 [dark]
-#This is printed to the console... just to satisfy your ego :P
 name=Dark Theme
 author=MerlinElMago
 #Overall height of the dialog.
@@ -58,16 +62,97 @@ buttonColorStatePrelight=#222222
 overallOpacity=100
 #Space between Buttons
 buttonSpacing=5
+#Choose dark or light icons
+icondir=dark
 #Button textures (i.e. the images on them)
-buttonImageCancel=Cancel.png
-buttonImagePoweroff=Poweroff.png
-buttonImageReboot=Reboot.png
-buttonImageSuspend=Sleep.png
-buttonImageLogout=Session.png
-buttonImageHybridSleep=Hibernate.png
-buttonImageHibernate=Hibernate.png
-
+buttonImageCancel=cancel.png
+buttonImagePoweroff=poweroff.png
+buttonImageReboot=reboot.png
+buttonImageSuspend=sleep.png
+buttonImageLogout=logout.png
+buttonImageHybridSleep=hibernate.png
+buttonImageHibernate=hibernate.png
 
 [light]
-name = Light theme
-# etc...
+name=Light Theme
+author=BunsenLabs
+#Overall height of the dialog.
+dialogHeight=150
+#Delay for the fade in counter
+sleepDelay=0.003
+#Background of the Dialog Window
+dialogBackgroundColor=#ffffff
+#Background of the buttons (Normal, Active, Prelight)
+buttonColorStateNormal=#ffffff
+buttonColorStateActive=#ffffff
+buttonColorStatePrelight=#ffffff
+#OverallOpacity of the dialog (0-100)
+overallOpacity=100
+#Space between Buttons
+buttonSpacing=5
+#Choose dark or light icons
+icondir=light
+#Button textures (i.e. the images on them)
+buttonImageCancel=cancel.png
+buttonImagePoweroff=poweroff.png
+buttonImageReboot=reboot.png
+buttonImageSuspend=sleep.png
+buttonImageLogout=logout.png
+buttonImageHybridSleep=hibernate.png
+buttonImageHibernate=hibernate.png
+
+[BunsenLight]
+name = Bunsen Light
+author = BunsenLabs
+#Overall height of the dialog.
+dialogHeight=150
+#Delay for the fade in counter
+sleepDelay=0.003
+#Background of the Dialog Window
+dialogBackgroundColor=#CECECE
+#Background of the buttons (Normal, Active, Prelight)
+buttonColorStateNormal=#ABABAB
+buttonColorStateActive=#ABABAB
+buttonColorStatePrelight=#ABABAB
+#OverallOpacity of the dialog (0-100)
+overallOpacity=100
+#Space between Buttons
+buttonSpacing=5
+#Choose dark or light icons
+icondir=light
+#Button textures (i.e. the images on them)
+buttonImageCancel=cancel.png
+buttonImagePoweroff=poweroff.png
+buttonImageReboot=reboot.png
+buttonImageSuspend=sleep.png
+buttonImageLogout=logout.png
+buttonImageHybridSleep=hibernate.png
+buttonImageHibernate=hibernate.png
+
+[BunsenDark]
+name = Bunsen Dark
+author = BunsenLabs
+#Overall height of the dialog.
+dialogHeight=150
+#Delay for the fade in counter
+sleepDelay=0.003
+#Background of the Dialog Window
+dialogBackgroundColor=#222222
+#Background of the buttons (Normal, Active, Prelight)
+buttonColorStateNormal=#3c3c3c
+buttonColorStateActive=#3c3c3c
+buttonColorStatePrelight=#3c3c3c
+#OverallOpacity of the dialog (0-100)
+overallOpacity=100
+#Space between Buttons
+buttonSpacing=5
+# Choose dark or light icons
+icondir=dark
+#Button textures (i.e. the images on them)
+buttonImageCancel=cancel.png
+buttonImagePoweroff=poweroff.png
+buttonImageReboot=reboot.png
+buttonImageSuspend=sleep.png
+buttonImageLogout=logout.png
+buttonImageHybridSleep=hibernate.png
+buttonImageHibernate=hibernate.png

@@ -366,7 +366,7 @@ if display:
             
     class BlexitWindowMerlin(BlexitWindow):
         """A dialog offering the user to log out, suspend, reboot or shut down.
-        With a graphical UI introduced by MerlinElMagio.
+        With a graphical UI initially developed by MerlinElMago.
         """
 
         def __init__(self):
@@ -389,6 +389,7 @@ if display:
                     print( 'Loading '+self.cp.get(self.theme, 'name')+' by ' + self.cp.get(self.theme, 'author'))
                     self.dialogHeight = int(self.cp.get(self.theme, 'dialogHeight'))
                     self.dialogBackgroundColor = self.cp.get(self.theme, 'dialogBackgroundColor')
+                    self.icondir = self.cp.get(self.theme, 'icondir')
                     self.buttonColorStateNormal = self.cp.get(self.theme, 'buttonColorStateNormal')
                     self.buttonColorStateActive = self.cp.get(self.theme, 'buttonColorStateActive')
                     self.buttonColorStatePrelight = self.cp.get(self.theme, 'buttonColorStatePrelight')
@@ -453,7 +454,7 @@ if display:
             #No borders
             button.set_relief(gtk.RELIEF_NONE)
             image = gtk.Image()
-            filename = os.path.join(os.path.dirname(self.config_file), self.theme,
+            filename = os.path.join(os.path.dirname(self.config_file), self.icondir,
                                     (self.cp.get(self.theme, 'buttonImage' + str(btype))))
             image.set_from_file(filename)
             button.set_image(image)
