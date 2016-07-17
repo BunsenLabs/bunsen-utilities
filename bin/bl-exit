@@ -9,6 +9,7 @@ import sys
 import getpass
 import subprocess
 import dbus
+import struct
 
 __me__ = 'bl-exit'
 __version__ = '2.0.1'
@@ -368,7 +369,6 @@ if display:
         """A dialog offering the user to log out, suspend, reboot or shut down.
         With a graphical UI initially developed by MerlinElMago.
         """
-
         def __init__(self):
             BlexitWindow.__init__(self)
 
@@ -410,6 +410,16 @@ if display:
             self.set_decorated(False)
             self.set_position(gtk.WIN_POS_CENTER)
             (_, _, width, _) = gtk.gdk.Screen(BlexitWindowMerlin).get_monitor_geometry(0)
+            
+            # make sure chosen dialog height cannot be smaller than icon height
+            imgdir = os.path.join(os.path.dirname(self.config_file), self.icondir)
+            img_files = os.listdir(imgdir)
+            for img_file in img_files:
+                img = os.path.join(imgdir,img_file)
+                img_h = self.get_image_info(img)
+                if img_h > self.dialogHeight:
+                    self.dialogHeight = img_h
+
             self.set_size_request(width, self.dialogHeight)
             self.connect("delete_event", gtk.main_quit)
             # Cancel key (Escape)
@@ -454,6 +464,7 @@ if display:
             #No borders
             button.set_relief(gtk.RELIEF_NONE)
             image = gtk.Image()
+
             filename = os.path.join(os.path.dirname(self.config_file), self.icondir,
                                     (self.cp.get(self.theme, 'buttonImage' + str(btype))))
             image.set_from_file(filename)
@@ -465,6 +476,18 @@ if display:
             button.connect("clicked", action)
             self.button_box.pack_start(button)
             
+        def get_image_info(self,imgpath):
+            '''Test if icon is png, and get icon height(px)'''
+            with open(imgpath, 'rb') as f:
+                data = f.read()
+            if data[:8] == '\211PNG\r\n\032\n' and (data[12:16] == 'IHDR'): # check if png
+                w, h = struct.unpack('>LL', data[16:24])
+                width = int(w)
+                height = int(h)
+            else:
+                raise Exception('Not a png image')
+
+            return height
 
 def get_options():
     result = None
