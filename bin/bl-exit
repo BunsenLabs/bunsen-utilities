@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+S#!/usr/bin/env python2.7
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 
@@ -395,7 +395,7 @@ if display:
                     self.buttonColorStatePrelight = self.cp.get(self.theme, 'buttonColorStatePrelight')
                     self.buttonSpacing = int(self.cp.get(self.theme, 'buttonSpacing'))
                     self.sleepDelay = float( self.cp.get(self.theme, 'sleepDelay') )
-                    self.overallOpacity = int(self.cp.get(self.theme,'overallOpacity'))
+                    self.overallOpacity = int(self.cp.get(self.theme, 'overallOpacity'))
                 except (ConfigParser.NoOptionError) as e:
                     print(e)
             except (ConfigParser.NoSectionError) as e:
@@ -416,7 +416,7 @@ if display:
             img_files = os.listdir(imgdir)
             img_list = [self.dialogHeight]
             for img_file in img_files:
-                img = os.path.join(imgdir,img_file)
+                img = os.path.join(imgdir, img_file)
                 img_h = self.get_image_info(img)
                 img_list.append(img_h)
 
@@ -444,7 +444,7 @@ if display:
             self.add(vbox)
             self.set_opacity(0)
             self.show_all()
-            for o in range(1,self.overallOpacity):
+            for o in range(1, self.overallOpacity):
                 sleep(self.sleepDelay)
                 while gtk.events_pending():
                     gtk.main_iteration(False)
@@ -478,7 +478,7 @@ if display:
             button.connect("clicked", action)
             self.button_box.pack_start(button)
             
-        def get_image_info(self,imgpath):
+        def get_image_info(self, imgpath):
             '''Test if icon is png, and get icon height(px)'''
             with open(imgpath, 'rb') as f:
                 data = f.read()
