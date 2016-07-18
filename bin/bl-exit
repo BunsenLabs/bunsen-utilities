@@ -409,7 +409,20 @@ if display:
             self.stick()
             self.set_decorated(False)
             self.set_position(gtk.WIN_POS_CENTER)
-            (_, _, width, _) = gtk.gdk.Screen(BlexitWindowMerlin).get_monitor_geometry(0)
+            screen = self.get_screen()
+            nmons = screen.get_n_monitors()
+            active_window = screen.get_active_window()
+            if active_window is not None:
+                curmon = screen.get_monitor_at_window(screen.get_active_window())
+                (_, _, width, _) = screen.get_monitor_geometry(curmon)
+            else:
+                # get the monitor with the greatest width
+                width = 9999
+                for mon in range(nmons):
+                     (_, _, maybe_width, _) = screen.get_monitor_geometry(mon)
+                     if maybe_width < width:
+                         width = maybe_width
+                         curmon = mon
             
             # make sure chosen dialog height cannot be smaller than maximum icon height
             imgdir = os.path.join(os.path.dirname(self.config_file), self.icondir)
