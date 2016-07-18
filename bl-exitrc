@@ -1,6 +1,7 @@
-# default button configuration for bl-exit
+# DEFAULT BUTTON CONFIGURATION FOR bl-exit
+#
 # CASE:
-#   Use only lowercase
+#   Use only lowercase in the BUTTONS section
 # WARNING:
 #   Do not overwrite this file.
 #   It is a Debian conf file and may be changed by the package manager when
@@ -15,7 +16,11 @@
 #   show and onerror values from this default section.
 #   show can take the values always | never | maybe
 #   onerror can take the values visual | novisual for feedback on error.
-
+# THEMES:
+#   The height of the bl-exit window will not be displayed less than the icon height.
+#   The default dark and light theme icons are 100x100px.
+#   NB The "dark" directory contains light icons for a dark theme, and vice versa.
+### BUTTONS ############################################################
 [cancel]
 show = never
 onerror = novisual
@@ -48,11 +53,12 @@ onerror = novisual
 show = always
 onerror = novisual
 
+### THEME to be used ###################################################
 [theme]
-# set the theme to be used
+# set the theme
 theme = BunsenDark
 
-# theme settings
+### THEME settings #####################################################
 [dark]
 name=Dark Theme
 author=MerlinElMago
@@ -70,7 +76,7 @@ buttonColorStatePrelight=#222222
 overallOpacity=100
 #Space between Buttons
 buttonSpacing=5
-#Choose dark or light icons
+#Choose dark or light theme icons
 icondir=dark
 #Button textures (i.e. the images on them)
 buttonImageCancel=cancel.png
@@ -98,7 +104,7 @@ buttonColorStatePrelight=#ffffff
 overallOpacity=100
 #Space between Buttons
 buttonSpacing=5
-#Choose dark or light icons
+#Choose dark or light theme icons
 icondir=light
 #Button textures (i.e. the images on them)
 buttonImageCancel=cancel.png
@@ -126,7 +132,7 @@ buttonColorStatePrelight=#ABABAB
 overallOpacity=100
 #Space between Buttons
 buttonSpacing=5
-#Choose dark or light icons
+#Choose dark or light theme icons
 icondir=light
 #Button textures (i.e. the images on them)
 buttonImageCancel=cancel.png
@@ -154,7 +160,7 @@ buttonColorStatePrelight=#3c3c3c
 overallOpacity=100
 #Space between Buttons
 buttonSpacing=5
-# Choose dark or light icons
+#Choose dark or light theme icons
 icondir=dark
 #Button textures (i.e. the images on them)
 buttonImageCancel=cancel.png
