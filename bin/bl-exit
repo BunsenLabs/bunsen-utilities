@@ -414,15 +414,13 @@ if display:
             # make sure chosen dialog height cannot be smaller than maximum icon height
             imgdir = os.path.join(os.path.dirname(self.config_file), self.icondir)
             img_files = os.listdir(imgdir)
-            img_list = []
+            img_list = [self.dialogHeight]
             for img_file in img_files:
                 img = os.path.join(imgdir,img_file)
                 img_h = self.get_image_info(img)
                 img_list.append(img_h)
 
-            max_h = max(img_list)
-            if max_h > self.dialogHeight:
-                    self.dialogHeight = max_h
+            self.dialogHeight = max(img_list)
 
             self.set_size_request(width, self.dialogHeight)
             self.connect("delete_event", gtk.main_quit)
