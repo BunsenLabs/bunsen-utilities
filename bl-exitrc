@@ -18,27 +18,35 @@
 
 [cancel]
 show = never
+onerror = novisual
 
 [logout]
 show = always
+onerror = novisual
 
 [suspend]
 show = always
+onerror = novisual
 
 [sleep]
 show = always
+onerror = novisual
 
 [hibernate]
 show = always
+onerror = novisual
 
 [hybridsleep]
 show = always
+onerror = novisual
 
 [reboot]
 show = always
+onerror = novisual
 
 [poweroff]
 show = always
+onerror = novisual
 
 [theme]
 # set the theme to be used
