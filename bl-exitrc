@@ -7,7 +7,7 @@
 #   a new version of bunsen-utilities is released.
 # CONFIGURATION:
 #   To configure bl-exit buttons, copy this file to
-#      $HOME/.config/bl-exitrc
+#      $HOME/.config/bl-exit/bl-exitrc
 #   and edit it according to your wishes.
 #   It is possible to group configurations for several buttons by adding a
 #      [default]
