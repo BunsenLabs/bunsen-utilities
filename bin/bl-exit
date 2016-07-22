@@ -233,7 +233,7 @@ if display:
             """Values that the 'onerror' keyword can take in the configuration
             file."""
             # Per button default settings
-            per_button_defaults = dict(
+            per_button_show_defaults = dict(
                 cancel='always',
                 logout='always',
                 suspend='always',
@@ -244,7 +244,7 @@ if display:
             )
             for (action, label, actionfunction) in bva:
                 # Defaults.
-                show = show_values[per_button_defaults[action]]
+                show = show_values[per_button_show_defaults[action]]
                 onError = onerror_values['novisual']
                 for section in ['default', action]:
                     try:
