@@ -196,8 +196,7 @@ if display:
             elif visible_button_count <= 2:
                 self.width = max (
                     (self.button_width + 10) * visible_button_count,
-                    len(title) + 300
-                )
+                    len(title) + 300)
             else:
                 self.width = -1
             self.set_size_request(self.width, self.height)
