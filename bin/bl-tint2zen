@@ -15,7 +15,7 @@
 #   To stop a tint2 just uncheck it, and "OK"
 #
 #   Running tint2s are saved to a session file, and can be run with
-#   the "tint2-session" script. To start them at login, add the 
+#   the "tint2-session" script. To start them at login, add the
 #   following line to autostart:
 #
 #           (sleep 2s && bl-tint2-session) &
@@ -41,11 +41,11 @@ CANCEL="--button=gtk-cancel:1"
 tintRunning(){
     # make blank tempfile, to save running tint2 paths
     TEMPFILE=$(mktemp --tmpdir tint2.XXXX)
-    pgrep -a tint2 | while read pid cmd; do 
+    pgrep -a tint2 | while read pid cmd; do
         if [[ ${cmd%% *} = tint2 ]]; then
             TPATH=$(echo $cmd | awk '{print $NF}')
             echo $TPATH >> $TEMPFILE
-        fi     
+        fi
     done
 }
 
@@ -76,7 +76,7 @@ findTint(){
 }
 
 # get any commandline arguments
-if ! (( $# == 0 ));then    
+if ! (( $# == 0 ));then
     for arg in "$@";do
         if [[ $1 = "-h" ]] || [[ $1 = "--help" ]];then
             echo -e "$USAGE"
@@ -114,19 +114,19 @@ else
     i=0
     OIFS=$IFS   # copy original IFS
     IFS=":"     # separator is ":" in returned choices
-    for name in $RET; do 
+    for name in $RET; do
         retTint[$i]=$name
         i=$(($i+1))
     done
     IFS=$OIFS    # reset IFS
-    
+
     # kill all tint2s
-    pgrep -a tint2 | while read pid cmd; do 
+    pgrep -a tint2 | while read pid cmd; do
         if [[ ${cmd%% *} = tint2 ]]; then
             kill "$pid"
-        fi     
+        fi
     done
-    
+
     for name in ${retTint[*]};do       # loop through checkmarked tint2 names
         for ((j=0; j<${#tintsPath[*]}; j++));do  # traverse through elements
             for f in ${tintsPath[j]};do
@@ -140,7 +140,7 @@ else
             done
         done
     done
-    bl-compositor --restart &   # restart compositor 
+#    bl-compositor --restart &   # restart compositor
 fi
 
 rm -r $TEMPFILE

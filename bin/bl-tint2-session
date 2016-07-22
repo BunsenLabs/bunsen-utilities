@@ -49,10 +49,10 @@ testSessionfile(){
 }
 
 killTints(){
-    pgrep -a tint2 | while read pid cmd; do 
+    pgrep -a tint2 | while read pid cmd; do
         if [[ ${cmd%% *} = tint2 ]]; then
             kill "$pid"
-        fi     
+        fi
     done
 }
 
@@ -63,6 +63,6 @@ else
 fi
 
 # restart compositor in case of rendering problems
-bl-compositor --restart
+#bl-compositor --restart
 
 exit 0
