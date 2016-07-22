@@ -427,27 +427,20 @@ if display:
                 curmon = screen.get_monitor_at_window(screen.get_active_window())
                 (_, _, width, _) = screen.get_monitor_geometry(curmon)
             else:
-                # get the monitor with the greatest width
+                # set width to the width of the monitor with smallest width
+                # to ensure we are not clipping or spreading the window over
+                # 2 monitors.
                 width = 9999
                 for mon in range(nmons):
                      (_, _, maybe_width, _) = screen.get_monitor_geometry(mon)
                      if maybe_width < width:
                          width = maybe_width
                          curmon = mon
-            
-            # make sure chosen dialog height cannot be smaller than maximum icon height
-            imgdir = os.path.join(os.path.dirname(self.config_file), self.icondir)
-            img_files = os.listdir(imgdir)
-            img_list = [self.dialogHeight]
-            for img_file in img_files:
-                img = os.path.join(imgdir, img_file)
-                img_h = self.get_image_info(img)
-                img_list.append(img_h)
 
-            self.dialogHeight = max(img_list)
+            # self.icon_heights is initialized here, and appended to in add_button
+            # Delay setting window dimensions until after building self.bva
+            self.icon_heights = [self.dialogHeight]
 
-            self.set_size_request(width, self.dialogHeight)
-            self.connect("delete_event", gtk.main_quit)
             # Cancel key (Escape)
             accelgroup = gtk.AccelGroup()
             key, mod = gtk.accelerator_parse('Escape')
@@ -463,6 +456,10 @@ if display:
                 if not show == 0:
                     self.add_button(show, actionfunc, label=label, btype=actionToMethod[action])
             self.status = gtk.Label()
+
+            self.dialogHeight = max(self.icon_heights)
+            self.set_size_request(width, self.dialogHeight)
+
             vbox = gtk.VBox()
             vbox.pack_start(self.button_box)
             self.add(vbox)
