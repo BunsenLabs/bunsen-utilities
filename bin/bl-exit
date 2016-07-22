@@ -153,6 +153,8 @@ if display:
                     self.cp.set(section, "show", "always")
 
         def construct_ui(self):
+            self.connect("delete_event", self.destroy)
+            self.connect("destroy_event", self.destroy)
             title = "Log out " + getpass.getuser() + "?"
             self.set_title(title)
             self.height = 80
@@ -164,7 +166,6 @@ if display:
             self.set_keep_above(True)
             self.stick()
             self.set_position(gtk.WIN_POS_CENTER)
-            self.connect("delete_event", gtk.main_quit)
             windowicon = self.render_icon(gtk.STOCK_QUIT, gtk.ICON_SIZE_DIALOG)
             self.set_icon(windowicon)
 
@@ -407,12 +408,13 @@ if display:
                     self.sleepDelay = float( self.cp.get(self.theme, 'sleepDelay') )
                     self.overallOpacity = int(self.cp.get(self.theme, 'overallOpacity'))
                 except (ConfigParser.NoOptionError) as e:
-                    print(e)
+                    self.on_warning(str(e))
             except (ConfigParser.NoSectionError) as e:
-                print(e)
-                sys.exit(1)
+                self.on_error(str(e))
 
         def construct_ui(self):
+            self.connect("delete_event", self.destroy)
+            self.connect("destroy_event", self.destroy)
             self.modify_bg(gtk.STATE_NORMAL, gtk.gdk.color_parse(self.dialogBackgroundColor))
             self.set_resizable(False)
             self.set_keep_above(True)
