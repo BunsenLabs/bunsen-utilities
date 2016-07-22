@@ -578,7 +578,7 @@ def main():
     the script is launched without arguments. The user selects the action she
     wants by clicking the right button.
 
-    WHen  the script is launched In a graphical environment the requested
+    WHen  the script is launched In a non-graphical environment the requested
     action should be one of the accepted arguments and the action is executed
     without asking for confirmation - as if the script was launched from the
     command line.
