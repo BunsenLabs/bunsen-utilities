@@ -2,7 +2,12 @@
 #
 # bl-tint2restart to be used by bl-tint2-pipemenu
 #   Written by damo <damo@bunsenlabs.org> for BunsenLabs Linux, April 2015
-# and johnraff <john@bunsenlabs.org> July 2015
+#   and johnraff <john@bunsenlabs.org> 2015-2016
+
+pidof tint2 >/dev/null || {
+    echo "$0: no tint2 processes found" >&2
+    exit 1
+}
 
 declare -A commands # associative array
 
@@ -30,7 +35,7 @@ do
     sleep 0.1
 done
 
-sleep 1
-bl-compositor --restart  # restart compositor
+#sleep 1
+#bl-compositor --restart  # restart compositor
 
 exit 0
