@@ -490,7 +490,13 @@ if display:
 
             filename = os.path.join(os.path.dirname(self.config_file), self.icondir,
                                     (self.cp.get(self.theme, 'buttonImage' + str(btype))))
-            image.set_from_file(filename)
+            if os.path.isfile(filename):
+                image.set_from_file(filename)
+                self.icon_heights.append(self.get_image_info(filename))
+            else:
+                image.set_from_file('/usr/share/gtk-doc/html/pygtk/icons/stock_broken_image_24.png')
+                self.on_warning("image file {} does not exist.".format(filename))
+
             button.set_image(image)
 
             if show == 3:
