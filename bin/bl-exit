@@ -71,8 +71,11 @@ class BlexitBase(object):
             self.on_error(str(e))
 
     def on_error(self, string):
-        print ("{}".format(string), file=sys.stderr)
+        print ("{}: {}".format(__me__, string), file=sys.stderr)
         sys.exit(1)
+
+    def on_warning(self, string):
+        print ("{}: {}".format(__me__, string), file=sys.stderr)
 
     def openbox_exit(self):
         subprocess.check_output(["openbox", "--exit"])
@@ -125,6 +128,7 @@ if display:
         def __init__(self):
             BlexitBase.__init__(self)
             gtk.Window.__init__(self)
+            self.selectedAction = None
 
         def configure(self):
             self.config_file = get_config_file()
@@ -299,11 +303,14 @@ if display:
             gtk.main_quit()
 
         def get_onerror(self):
-            for item in self.bva:
-                (action, label, actionfunction, actionMethod, show,
-                 onerror) = item
-                if action == self.selected_action:
-                    return onerror
+            onerror = 0
+            if self.selectedAction is not None:
+                for item in self.bva:
+                    (action, label, actionfunction, actionMethod, show,
+                     onerror) = item
+                    if action == self.selected_action:
+                        return onerror
+            return onerror
 
         def on_error(self, e):
             onerror = self.get_onerror()
@@ -318,6 +325,9 @@ if display:
                 if emDialog:
                     emDialog.set_markup("{}".format(e))
                     emDialog.run()
+
+        def on_warning(self, e):
+            print ("{}: {}".format(__me__, str(e)), file=sys.stderr)
 
         def cancel_action(self, button):
             self.destroy()
