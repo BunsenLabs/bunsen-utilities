@@ -12,7 +12,7 @@ import dbus
 import struct
 
 __me__ = 'bl-exit'
-__version__ = '2.0.1'
+__version__ = '2.2.0'
 
 # Translate command-line option to method - command line only
 actionToMethod = dict(
