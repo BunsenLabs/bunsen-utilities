@@ -8,6 +8,7 @@
 
 from subprocess import Popen, PIPE, STDOUT
 import sys, time, os, re
+import argparse
 
 history = '/tmp/bl-aerosnap-'+str(os.getuid())
 windows = {}
@@ -29,14 +30,6 @@ aeroRcommand="wmctrl -r :ACTIVE: -b add,maximized_vert && wmctrl -r :ACTIVE: -b 
 if os.path.exists(history) == False:
     f = open(history,'w')
     f.close()
-
-def print_usage():
-    print "bl-aerosnap: usage:"
-    print "  --help     show this message and exit"
-    print "  --left     attempt to snap active window to left of screen"
-    print "  --right    attempt to snap active window to right of screen"
-    print ""
-    exit()
 
 def is_root_window():
     p = Popen(['xdotool', 'getactivewindow'], stdout=PIPE, stderr=STDOUT)
@@ -107,10 +100,17 @@ def history_load():
     f.close()
     return windows
 
-if len(sys.argv) < 2 or sys.argv[1] == "--help":
-    print_usage()
+ap = argparse.ArgumentParser(description="Add aero style window snapping to Openbox")
+ap.add_argument("-l", "--left", help="attempt to snap active window to left of screen",
+            action="store_true")
+ap.add_argument("-r", "--right", help="attempt to snap active window to right of screen",
+            action="store_true")
+opts = ap.parse_args(sys.argv[1:])
 
-elif sys.argv[1] == "--left":
+# if len(sys.argv) < 2 or sys.argv[1] == "--help":
+#     print_usage()
+
+if opts.left:
     if is_root_window != True:
         if window_lookup():
             window_restore(width)
@@ -118,13 +118,10 @@ elif sys.argv[1] == "--left":
             window_store()
             os.system(aeroLcommand)
 
-elif sys.argv[1] == "--right":
+elif opts.right:
     if is_root_window != True:
         if window_lookup():
             window_restore(width)
         else:
             window_store()
             os.system(aeroRcommand)
-
-else:
-    print_usage()
