@@ -10,6 +10,7 @@ import getpass
 import subprocess
 import dbus
 import struct
+import ConfigParser
 
 __me__ = 'bl-exit'
 __version__ = '2.2.0'
@@ -118,27 +119,27 @@ if display:
     import gtk
     import pygtk
     pygtk.require('2.0')
-    import ConfigParser
     from time import sleep
     
     class BlexitWindow(BlexitBase, gtk.Window):
         """A dialog offering the user to log out, suspend, reboot or shut down.
         """
 
-        def __init__(self):
+        def __init__(self, cp, config_file):
             BlexitBase.__init__(self)
             gtk.Window.__init__(self)
+            self.cp = cp
+            self.config_file = config_file
+            self.debug = True
             self.selectedAction = None
             self.set_decorated(True)
 
         def configure(self):
-            self.config_file = get_config_file()
-            self.cp = ConfigParser.RawConfigParser()
             if self.config_file:
                 try:
                     self.cp.read(self.config_file)
                 except ConfigParser.ParsingError as e:
-                    print ("{}: {}".format(__me__, str(e)), file=sys.stderr)
+                    print_message("{}: {}".format(__me__, str(e)))
                     sys.exit(1)
             else:
                 # No config file present:
@@ -586,19 +587,31 @@ def main():
     specified as an argument.
     '''
     if display and len(sys.argv[1:]) == 0:
-        import ConfigParser
-        cp = ConfigParser.RawConfigParser()
-        config_file = get_config_file()
-        if config_file:
-            cp.read(config_file)
-            if cp.has_section('theme'):
-                blexit = BlexitWindowMerlin()
+        try:
+            # import ConfigParser
+            cp = ConfigParser.RawConfigParser()
+            config_file = get_config_file()
+            if config_file:
+                cp.read(config_file)
+                if (cp.has_section('theme') and
+                    cp.get('theme', 'theme') is not None):
+                    blexit = BlexitWindowMerlin(cp, config_file)
+                else:
+                    if cp.has_section('theme'):
+                        print_message("config has section 'theme', but no item 'theme'")
+                        print_message("Falling back to ButtonBox window")
+                    blexit = BlexitWindow(cp, config_file)
             else:
-                blexit = BlexitWindow()
-        else:
-            blexit = BlexitWindow()
+                blexit = BlexitWindow(cp, config_file)
+        except ConfigParser.ParsingError as e:
+            print_message(str(e))
+            return 1
+        except ConfigParser.NoOptionError as e:
+            print_message(str(e))
+            blexit = BlexitWindow(cp, config_file)
     else:
         blexit = BlexitBase()
+
     return blexit.main()
 
 if __name__ == "__main__":
