@@ -507,16 +507,33 @@ if display:
 
             # self.icon_heights is initialized here, and appended to in add_button
             # Delay setting window dimensions until after building self.bva
-            self.icon_heights = [self.dialogHeight]
+            try:
+                self.icon_heights = [int(self.configured_theme.settings.get('dialogHeight'))]
+            except:
+                self.on_debug("dialogHeight is not set or is not an int")
+                self.icon_heights = []
+                pass
 
             # Cancel key (Escape)
             accelgroup = gtk.AccelGroup()
             key, mod = gtk.accelerator_parse('Escape')
             accelgroup.connect_group(key, mod, gtk.ACCEL_VISIBLE, gtk.main_quit)
             self.add_accel_group(accelgroup)
+
             self.button_box = gtk.HBox()
-            self.button_box.set_size_request(-1, self.dialogHeight)
-            self.button_box.set_spacing(self.buttonSpacing)
+            try:
+                self.button_box.set_size_request(-1, int(self.configured_theme.settings.get('dialogHeight', -1)))
+            except:
+                self.on_debug("dialogHeight is not set or is not an int")
+                # self.button_box.set_size_request(-1, -1)
+                pass
+
+            try:
+                self.button_box.set_spacing(int(self.configured_theme.settings.get('buttonSpacing', 0)))
+            except:
+                self.on_debug("dialogHeight is not set or is not an int")
+                pass
+
             # self.add_button(1, self.cancel_action, btype='cancel')
             self.build_button_visibility_array()
             for button in self.bva:
@@ -525,7 +542,10 @@ if display:
                     self.add_button(show, actionfunc, label=label, btype=actionToMethod[action])
             self.status = gtk.Label()
 
-            self.dialogHeight = max(self.icon_heights)
+            if len(self.icon_heights) > 0:
+                self.dialogHeight = max(self.icon_heights)
+            else:
+                self.dialogHeight = -1
             self.set_size_request(width, self.dialogHeight)
 
             vbox = gtk.VBox()
@@ -533,12 +553,15 @@ if display:
             self.add(vbox)
             self.set_opacity(0)
             self.show_all()
-            for o in range(1, self.overallOpacity):
-                sleep(self.sleepDelay)
-                while gtk.events_pending():
-                    gtk.main_iteration(False)
-                self.set_opacity(float(o)/100)
-            #Don't use anything else!
+            try:
+                for o in range(1, int(self.configured_theme.settings.get('overallOpacity'))):
+                    sleep(float(self.configured_theme.settings.get('sleepDelay')))
+                    while gtk.events_pending():
+                        gtk.main_iteration(False)
+                        self.set_opacity(float(o)/100.0)
+            except:
+                self.on_debug("Opacity is not fully configured")
+                pass
             self.set_keep_above(True)
             
         def main(self):
@@ -547,17 +570,37 @@ if display:
             gtk.main()
 
         def add_button(self, show, action, label=None, btype=None):
-            button = gtk.ColorButton(gtk.gdk.color_parse(self.dialogBackgroundColor))
-            button.modify_bg(gtk.STATE_NORMAL, gtk.gdk.color_parse(self.buttonColorStateNormal))
-            button.modify_bg(gtk.STATE_ACTIVE, gtk.gdk.color_parse(self.buttonColorStateActive))
-            button.modify_bg(gtk.STATE_PRELIGHT, gtk.gdk.color_parse(self.buttonColorStatePrelight))
+            try:
+                button = gtk.ColorButton(gtk.gdk.color_parse(self.configured_theme.settings.get('dialogBackgroundColor', "#222222")))
+            except:
+                self.on_debug("dialogBackgroundColor is not set")
+                button = gtk.ColorButton(gtk.gdk.color_parse('#222222'))
+                pass
+            try:
+                button.modify_bg(gtk.STATE_NORMAL, gtk.gdk.color_parse(self.configured_theme.settings.get('buttonColorStateNormal', '#222222')))
+            except:
+                self.on_debug("buttonColorStateNormal is not set")
+                pass
+
+            try:
+                button.modify_bg(gtk.STATE_ACTIVE, gtk.gdk.color_parse(self.configured_theme.settings.get('buttonColorStateActive', '#222222')))
+            except:
+                self.on_debug("buttonColorStateAcctive is not set")
+                pass
+
+            try:
+                button.modify_bg(gtk.STATE_PRELIGHT, gtk.gdk.color_parse(self.configured_theme.settings.get('buttonColorStatePrelight', '#222222')))
+            except:
+                self.on_debug("ButtonColorStatePrelight is not set")
+                pass
 
             #No borders
             button.set_relief(gtk.RELIEF_NONE)
             image = gtk.Image()
 
-            filename = os.path.join(os.path.dirname(self.config_file), self.icondir,
-                                    (self.cp.get(self.theme, 'buttonImage' + str(btype))))
+            filename = os.path.join(os.path.dirname(self.config_file),
+                                    self.configured_theme.settings.get('icondir'),
+                                    self.configured_theme.settings.get('buttonImage' + str(btype), 'nonexistant'))
             if os.path.isfile(filename):
                 image.set_from_file(filename)
                 self.icon_heights.append(self.get_image_info(filename))
