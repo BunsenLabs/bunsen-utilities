@@ -55,7 +55,7 @@ class BlexitBase(object):
         return str(response)
 
     def do_action(self, action):
-        print("do_action: {}".format(action), file=sys.stderr)
+        print_message("do_action: {}".format(action))
         self.send_dbus(action)
 
     def send_dbus(self, method):
@@ -72,11 +72,11 @@ class BlexitBase(object):
             self.on_error(str(e))
 
     def on_error(self, string):
-        print ("{}: {}".format(__me__, string), file=sys.stderr)
+        print_message("{} {}".format(__me__, string))
         sys.exit(1)
 
     def on_warning(self, string):
-        print ("{}: {}".format(__me__, string), file=sys.stderr)
+        print_message("{} {}".format(__me__, string))
 
     def openbox_exit(self):
         subprocess.check_output(["openbox", "--exit"])
@@ -259,17 +259,21 @@ if display:
                                         actionToMethod[action])
                                     if not candoit == 'yes':
                                         show = 3
+                            self.on_debug("config section {} show={}".format(section,show))
                         except ConfigParser.NoOptionError as e:
+                            self.on_debug("config section {}  no option show".format(section))
                             pass
 
                         try:
-                            getonerror = self.cp.get(section,
-                                                     'onerror')
+                            getonerror = self.cp.get(section, 'onerror')
                             if getonerror in onerror_values:
                                 onError = onerror_values[getonerror]
+                            self.on_debug("config section {} onerror={}".format(section,onError))
                         except ConfigParser.NoOptionError as e:
+                            self.on_debug("config section {} no option onerror".format(section))
                             pass
                     except ConfigParser.NoSectionError as e:
+                        self.on_debug("config section {} not present".format(section))
                         pass
 
                 self.bva.append(tuple([action, label, actionfunction,
@@ -314,7 +318,7 @@ if display:
         def on_error(self, e):
             onerror = self.get_onerror()
             if onerror == 0:
-                print ("{}: {}".format(__me__, str(e)), file=sys.stderr)
+                print_message("{}: {}".format(__me__, str(e)))
                 sys.exit(1)
             else:
                 emDialog = gtk.MessageDialog(parent=None, flags=0,
@@ -326,7 +330,14 @@ if display:
                     emDialog.run()
 
         def on_warning(self, e):
-            print ("{}: {}".format(__me__, str(e)), file=sys.stderr)
+            e = "{} {}".format(__me__, str(e))
+            if self.debug:
+                e = "DEBUG {}".format(e)
+            print_message(e)
+
+        def on_debug(self, e):
+            if self.debug:
+                self.on_warning(e)
 
         def cancel_action(self, button):
             self.destroy()
@@ -373,48 +384,105 @@ if display:
             self.do_action("PowerOff")
             self.destroy()
 
+
+    class BlexitThemeDetail():
+        """
+        :param required
+        When a theme detail is not configured for a theme, and the detail
+        is configured as being required, the default detail value is substituted.
+        When required is False, nothing is substituted and the detail is not set.
+        """
+        def __init__(self, value, required, value_type):
+            self.value = value
+            self.required = required
+            self.value_type = value_type
+
+    default_theme_settings = dict(
+        name=BlexitThemeDetail('Dark Theme', False, 'string'),
+        author=BlexitThemeDetail('MerlinElMago', False, 'string'),
+        dialogHeight=BlexitThemeDetail(120, False, 'int'),
+        sleepDelay=BlexitThemeDetail(0.003, False, 'float'),
+        dialogBackgroundColor=BlexitThemeDetail('#222222', False, 'string'),
+        buttonColorStateNormal=BlexitThemeDetail('#222222', False, 'string'),
+        buttonColorStateActive=BlexitThemeDetail('#222222', False, 'string'),
+        buttonColorStatePrelight=BlexitThemeDetail('#222222', False, 'string'),
+        overallOpacity=BlexitThemeDetail(100, False, 'int'),
+        buttonSpacing=BlexitThemeDetail(10, False, 'int'),
+        icondir=BlexitThemeDetail('dark', True, 'string'),
+        buttonImageCancel=BlexitThemeDetail('cancel.png', False, 'string'),
+        buttonImagePowerOff=BlexitThemeDetail('poweroff.png', False, 'string'),
+        buttonImageReboot=BlexitThemeDetail('reboot.png', False, 'string'),
+        buttonImageSuspend=BlexitThemeDetail('sleep.png', False, 'string'),
+        buttonImageLogout=BlexitThemeDetail('logout.png', False, 'string'),
+        buttonImageHybridSleep=BlexitThemeDetail('hibernate.png', False, 'string'),
+        buttonImageHibernate=BlexitThemeDetail('hibernate.png', False, 'string')
+    )
+
+
+    class BlexitTheme():
+        def __init__(self, theme, settings, blexit):
+            self.theme = theme
+            self.settings = settings
+            self.blexit = blexit
+
+        def set_detail(self, key, value):
+            self.settings[key] = value
             
+        def set_details_from_config(self, cp, default_theme):
+            for key in default_theme_settings.iterkeys():
+                default_theme_detail = default_theme_settings[key]
+                try:
+                    config_value = cp.get(self.theme, key)
+                except ConfigParser.NoOptionError as e:
+                    self.blexit.on_debug("theme config option {} is not set for theme {}".format(key, self.theme))
+                    config_value = None
+                    pass
+                if config_value is not None:
+                    if default_theme_detail.value_type == 'int':
+                        try:
+                            config_value = int(config_value)
+                        except:
+                            self.bl-exit.on_debug("theme config option {} is not an int".format(key, self.theme))
+                            config_value = default_theme_detail.value
+                    elif default_theme_detail.value_type == 'float':
+                        try:
+                            default_theme_detail.config_value =float(config_value)
+                        except:
+                            self.bl-exit.on_debug("theme config option {} is not a float".format(key, self.theme))
+                            config_value = default_theme_detail.value
+                else:
+                    if default_theme_detail.required:
+                        config_value = default_theme_detail.value
+                if config_value is not None:
+                    self.set_detail(key, config_value)
+
+
     class BlexitWindowMerlin(BlexitWindow):
         """A dialog offering the user to log out, suspend, reboot or shut down.
         With a graphical UI initially developed by MerlinElMago.
+        :param cp: ConfigParser instance
+        :param config_file: path to blexit config file
         """
-        def __init__(self):
-            BlexitWindow.__init__(self)
+        def __init__(self, cp, config_file):
+            BlexitWindow.__init__(self, cp, config_file)
             self.set_decorated(False)
 
         def configure(self):
             BlexitWindow.configure(self)
-            self.saved_config_file = self.config_file
-            self.dialogHeight = 120
-            self.dialogBackgroundColor = '#222222'
-            self.buttonColorStateNormal = '#222222'
-            self.buttonColorStateActive = '#222222'
-            self.buttonColorStatePrelight= '#222222'
-            self.buttonSpacing = 10
-            self.sleepDelay = 0.003
-            self.overallOpacity = 1
-            try:
-                try:
-                    self.theme = self.cp.get('theme', 'theme')
-                    print( 'Loading '+self.cp.get(self.theme, 'name')+' by ' + self.cp.get(self.theme, 'author'))
-                    self.dialogHeight = int(self.cp.get(self.theme, 'dialogHeight'))
-                    self.dialogBackgroundColor = self.cp.get(self.theme, 'dialogBackgroundColor')
-                    self.icondir = self.cp.get(self.theme, 'icondir')
-                    self.buttonColorStateNormal = self.cp.get(self.theme, 'buttonColorStateNormal')
-                    self.buttonColorStateActive = self.cp.get(self.theme, 'buttonColorStateActive')
-                    self.buttonColorStatePrelight = self.cp.get(self.theme, 'buttonColorStatePrelight')
-                    self.buttonSpacing = int(self.cp.get(self.theme, 'buttonSpacing'))
-                    self.sleepDelay = float( self.cp.get(self.theme, 'sleepDelay') )
-                    self.overallOpacity = int(self.cp.get(self.theme, 'overallOpacity'))
-                except (ConfigParser.NoOptionError) as e:
-                    self.on_warning(str(e))
-            except (ConfigParser.NoSectionError) as e:
-                self.on_error(str(e))
+            default_theme = BlexitTheme('dark', default_theme_settings, self)
+            self.configured_theme = BlexitTheme(self.cp.get('theme', 'theme'), dict(), self)
+            self.configured_theme.set_details_from_config(self.cp, default_theme)
+            print_message('Loading theme \'' + self.configured_theme.settings.get('name', self.configured_theme.theme) + '\' by ' +
+                          self.configured_theme.settings.get('author', 'not set'))
 
         def construct_ui(self):
             self.connect("delete_event", self.destroy)
             self.connect("destroy_event", self.destroy)
-            self.modify_bg(gtk.STATE_NORMAL, gtk.gdk.color_parse(self.dialogBackgroundColor))
+            try:
+                self.modify_bg(gtk.STATE_NORMAL, gtk.gdk.color_parse(self.configured_theme.settings.get(['dialogBackgroundColor'])))
+            except:
+                self.on_debug("dialogBackgroundColor is not set")
+                pass
             self.set_resizable(False)
             self.set_keep_above(True)
             self.stick()
@@ -517,6 +585,10 @@ if display:
                 self.on_warning("get_image_info failed for '{}'".format(img_path))
             return height
 
+def print_message(m):
+        # print ("{}: {}".format(__me__, str(m)), file=sys.stderr)
+        print (str(m), file=sys.stderr)
+
 def get_options():
     result = None
     import argparse
@@ -556,10 +628,9 @@ def get_config_file():
                                                     xdg_config_dir)):
             config_dirs.append(user_config_dir)
     except OSError as e:
-        print ("{}: {}".format(__me__, str(e)), file=sys.stderr)
+        print_message(e)
         pass
     config_dirs.append('/etc')
-    config_file = None
     for config_dir in config_dirs:
         config_dir = config_dir + '/bl-exit'
         if os.path.isdir(config_dir):
