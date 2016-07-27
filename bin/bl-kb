@@ -26,6 +26,7 @@
 import sys,os
 import datetime
 import subprocess
+import argparse
 
 try:
     from lxml import etree
@@ -124,7 +125,12 @@ def check_txtfile(kb_fpath):
     return True
 
 if __name__ == "__main__":
-    gui=cmdargs()
+
+    ap = argparse.ArgumentParser(description="Display keybinds")
+    ap.add_argument("-g", "--gui", help="display keybinds in a text window",
+                    action="store_true")
+    opts = ap.parse_args(sys.argv[1:])
+    gui = opts.gui
     check_txtfile(kb_fpath)
     if gui:      # output formatted keybinds text in text window
         write_file(str(datetime.date.today()) + "\trc.xml KEYBINDS")
