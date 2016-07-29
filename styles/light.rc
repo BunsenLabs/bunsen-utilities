@@ -1,0 +1,35 @@
+# custom rc file for bl-exit
+# For more info, see
+#
+#   http://www.pygtk.org/pygtk2tutorial/ch-GtkRcFiles.html
+
+
+style "window"
+{
+  bg[NORMAL] = '#888888'
+}
+
+
+style "button"
+{
+  # This shows all the possible states for a button.  
+  
+  # fg[PRELIGHT] = { 0, 0, 0 }
+  bg[PRELIGHT] = { 0, 1.0, 0 }
+  bg[ACTIVE] = { 1.0, 0, 0 }
+  # fg[ACTIVE] = { 0, 1.0, 0 }
+  bg[NORMAL] = { 1.0, 0, 0 }
+  # fg[NORMAL] = { 1.0, 0, 1.0 }
+  bg[INSENSITIVE] = { 1.0, 1.0, 1.0 }
+  # fg[INSENSITIVE] = { 1.0, 0, 1.0 }
+  bg[SELECTED] = { 1.0, 1.0, 1.0 }
+  # fg[SELECTED] = { 1.0, 0, 1.0 }
+}
+
+# These set the widget types to use the styles defined above.
+# The widget types are listed in the class hierarchy, but could probably be
+# just listed in this document for the users reference.
+
+widget_class "GtkWindow" style "window"
+widget_class "GtkDialog" style "window"
+widget_class "GtkButton" style "button"
