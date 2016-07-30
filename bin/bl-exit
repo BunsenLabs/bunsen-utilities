@@ -128,7 +128,7 @@ if display:
 
         def __init__(self, cp, config_file):
             BlexitBase.__init__(self)
-            self.window = gtk.Window()
+            self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
             self.cp = cp
             self.config_file = config_file
             self.debug = True
