@@ -7,7 +7,7 @@
 #   To start the chosen Tint2 session at login, add the following line
 #   to config/openbox/autostart:
 #
-#      (sleep 2s && bl-tint2-session) &
+#      bl-tint2-session
 #
 ########################################################################
 TINT2PATH="$HOME/.config/tint2"
@@ -17,7 +17,7 @@ USAGE=$(
     echo -e "\tTint2 session file \"$TINT2PATH/tint2-sessionfile\","
     echo -e "\tif it exists, otherwise the default tint2rc is used"
     echo -e "\v\tTo start them at login, add the following line to autostart:"
-    echo -e "\v\t\t(sleep 2s && bl-tint2-session) &"
+    echo -e "\v\t\tbl-tint2-session"
 )
 
 findArgs(){     # get command args
