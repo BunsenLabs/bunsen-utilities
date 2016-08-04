@@ -20,6 +20,17 @@
 #   The height of the bl-exit window will not be displayed less than the icon height.
 #   The default dark and light theme icons are 100x100px.
 #   NB The "dark" directory contains light icons for a dark theme, and vice versa.
+# STYLE:
+# When the [style] section is not present or the combination of the values
+# of options 'dir' and 'rcfile' point to a non-existant file, the buttons
+# will take colors from the active gtk theme.
+# So you can leave in the section [style] and just switch the value of 'rcfile'
+# from an existant file to 'None' for instance, to switch from a custom
+# style to the current active gtk theme. (presuming there is no file 'None'
+# in the directory 'dir')
+# To create a 'custom' style, create an rc file in the directory 'dir' as per
+# example. Name it as you please.
+
 ### BUTTONS ############################################################
 [cancel]
 show = never
@@ -155,7 +166,11 @@ buttonImageHibernate=hibernate.png
 name = Minimal working theme
 author = BunsenLabs
 condir=dark
-# #Button textures (i.e. the images on them)
+#Delay for the fade in counter
+sleepDelay=0.003
+#OverallOpacity of the dialog (0-100)
+overallOpacity=100
+#Button textures (i.e. the images on them)
 # buttonImageCancel=cancel.png
 buttonImagePowerOff=poweroff.png
 buttonImageReboot=reboot.png
