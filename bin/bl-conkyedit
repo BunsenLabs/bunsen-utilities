@@ -1,8 +1,20 @@
 #!/bin/bash
 #
-#   BunsenLabs Conky Editor
+#    bl-conkyedit: a BunsenLabs Conky Editor
+#    Copyright (C) 2015 damo    <damo@bunsenlabs.org>
 #
-#   Written by damo <damo@bunsenlabs.org> for BunsenLabs Linux, April 2015
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ########################################################################
 #
@@ -16,6 +28,19 @@
 
 CONKYPATH="$HOME/.config/conky"
 
+HELP="    bl-conkyedit a BunsenLabs Conky Editor
+Options:
+    -h --help   show this message
+
+No other options are supported.
+
+   Conkys must be in $CONKYPATH
+   The name must end with 'conky' or 'conkyrc'
+
+   Checkmarked conkys will be opened in the text editor.
+   Multiple conkys can be chosen.
+"
+
 ### DIALOG VARIABLES
 DLGDEC="yad --center  --borders=20 --width=400 --height=500 "
 TITLE="BunsenLabs Conky Edit"
@@ -28,7 +53,7 @@ CANCEL="--button=gtk-cancel:1"
 fillArrays(){
     num="$1"
     conkysPath[$num]="$2"   # full filepath to conky
-    conkysArr[$num]="$3"    # displayed name: "directory/*conky(rc)" 
+    conkysArr[$num]="$3"    # displayed name: "directory/*conky(rc)"
 }
 
 findConky(){
@@ -37,18 +62,30 @@ findConky(){
 
 num=0
 # find files in CONKYPATH with conky in the name
-for x in $(find "$CONKYPATH" -type f );do 
+for x in $(find "$CONKYPATH" -type f );do
     f=$(basename "$x")    # filename from filepath
     if [[ $f = *conkyrc ]] || [[ $f = *conky ]];then
         # filename ends with *conky or *conkyrc
         # get directory/conkyname to display in list
         CONKY=$( echo "$x" | awk -F"/" '{print $(NF-1)"/"$NF}')
         fillArrays $num "$x" "$CONKY"
-        num=$(($num+1)) 
+        num=$(($num+1))
     fi
 done
 }
+
 ######## END FUNCTIONS #################################################
+
+# look for a help option somewhere
+for i in "$@"
+do
+    case "$i" in
+    -h|--help)
+        echo "$HELP"
+        exit 0
+        ;;
+    esac
+done
 
 # get conky directories in .conky, add to array
 findConky
@@ -73,12 +110,12 @@ else
     i=0
     OIFS=$IFS   # save Internal Field Separator
     IFS=":"     # separator is ":" in returned choices
-    for name in $RET; do 
+    for name in $RET; do
         retConky[$i]="$name"
         i=$(($i+1))
     done
     IFS=$OIFS   # reset IFS back to default
-    
+
     # Find the chosen conkys and edit them
     for name in ${retConky[*]};do       # loop through checkmarked conky names
         for ((j=0; j<${#conkysPath[*]}; j++));do  # traverse through elements
@@ -89,7 +126,7 @@ else
                 fi
             done
         done
-    done 
+    done
 fi
 
 exit 0

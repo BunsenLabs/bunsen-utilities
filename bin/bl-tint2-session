@@ -1,8 +1,21 @@
 #!/bin/bash
-##
-#   Read a saved BunsenLabs Tint2 session file and start the tint2s
 #
-#   Written by damo <damo@bunsenlabs.org> for BunsenLabs Linux, April 2015
+#    bl-tint2-session: a script to read a saved Tint2 session file
+#     and start the tint2s
+#    Copyright (C) 2015 damo    <damo@bunsenlabs.org>
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 #   To start the chosen Tint2 session at login, add the following line
 #   to config/openbox/autostart:

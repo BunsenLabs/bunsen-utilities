@@ -1,6 +1,25 @@
 #!/usr/bin/env python2.7
 # -*- coding: utf-8 -*-
-
+#
+#    bl-kb: a script to read openbox's rc.xml and write out the keybinds
+#    Copyright (C) 2010 wlourf
+#    Copyright (C) 2015 damo    <damo@bunsenlabs.org>
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+#
 # This script reads the keybinds configuration file ("$HOME/.config/openbox/rc.xml")
 # and writes them to a text file ("$HOME/.config/openbox/kbinds.txt").
 # The script is used by bl-kb-pipemenu to pipe the output to the Openbox menu, or to display keybinds in a separate window

@@ -1,8 +1,30 @@
 #!/bin/bash
+#
+#    bl-pkg-versions: a script to check versions of BunsenLabs packages
+#    Copyright (C) 2015-2016  John Crawley <john@bunsenlabs.org>
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-HELP="Just run the script - no options (except -h|--help to see this message).
+HELP='bl-pkg-versions a script to check versions of BunsenLabs packages
+Options:
+    -h --help   show this message
+
+No other options are supported.
+
 It will check the versions of bunsen packages
-on the Debian and GitHub repositories."
+on the Debian and GitHub repositories.
+'
 
 # base url for GitHub repository names
 readonly GITHUB_ROOT=https://github.com/BunsenLabs
@@ -16,6 +38,13 @@ required_commands='curl awk sed tput printf'
 declare -A REPOS=([bunsen-python-apt-template]=bunsen-os-release [bunsen-images-extra]=bunsen-images [bunsen-meta-printer-support]=bunsen-welcome [bunsen-meta-java]=bunsen-welcome [bunsen-meta-libreoffice]=bunsen-welcome [bunsen-meta-vcs]=bunsen-welcome [bunsen-meta-ssh]=bunsen-welcome [bunsen-meta-lamp]=bunsen-welcome [bunsen-meta-packaging]=bunsen-welcome)
 readonly REPOS
 
+case $1 in
+--help|-h)
+    echo "$HELP"
+    exit
+    ;;
+esac
+
 missing_commands=
 for i in $required_commands
 do
@@ -24,13 +53,6 @@ done
 [[ $missing_commands ]] && error_exit "This script requires the following commands: $missing_commands
 Please install the packages containing the missing commands
 and rerun the script."
-
-case $1 in
---help|-h)
-    echo "$HELP"
-    exit
-    ;;
-esac
 
 # get name of repository which builds package
 # default is same as package name, unless listed in REPOS

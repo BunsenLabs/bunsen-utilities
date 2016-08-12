@@ -1,13 +1,26 @@
 #!/bin/bash
-##
-#   Read saved BunsenLabs Conky session file(s) and start the conkys
 #
-#   Written by damo <damo@bunsenlabs.org> for BunsenLabs Linux, April 2015
+#    bl-conky-session: read saved BunsenLabs Conky session file(s) and start the conkys
+#    Copyright (C) 2015 damo    <damo@bunsenlabs.org>
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
 #
 #   To start the default conky session at login, add the following line
 #   to config/openbox/autostart:
 #
-#      (sleep 2s && bl-conky-session --autostart) &
+#      bl-conky-session --autostart &
 #
 ########################################################################
 CONKYPATH="$HOME/.config/conky"
@@ -93,7 +106,7 @@ if (( $# == 0 )); then    # if no args, then run default sessionfile
 elif [[ $1 = "-h" ]] || [[ $1 = "--help" ]]; then
     echo -e "$USAGE"
     exit 0
-else 
+else
     findArgs $@    # get the sessionfile paths from the command args
 fi
 

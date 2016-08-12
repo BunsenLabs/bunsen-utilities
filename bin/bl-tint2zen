@@ -1,8 +1,21 @@
 #!/bin/bash
 #
-#   BunsenLabs tint2 selection and switcher script
+#    bl-tint2zen: a BunsenLabs tint2 selection and switcher script
+#    Copyright (C) 2015 damo    <damo@bunsenlabs.org>
 #
-#   Written by damo <damo@bunsenlabs.org> for BunsenLabs Linux, April 2015
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
 ########################################################################
 #
 #   Tint2 config files must be in $TINT2PATH
@@ -18,7 +31,7 @@
 #   the "tint2-session" script. To start them at login, add the
 #   following line to autostart:
 #
-#           (sleep 2s && bl-tint2-session) &
+#           bl-tint2-session
 #
 ########################################################################
 
