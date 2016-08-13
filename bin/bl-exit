@@ -500,22 +500,12 @@ if display:
                           self.configured_theme.settings.get('author', 'not set'))
 
         def construct_ui(self):
-            screen = self.window.get_screen()
-            nmons = screen.get_n_monitors()
-            active_window = screen.get_active_window()
-            if active_window is not None:
-                curmon = screen.get_monitor_at_window(screen.get_active_window())
-                (_, _, width, _) = screen.get_monitor_geometry(curmon)
-            else:
-                # set width to the width of the monitor with smallest width
-                # to ensure we are not clipping or spreading the window over
-                # 2 monitors.
-                width = 9999
-                for mon in range(nmons):
-                     (_, _, maybe_width, _) = screen.get_monitor_geometry(mon)
-                     if maybe_width < width:
-                         width = maybe_width
-                         curmon = mon
+            # get width of the monitor where the cursor is
+            display=gtk.gdk.Display(gtk.gdk.get_display())
+            screen, x, y, flags=display.get_pointer()
+            curmon = screen.get_monitor_at_point(x, y)
+            _, _, width, _ = screen.get_monitor_geometry(curmon)
+            del x, y, display, screen, curmon # A workaround http://bugzilla.gnome.org/show_bug.cgi?id=593732
 
             # self.icon_heights is initialized here, and appended to in add_button
             # Delay setting window dimensions until after building self.bva
