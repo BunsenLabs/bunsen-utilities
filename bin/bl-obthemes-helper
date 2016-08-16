@@ -17,11 +17,13 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import gtk
+from __future__ import print_function
 import pygtk
 pygtk.require('2.0')
+import gtk
 import sys
 import argparse
+
 
 ap = argparse.ArgumentParser(description="""Helper pyton script.
 Using the current cursor position, this script prints the dimensions 
@@ -29,10 +31,17 @@ of the monitor that the cursor is on.
 """)
 opts = ap.parse_args(sys.argv[1:])
 
+def main():
+    try:
+        display = gtk.gdk.Display(gtk.gdk.get_display())
+        screen, x, y, flags = display.get_pointer()
+        curmon = screen.get_monitor_at_point(x, y)
+        _, _, width, height = screen.get_monitor_geometry(curmon)
+        print("{} {}".format(width, height))
+        return 0
+    except:
+        print("Not running under X.", file=sys.stderr)
+        return 1
 
-# get width and height of the monitor where the cursor is
-display=gtk.gdk.Display(gtk.gdk.get_display())
-screen, x, y, flags=display.get_pointer()
-curmon = screen.get_monitor_at_point(x, y)
-_, _, width, height = screen.get_monitor_geometry(curmon)
-print "%d %d" % (width, height)
+if __name__ == "__main__":
+    sys.exit(main())
