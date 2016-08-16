@@ -248,31 +248,15 @@ function getSet(){      # get name of currently set BLOB config
     fi
 }
 
-function countMonitors(){ #test for more than 2 monitors connected.
-    MON=$(xrandr -q | grep -c " connected")
-    PRIMARY=$(xrandr -q | awk '/ connected/ {if ($3=="primary") print $4; else print $3}')
-    PSIZE=${PRIMARY%%x*}    # Primary monitor width
-    case $MON in
-        1|2|3)  getScreenDims $MON $PSIZE
-                ;;
-        * )     W=600
-                H=600
-                echo -e "\n  Script cannot deal with these monitors.\
-                \n  Setting dialog width height = 600 x 600" 2>&1
-    esac
-}
-
-function getScreenDims(){   # Set width and height for View dialog
-    # param $1 = num screens; param $2 = primary screen width
-    desktopW=$(xrandr -q | awk '/Screen/ {print $8}')  # total desktop width
-    desktopH=$(xrandr -q | awk '/Screen/ {print $10}') # desktop height
-    desktopH=${desktopH%%,*}    # remove trailing comma
-    if (( $1 == 1 ));then
-        W=$(( $desktopW / 3 ))  # 1/3 width
-    else
-        W=$(( $2 / 3 ))  # 1/3 width primary monitor
-    fi
-    H=$(( ($desktopH / 3)*2 ))  # 2/3 height
+function getActiveMonitorDimensions(){   # Set width and height for View dialog
+    declare -a dim=()
+    dim=($(bl-obthemes-helper))
+    W=$(( ${dim[0]} / 3 ))
+    H=$(( ${dim[1]} / 3 * 2 ))
+    [[ $W =~ ^[0-9]+$ ]] && [[ $H =~ ^[0-9]+$ ]] || {
+        print 'Error in getActiveMonitorDimensions'
+        exit 1
+    }
 }
 
 function setName(){  # set name of collection, make dir and session settings file
@@ -1174,7 +1158,7 @@ mkdir -p "$CONFIGPATH"
 if [[ ! -f $CURSESSION ]] &>/dev/null;then
     touch "$CURSESSION"
 fi
-countMonitors
+getActiveMonitorDimensions
 getSet
 if (( $NUMDIRS == 0 ));then
     Intro

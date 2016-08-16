@@ -1,0 +1,38 @@
+#!/usr/bin/env python
+
+#    bl-obthemes-helper: script to determine dimensions of the monitor
+#    from the current cursor position.
+#    Copyright (C) 2016 damo    <xaos52@bunsenlabs.org>
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import gtk
+import pygtk
+pygtk.require('2.0')
+import sys
+import argparse
+
+ap = argparse.ArgumentParser(description="""Helper pyton script.
+Using the current cursor position, this script prints the dimensions 
+of the monitor that the cursor is on.
+""")
+opts = ap.parse_args(sys.argv[1:])
+
+
+# get width and height of the monitor where the cursor is
+display=gtk.gdk.Display(gtk.gdk.get_display())
+screen, x, y, flags=display.get_pointer()
+curmon = screen.get_monitor_at_point(x, y)
+_, _, width, height = screen.get_monitor_geometry(curmon)
+print "%d %d" % (width, height)
