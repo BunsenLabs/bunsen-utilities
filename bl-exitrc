@@ -21,15 +21,18 @@
 #   The default dark and light theme icons are 100x100px.
 #   NB The "dark" directory contains light icons for a dark theme, and vice versa.
 # STYLE:
-# When the [style] section is not present or the combination of the values
-# of options 'dir' and 'rcfile' point to a non-existant file, the buttons
-# will take colors from the active gtk theme.
-# So you can leave in the section [style] and just switch the value of 'rcfile'
-# from an existant file to 'None' for instance, to switch from a custom
-# style to the current active gtk theme. (presuming there is no file 'None'
-# in the directory 'dir')
-# To create a 'custom' style, create an rc file in the directory 'dir' as per
-# example. Name it as you please.
+#   When the [style] section is not present or the combination of the values
+#   of options 'dir' and 'rcfile' point to a non-existant file, the buttons
+#   will take colors from the active gtk theme.
+#   So you can keep the section [style] and just switch the value of 'rcfile'
+#   from an existant file to 'None' for instance - to switch from a custom
+#   style to the current active gtk theme. (presuming there is no file 'None'
+#   in the directory 'dir')
+#   To create a 'custom' style, create an rc file in the directory 'dir' as per
+#   example. Name it as you please.
+#   TL;DR
+#     non-existing rcfile  --> use current GTK theme
+#     existing rcfile      --> use custom colors
 
 ### BUTTONS ############################################################
 [cancel]
@@ -49,11 +52,11 @@ show = always
 onerror = novisual
 
 [hibernate]
-show = always
+show = never
 onerror = novisual
 
 [hybridsleep]
-show = always
+show = never
 onerror = novisual
 
 [reboot]
@@ -66,12 +69,12 @@ onerror = novisual
 
 [style]
 dir = styles
-rcfile = light.rc
+rcfile = None
 
 ### THEME to be used ###################################################
 [theme]
 # set the theme
-theme = BunsenDark
+theme = dark
 
 ### THEME settings #####################################################
 [dark]
@@ -118,63 +121,19 @@ buttonImageLogout=logout.png
 buttonImageHybridSleep=hibernate.png
 buttonImageHibernate=hibernate.png
 
-[BunsenLight]
-name = Bunsen Light
-author = BunsenLabs
-#Overall height of the dialog.
-dialogHeight=150
-#Delay for the fade in counter
-sleepDelay=0.003
-#OverallOpacity of the dialog (0-100)
-overallOpacity=100
-#Space between Buttons
-buttonSpacing=5
-#Choose dark or light theme icons
-icondir=light
-#Button textures (i.e. the images on them)
-buttonImageCancel=cancel.png
-buttonImagePoweroff=poweroff.png
-buttonImageReboot=reboot.png
-buttonImageSuspend=sleep.png
-buttonImageLogout=logout.png
-buttonImageHybridSleep=hibernate.png
-buttonImageHibernate=hibernate.png
-
-[BunsenDark]
-name = Bunsen Dark
-author = BunsenLabs
-#Overall height of the dialog.
-dialogHeight=150
-#Delay for the fade in counter
-sleepDelay=0.003
-#OverallOpacity of the dialog (0-100)
-overallOpacity=100
-#Space between Buttons
-buttonSpacing=5
-#Choose dark or light theme icons
-icondir=dark
-#Button textures (i.e. the images on them)
-buttonImageCancel=cancel.png
-buttonImagePoweroff=poweroff.png
-buttonImageReboot=reboot.png
-buttonImageSuspend=sleep.png
-buttonImageLogout=logout.png
-buttonImageHybridSleep=hibernate.png
-buttonImageHibernate=hibernate.png
-
 [Minimal]
 name = Minimal working theme
 author = BunsenLabs
-condir=dark
+icondir=dark
 #Delay for the fade in counter
 sleepDelay=0.003
 #OverallOpacity of the dialog (0-100)
-overallOpacity=100
+overallOpacity=75
 #Button textures (i.e. the images on them)
-# buttonImageCancel=cancel.png
+buttonImageCancel=cancel.png
 buttonImagePowerOff=poweroff.png
 buttonImageReboot=reboot.png
 buttonImageSuspend=sleep.png
 buttonImageLogout=logout.png
-# buttonImageHybridSleep=hibernate.png
-# buttonImageHibernate=hibernate.png
+buttonImageHybridSleep=hibernate.png
+buttonImageHibernate=hibernate.png
