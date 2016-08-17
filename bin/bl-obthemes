@@ -167,24 +167,27 @@ PICKX="X configs"
 DIALOG="yad --center --undecorated --borders=20 --window-icon=distributor-logo-bunsenlabs"
 DIALOGDEC="yad --center  --borders=20 --window-icon=distributor-logo-bunsenlabs"
 TITLE="BLOB Config Manager"
-IMG="--image=bunsenlabs-flame"
 T="--text="
 OK="--button=OK:0"
 CANCEL="--button=gtk-cancel:1"
 EXIT="--button=gtk-quit:1"
 CLOSE="--button=gtk-close:1"
-TXTINTRO="<big><b>BunsenLabs\n\nOpenbox Configuration Manager</b></big>\n\n\n \
-<b>Save or Restore settings for:</b>\n\n \
-\tOpenbox theme\n \
-\tGTK theme\n \
-\tConkys\n \
-\tTint2\n \
-\tDesktop Background\n \
-\tAlt Menu (dmenu)\n \
-\tLightDM theme\n \
-\tX configs (.bashrc, .Xresources)\n \
-\tTerminator (if default term)\n \
-\t+ Screenshot\n\n"
+TXTINTRO='<big><b>BunsenLabs 
+Openbox Configuration Manager</b></big>
+
+
+<b>Save or Restore settings for:</b>
+
+    Openbox theme
+    GTK theme
+    Conkys
+    Tint2
+    Desktop Background
+    Alt Menu (dmenu)
+    LightDM theme
+    X configs (.bashrc, .Xresources)
+    Terminator (if default term)
+    + Screenshot'
 ### END DIALOG VARIABLES
 
 ### USER SETTINGS
@@ -201,13 +204,13 @@ function Intro(){
     getSet
     #  If blob/ is empty, then don't display "Save Settings" option in Intro dialog
     if (( $NUMDIRS > 0 ));then
-        INTRO=$($DIALOGDEC $IMG "$T$TXTINTRO" \
+        INTRO=$($DIALOGDEC "$T$TXTINTRO" \
         --title="$TITLE" \
         --button="Save Settings:0" --button="View Saved:2" $CLOSE \
         --borders=30 \
         2>/dev/null )
     else
-        INTRO=$($DIALOGDEC $IMG \
+        INTRO=$($DIALOGDEC \
         --title="$TITLE" \
         "$T$TXTINTRO" \
         --button="Save Settings:0" --button="gtk-close:1" \
