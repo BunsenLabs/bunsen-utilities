@@ -5,7 +5,7 @@
 
 style "window"
 {
-  bg[NORMAL] = '#c3c3c3'
+  bg[NORMAL] = '#f23814'
 }
 
 
@@ -13,8 +13,8 @@ style "button"
 {
 # This shows all the possible states for a button.  
   
-    bg[PRELIGHT] = '#c3c3c3'
-    bg[ACTIVE] = '#c3c3c3'
+    bg[PRELIGHT] = '#cc0000'
+    bg[ACTIVE] = '#cc0000'
 }
 
 # These set the widget types to use the styles defined above.
