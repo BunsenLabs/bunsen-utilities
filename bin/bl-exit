@@ -116,9 +116,9 @@ if display:
     in a non-graphical environment as well. Without the test, importing 
     gtk.Window in a non-graphical environment spits out some errors and crashes
     the application."""
-    import gtk
     import pygtk
     pygtk.require('2.0')
+    import gtk
     from time import sleep
 
 
@@ -426,10 +426,6 @@ if display:
         author=BlexitThemeDetail('MerlinElMago', False, 'string'),
         dialogHeight=BlexitThemeDetail(120, False, 'int'),
         sleepDelay=BlexitThemeDetail(0.003, False, 'float'),
-        # dialogBackgroundColor=BlexitThemeDetail('#222222', False, 'string'),
-        # buttonColorStateNormal=BlexitThemeDetail('#222222', False, 'string'),
-        # buttonColorStateActive=BlexitThemeDetail('#222222', False, 'string'),
-        # buttonColorStatePrelight=BlexitThemeDetail('#222222', False, 'string'),
         overallOpacity=BlexitThemeDetail(100, False, 'int'),
         buttonSpacing=BlexitThemeDetail(10, False, 'int'),
         icondir=BlexitThemeDetail('dark', True, 'string'),
@@ -501,11 +497,16 @@ if display:
 
         def construct_ui(self):
             # get width of the monitor where the cursor is
-            display=gtk.gdk.Display(gtk.gdk.get_display())
-            screen, x, y, flags=display.get_pointer()
-            curmon = screen.get_monitor_at_point(x, y)
-            _, _, width, _ = screen.get_monitor_geometry(curmon)
-            del x, y, display, screen, curmon # A workaround http://bugzilla.gnome.org/show_bug.cgi?id=593732
+            width = 800
+            try:
+                display=gtk.gdk.Display(gtk.gdk.get_display())
+                screen, x, y, flags=display.get_pointer()
+                curmon = screen.get_monitor_at_point(x, y)
+                _, _, width, _ = screen.get_monitor_geometry(curmon)
+            except:
+                self.bl-exit.on_error('Error in construct_ui: Not running under X')
+            finally:
+                del x, y, display, screen, curmon # A workaround http://bugzilla.gnome.org/show_bug.cgi?id=593732
 
             # self.icon_heights is initialized here, and appended to in add_button
             # Delay setting window dimensions until after building self.bva
