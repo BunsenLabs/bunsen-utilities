@@ -25,6 +25,7 @@
 #                                   has the newer saved bg config file)
 #                       Alt Menu (dmenu)
 #                       Lightdm login gtk greeter
+#                       Exit dialog theme
 #                       X configs (.bashrc, .Xresources)
 #                       Terminator config
 #
@@ -336,7 +337,7 @@ function setText(){
     fi
     echo -e "\n  Configuration will be saved as: $ANS$TXT"
     if [[ $1 = repeat ]];then
-        > "$LISTMSG"    # reset LISTNSG.txt
+        > "$LISTMSG"    # reset LISTMSG.txt
     fi
     # Store list in listfile
     echo -e "<b>Configuration name: $ANS</b>\t$TXT\nSaved at $TIME\n" >> "$LISTMSG"
