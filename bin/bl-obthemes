@@ -74,6 +74,7 @@ No other options are supported.
                                    has the newer saved bg config file)
                        Alt Menu (dmenu)
                        Lightdm login gtk greeter
+                       Exit dialog theme
                        X configs (.bashrc, .Xresources)
                        Terminator config
 
@@ -148,6 +149,8 @@ LDMDIR="/etc/lightdm"
 LDM="lightdm-gtk-greeter.conf"
 DMENUDIR="$HOME/.config/dmenu"
 DMENU="dmenu-bind.sh"
+EXITDIR="$HOME/.config/bl-exit"
+EXITRC="bl-exitrc"
 XFILE=".Xresources"
 BASHFILE=".bashrc"
 PICKOBCFGS="OB menu.xml rc.xml autostart"
@@ -158,6 +161,7 @@ PICKTINT="Tint2"
 PICKBG="Background Wallpaper"
 PICKDMENU="dmenu (Alt menu)"
 PICKLDM="Lightdm Login theme"
+PICKEXIT="Exit dialog theme"
 PICKSCROT="Save screenshot"
 PICKTERM="Terminator"
 PICKX="X configs"
@@ -166,7 +170,7 @@ PICKX="X configs"
 ### DIALOG VARIABLES
 DIALOG="yad --center --undecorated --borders=20 --window-icon=distributor-logo-bunsenlabs"
 DIALOGDEC="yad --center  --borders=20 --window-icon=distributor-logo-bunsenlabs"
-TITLE="BLOB Config Manager"
+TITLE="BLOB Configuration Manager"
 T="--text="
 OK="--button=OK:0"
 CANCEL="--button=gtk-cancel:1"
@@ -185,6 +189,7 @@ Openbox Configuration Manager</b></big>
     Desktop Background
     Alt Menu (dmenu)
     LightDM theme
+    Exit dialog theme
     X configs (.bashrc, .Xresources)
     Terminator (if default term)
     + Screenshot'
@@ -567,6 +572,16 @@ function getLightdm(){
     fi
 }
 
+function getExit(){
+    if [[ -f $EXITDIR/$EXITRC ]];then
+        cp "$EXITDIR/$EXITRC" "$CONFIGDIR"
+        TXT="bl-exit config:  $EXITDIR/$EXITRC\n"
+        echo -e "\n  Saved $TXT"
+        echo "[BL_EXIT]" >> "$SETTINGS"
+        echo "$TXT" >> "$LISTMSG"
+    fi
+}
+
 function getTerminator(){
     if [[ -e $TERMFILE ]];then
         cp "$TERMFILE" "$CONFIGDIR"
@@ -791,16 +806,29 @@ function restoreLightdm(){   # need sudo to restore lightdm-gtk-greeter.conf
     done
 }
 
+function restoreExit(){
+    EXITFILE="$1"
+    if [[ -e $EXITDIR ]];then        # backup bl-exitrc first
+        EXITBKP="$EXITDIR/$EXITRC.bkp"
+        cp "$EXITDIR/$EXITRC" "$EXITBKP"
+        cp "$EXITFILE" "$EXITDIR"
+        echo -e "\n  $EXITDIR/$EXITRC backed up and restored"
+    else
+        cp "$EXITFILE" "$EXITDIR/$EXITRC"
+        echo -e "\n  $EXITDIR/$EXITRC restored"
+    fi
+}
+
 function restoreXsettings(){
     XBKP=""
     for var in "$@";do
         if [[ -e $var ]];then        # backup .bashrc & .Xresources first
-            XBKP="$HOME/$var.bkp"
-            cp "$HOME/$var" "$XBKP"
-            cp "$var" "$HOME/" &>/dev/null
+            XBKP="$var.bkp"
+            cp "$var" "$XBKP"
+            cp "$var" "$HOME"
             echo -e "\n  $var backed up and restored"
         else
-            cp "$var" "$HOME/" &>/dev/null
+            cp "$var" "$HOME"
             echo -e "\n  $var restored"
         fi
     done
@@ -864,6 +892,7 @@ function saveSettings(){
         $SELECT "$PICKBG" \
         $SELECT "$PICKDMENU" \
         $SELECT "$PICKLDM" \
+        $SELECT "$PICKEXIT" \
         $SELECT "$PICKX" \
         )
     # add terminator to array if set as default
@@ -930,6 +959,8 @@ function saveSettings(){
                         "$PICKDMENU")   getDmenu
                                         ;;
                         "$PICKLDM"  )   getLightdm
+                                        ;;
+                        "$PICKEXIT" )   getExit
                                         ;;
                         "$PICKTERM" )   getTerminator
                                         ;;
@@ -1140,6 +1171,8 @@ function restoreSettings(){
             "[DMENU]"       )   restoreDmenu "$FPATH/$DMENU"
                                 ;;
             "[LIGHTDM]"     )   restoreLightdm "$FPATH/$LDM"
+                                ;;
+            "[BL_EXIT]"     )   restoreExit "$FPATH/$EXITRC"
                                 ;;
             "[XFILES]"      )   restoreXsettings "$FPATH/.bashrc" "$FPATH/.Xresources"
                                 ;;
