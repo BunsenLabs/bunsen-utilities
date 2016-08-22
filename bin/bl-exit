@@ -664,6 +664,23 @@ def get_config_file():
     
     return config_file
 
+def get_config_theme_entry(section, item, cp):
+    """Get 'theme' entry from [theme] section.
+    :param
+      section: String, config section
+      item:    String, config item
+      cp:      ConfigParser, instance
+    :out 
+      string or None"""
+    if (cp.has_section(section)):
+        try:
+            _item = cp.get(section, item)
+        except ConfigParser.NoOptionError:
+            _item = None
+        return _item
+    else:
+        return None
+
 def main():
     '''
     The script works both in a graphical and a non-graphical environment.
@@ -687,13 +704,11 @@ def main():
             config_file = get_config_file()
             if config_file:
                 cp.read(config_file)
-                if (cp.has_section('theme') and
-                    cp.get('theme', 'theme') is not None):
+                _theme = get_config_theme_entry('theme', 'theme', cp)
+                if (_theme is not None and
+                    _theme != 'classic'):
                     blexit = BlexitMerlin(cp, config_file)
                 else:
-                    if cp.has_section('theme'):
-                        print_message("config has section 'theme', but no item 'theme'")
-                        print_message("Falling back to ButtonBox window")
                     blexit = Blexit(cp, config_file)
             else:
                 blexit = Blexit(cp, config_file)

@@ -72,6 +72,9 @@ dir = styles
 rcfile = None
 
 ### THEME to be used ###################################################
+# When the [theme] section is not present or commented out
+# or the [theme] section is present and the 'theme' entry is set to
+# 'classic', use the 'classic' ButtonBox layout.
 [theme]
 # set the theme
 theme = dark
