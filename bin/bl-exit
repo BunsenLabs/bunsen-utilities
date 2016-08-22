@@ -435,7 +435,8 @@ if display:
         buttonImageSuspend=BlexitThemeDetail('sleep.png', False, 'string'),
         buttonImageLogout=BlexitThemeDetail('logout.png', False, 'string'),
         buttonImageHybridSleep=BlexitThemeDetail('hibernate.png', False, 'string'),
-        buttonImageHibernate=BlexitThemeDetail('hibernate.png', False, 'string')
+        buttonImageHibernate=BlexitThemeDetail('hibernate.png', False, 'string'),
+        windowWidthAdjustment=BlexitThemeDetail(0, False, 'int')
     )
 
 
@@ -462,7 +463,7 @@ if display:
                         try:
                             config_value = int(config_value)
                         except:
-                            self.bl-exit.on_debug("theme config option {} is not an int".format(key, self.theme))
+                            self.blexit.on_debug("theme config option {} is not an int".format(key, self.theme))
                             config_value = default_theme_detail.value
                     elif default_theme_detail.value_type == 'float':
                         try:
@@ -504,9 +505,18 @@ if display:
                 curmon = screen.get_monitor_at_point(x, y)
                 _, _, width, _ = screen.get_monitor_geometry(curmon)
             except:
-                self.bl-exit.on_error('Error in construct_ui: Not running under X')
+                self.bl_exit.on_error('Error in construct_ui: Not running under X')
             finally:
-                del x, y, display, screen, curmon # A workaround http://bugzilla.gnome.org/show_bug.cgi?id=593732
+                del x, y, display, screen, curmon
+
+            try:
+                _width_adjustment = int(self.configured_theme.settings.get('windowWidthAdjustment', 0))
+                if abs(_width_adjustment) < width:
+                    width -= abs(_width_adjustment)
+                if width < 0:
+                    width = -1
+            except:
+                self.on_debug('Problem with windowWidthAdjustment')
 
             # self.icon_heights is initialized here, and appended to in add_button
             # Delay setting window dimensions until after building self.bva

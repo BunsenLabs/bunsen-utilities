@@ -101,6 +101,8 @@ buttonImageSuspend=sleep.png
 buttonImageLogout=logout.png
 buttonImageHybridSleep=hibernate.png
 buttonImageHibernate=hibernate.png
+# windowWidthAdjustment - subtract this number from monitor width to get window width
+windowWidthAdjustment=
 
 [light]
 name=Light Theme
@@ -123,6 +125,8 @@ buttonImageSuspend=sleep.png
 buttonImageLogout=logout.png
 buttonImageHybridSleep=hibernate.png
 buttonImageHibernate=hibernate.png
+# windowWidthAdjustment - subtract this number from monitor width to get window width
+windowWidthAdjustment=
 
 [Minimal]
 name = Minimal working theme
@@ -140,3 +144,5 @@ buttonImageSuspend=sleep.png
 buttonImageLogout=logout.png
 buttonImageHybridSleep=hibernate.png
 buttonImageHibernate=hibernate.png
+# windowWidthAdjustment - subtract this number from monitor width to get window width
+windowWidthAdjustment=
