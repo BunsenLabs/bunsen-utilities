@@ -33,6 +33,7 @@ Description: Small scripts to use with BunsenLabs.
   - bl-tint2zen: Yad-based tint2 manager.
   - bl-package-versions: Utility to display the versions of BunsenLabs packages.
   - bl-github-upgrade: Script to upgrade the BunsenLabs packages from GitHub.
+  - bl-xinerama-prop: Script to get xinerama properties in a shell script
  .
  Originally imported from cb-exit, cb-lock and cb-wmhacks,
  made for CrunchBang Linux and subsequently modified for BunsenLabs.
