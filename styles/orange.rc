@@ -13,8 +13,8 @@ style "button"
 {
 # This shows all the possible states for a button.  
   
-    bg[PRELIGHT] = '#cc0000'
-    bg[ACTIVE] = '#cc0000'
+    bg[PRELIGHT] = '#f83712'
+    bg[ACTIVE] = '#fd3109'
 }
 
 # These set the widget types to use the styles defined above.
