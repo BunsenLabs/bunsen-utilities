@@ -428,7 +428,7 @@ if display:
         sleepDelay=BlexitThemeDetail(0.003, False, 'float'),
         overallOpacity=BlexitThemeDetail(100, False, 'int'),
         buttonSpacing=BlexitThemeDetail(10, False, 'int'),
-        icondir=BlexitThemeDetail('dark', True, 'string'),
+        iconpath=BlexitThemeDetail('/usr/share/images/bunsen/exit', True, 'string'),
         buttonImageCancel=BlexitThemeDetail('cancel.png', False, 'string'),
         buttonImagePowerOff=BlexitThemeDetail('poweroff.png', False, 'string'),
         buttonImageReboot=BlexitThemeDetail('reboot.png', False, 'string'),
@@ -584,20 +584,29 @@ if display:
             gtk.main()
 
         def add_button(self, show, action, label=None, btype=None):
+
+            def find_image_file_for_button():
+                _filename = self.configured_theme.settings.get('buttonImage' + str(btype), 'nonexistant')
+                if _filename is None:
+                    return None
+                _iconpath = self.configured_theme.settings.get('iconpath')
+                if _iconpath is None:
+                    return None
+                for _dir in _iconpath.split(os.pathsep):
+                    _dir = os.path.expanduser(_dir)
+                    if os.path.exists(os.path.join(_dir, _filename)):
+                        return os.path.join(_dir, _filename)
+
             button = gtk.Button()
             button.set_relief(gtk.RELIEF_NONE)
             image = gtk.Image()
-
-            filename = os.path.join(os.path.dirname(self.config_file),
-                                    self.configured_theme.settings.get('icondir'),
-                                    self.configured_theme.settings.get('buttonImage' + str(btype), 'nonexistant'))
-            if os.path.isfile(filename):
-                image.set_from_file(filename)
-                self.icon_heights.append(self.get_image_info(filename))
+            _filename = find_image_file_for_button()
+            if _filename is not None:
+                image.set_from_file(_filename)
+                self.icon_heights.append(self.get_image_info(_filename))
             else:
                 image.set_from_file('/usr/share/gtk-doc/html/pygtk/icons/stock_broken_image_24.png')
-                self.on_warning("image file {} does not exist.".format(filename))
-
+                self.on_warning("image file for '{}' not found.".format(str(btype)))
             button.set_image(image)
 
             if show == 3:
