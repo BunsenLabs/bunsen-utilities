@@ -36,7 +36,7 @@
 
 ### BUTTONS ############################################################
 [cancel]
-show = never
+show = always
 onerror = novisual
 
 [logout]
