@@ -1,5 +1,5 @@
 bin usr
 bl-exitrc etc/bl-exit/
-styles etc/cl-exit/
+styles etc/bl-exit/
 dark usr/share/images/bunsen/exit/dark/
 light usr/share/images/bunsen/exit/light/
