@@ -43,11 +43,22 @@
 #   from an existant file to 'None' for instance - to switch from a custom
 #   style to the current active gtk theme. (presuming there is no file 'None'
 #   in the directory 'dir')
-#   To create a 'custom' style, create an rc file in the directory 'dir' as per
-#   example. Name it as you please.
 #   TL;DR
 #     non-existing rcfile  --> use current GTK theme
 #     existing rcfile      --> use custom colors
+#
+#   EDIT:
+#     To switch to the classic button layout, you can now set the 'theme'
+#     entry in the [theme] section to 'classic'
+#
+#   To use custom styles, you MUST
+#      - create a subdirectory in $HOME/.config/bl-exit
+#      - specify that subdirectory in entry 'dir' of section [style]
+#      - specify the filename in entry 'rcfile' of section [style]
+#
+#   We install example custom styles in /etc/bl-exit/styles that you can copy
+#   to $HOME/.config/bl-exit/...
+#
 
 ### BUTTONS ############################################################
 [cancel]
