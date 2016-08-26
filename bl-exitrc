@@ -17,6 +17,10 @@
 #   section. All buttons that do not have a specific section will take the
 #   show and onerror values from this default section.
 #   show can take the values always | never | maybe
+#     maybe:
+#       the button will be shown and clickable when the action is
+#       possible. When the action is not possible (e.g. suspend when
+#       no swap file is present) the button will be inactive.
 #   onerror can take the values visual | novisual for feedback on error.
 #
 # ICONS:
@@ -154,10 +158,9 @@ buttonImageHibernate=hibernate.png
 # windowWidthAdjustment - subtract this number from monitor width to get window width
 windowWidthAdjustment=
 
-[Minimal]
+[minimal]
 name = Minimal working theme
 author = BunsenLabs
-icondir=dark
 #Delay for the fade in counter
 sleepDelay=0.003
 #OverallOpacity of the dialog (0-100)
