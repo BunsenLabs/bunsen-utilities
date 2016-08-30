@@ -1,5 +1,7 @@
 # DEFAULT BUTTON CONFIGURATION FOR bl-exit
 #
+# USING THE CLASSICAL STYLE
+#
 # CASE:
 #   Use only lowercase in the BUTTONS section
 #
@@ -23,6 +25,8 @@
 #       no swap file is present) the button will be inactive.
 #   onerror can take the values visual | novisual for feedback on error.
 #
+# USING THE MODERN STYLE
+#
 # ICONS:
 #   Icon images are installed in /usr/share/images/bunsen/exit/dark
 #   You can use your own images by placing them in a direcory of your
@@ -37,7 +41,9 @@
 # THEMES:
 #   The height of the bl-exit window will not be displayed less than the icon height.
 #   The default dark and light theme icons are 100x100px.
-#   NB The "dark" directory contains light icons for a dark theme, and vice versa.
+#   NOTE: We install a "light" directory containing light icons for a dark theme.
+#         You are free to name your icon directory as you want and you can
+#         use any directory for any theme.
 #
 # STYLE:
 #   When the [style] section is not present or the combination of the values
