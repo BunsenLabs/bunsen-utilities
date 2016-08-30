@@ -41,9 +41,11 @@
 # THEMES:
 #   The height of the bl-exit window will not be displayed less than the icon height.
 #   The default dark and light theme icons are 100x100px.
-#   NOTE: We install a "light" directory containing light icons for a dark theme.
-#         You are free to name your icon directory as you want and you can
-#         use any directory for any theme.
+#   NOTE: We install a "light" directory containing light icons for a dark theme
+#         and a 'dark' directory containing dark icons for a light theme.
+#         However, you are free to name your icon directory as you want and you can
+#         use any directory for any theme, by editing the 'iconpath' configuration
+#         option for that theme appropriately.
 #
 # STYLE:
 #   When the [style] section is not present or the combination of the values
