@@ -28,6 +28,7 @@
 #                       Exit dialog theme
 #                       X configs (.bashrc, .Xresources)
 #                       Terminator config
+#                       Exit dialogue
 #
 # Paths are assumed to be BunsenLabs defaults
 #
@@ -134,6 +135,7 @@ NUMDIRS=0
 CONKYCMD=""
 COLS=0
 ### CONFIGS VARIABLES
+EXITFILE="$HOME/.config/bl-exit/bl-exitrc"
 TERMDIR="$HOME/.config/terminator"
 TERMFILE="$TERMDIR/config"
 FEHFILE="$HOME/.fehbg"
@@ -166,6 +168,7 @@ PICKEXIT="Exit dialog theme"
 PICKSCROT="Save screenshot"
 PICKTERM="Terminator"
 PICKX="X configs"
+PICKEXIT="Exit dialog"
 ### END CONFIGS VARIABLES
 
 ### DIALOG VARIABLES
@@ -608,6 +611,18 @@ function getXconfig(){
     echo "$TXT" >> "$LISTMSG"
 }
 
+function getBLexitrc(){
+    if [[ -f $EXITFILE ]];then
+        cp "$EXITFILE" "$CONFIGDIR"
+        echo "[EXITRC]" >> "$SETTINGS"
+        TXT="bl-exitrc config:  $EXITFILE\n"
+        echo -e "\n  Saved $TXT"
+        echo "$TXT" >> "$LISTMSG"
+    else
+        echo "  $EXITFILE not found"
+    fi
+}
+
 function checkTint2(){   # kill or restart tint2s for screenshot, if necessary
     if [[ $1 = stop ]];then
         if ! cat "$SETTINGS" | grep "TINT2" &>/dev/null;then
@@ -783,6 +798,19 @@ function restoreDmenu(){
     fi
 }
 
+function restoreBLexitrc(){
+    EFILE="$1"
+    if [[ -e $EXITFILE ]];then        # backup bl-exitrc first
+        EFILEBKP="$EFILE.bkp"
+        cp "$EFILE" "$EFILEBKP"
+        cp "$EFILE" "$EXITFILE"
+        echo -e "\n  $EXITFILE backed up and restored"
+    else
+        cp "$EFILE" "$EXITFILE"
+        echo -e "\n  $EXITFILE restored"
+    fi
+}
+
 function restoreLightdm(){   # need sudo to restore lightdm-gtk-greeter.conf
     CMD="cp $1 $LDMDIR/$LDM"
     TXT="Authenticate restore of lightdm-gtk-greeter.conf"
@@ -895,6 +923,7 @@ function saveSettings(){
         $SELECT "$PICKLDM" \
         $SELECT "$PICKEXIT" \
         $SELECT "$PICKX" \
+        $SELECT "$PICKEXIT" \
         )
     # add terminator to array if set as default
     if  echo $(readlink -f /usr/bin/x-terminal-emulator ) | grep terminator &>/dev/null;then
@@ -966,6 +995,8 @@ function saveSettings(){
                         "$PICKTERM" )   getTerminator
                                         ;;
                         "$PICKX"    )   getXconfig
+                                        ;;
+                        "$PICKEXIT" )   getBLexitrc
                                         ;;
                         *           )   echo -e "\n  Unknown value!" 2>&1
                                         exit 1
@@ -1178,6 +1209,8 @@ function restoreSettings(){
             "[XFILES]"      )   restoreXsettings "$FPATH/.bashrc" "$FPATH/.Xresources"
                                 ;;
             "[TERMINATOR]"  )   restoreTerminator "$FPATH/config"
+                                ;;
+            "[EXITRC]"      )   restoreBLexitrc "$FPATH/bl-exitrc"
                                 ;;
             *               )   echo -e "  Unknown value!" 2>&1
                                 restoreSettings
