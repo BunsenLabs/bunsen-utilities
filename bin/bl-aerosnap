@@ -135,6 +135,12 @@ class EWMH(object):
             return prop[0]
         return 0
 
+    def get_viewport(self):
+        """Returns the viewport, which is the x and y coordinates of the top
+        left corner of each desktop."""
+        viewport = self._get_property(self.dpy.screen().root, '_NET_DESKTOP_VIEWPORT')
+        return viewport[0], viewport[1]
+
     def get_workarea(self):
         """Returns the work area, which is the size of the screen minus panels and docks and the like."""
         workarea = self._get_property(self.dpy.screen().root, '_NET_WORKAREA')
@@ -197,25 +203,29 @@ def window_snap(ewmh, win, snap):
 
     # TODO(Python3): replace with switch.
     if snap is Snap.Left:
-        print ("Snapping window to: " + str(x) + " " + str(y) + " " + str(width / 2 - frame_left - frame_right))
+        print ("Snapping window to: x: " + str(x) + " width: " + str(width / 2 - frame_left - frame_right))
         ewmh.set_window_state(win, 1, '_NET_WM_STATE_MAXIMIZED_VERT')
         ewmh.set_window_state(win, 0, '_NET_WM_STATE_MAXIMIZED_HORZ')
-        ewmh.set_move_resize_window(win, x=x, y=y, width=width / 2 - frame_left - frame_right)
+        ewmh.set_move_resize_window(win, x=x, width=width / 2 - frame_left - frame_right)
     elif snap is Snap.Right:
-        print ("Snapping window to: " + str(width / 2) + ' ' + str(y) + ' ' + str(width / 2 - frame_left - frame_right))
+        viewport_x, viewport_y = ewmh.get_viewport()
+        offset_x = x - viewport_x
+        print ("Snapping window to: x: " + str(width / 2 + offset_x) + ' width: ' + str(width / 2 - frame_left - frame_right))
         ewmh.set_window_state(win, 1, '_NET_WM_STATE_MAXIMIZED_VERT')
         ewmh.set_window_state(win, 0, '_NET_WM_STATE_MAXIMIZED_HORZ')
-        ewmh.set_move_resize_window(win, x=width / 2, y=y, width=width / 2 - frame_left - frame_right)
+        ewmh.set_move_resize_window(win, x=width / 2 + offset_x, width=width / 2 - frame_left - frame_right)
     elif snap is Snap.Top:
-        print ("Snapping window to: " + str(x) + " " + str(y) + " " + str(height / 2 - frame_top - frame_bottom))
+        print ("Snapping window to: y: " + str(y) + " height: " + str(height / 2 - frame_top - frame_bottom))
         ewmh.set_window_state(win, 0, '_NET_WM_STATE_MAXIMIZED_VERT')
         ewmh.set_window_state(win, 1, '_NET_WM_STATE_MAXIMIZED_HORZ')
-        ewmh.set_move_resize_window(win, x=x, y=y, height=height / 2 - frame_top - frame_bottom)
+        ewmh.set_move_resize_window(win, y=y, height=height / 2 - frame_top - frame_bottom)
     elif snap is Snap.Bottom:
-        print ("Snapping window to: " + str(x) + " " + str(height / 2) + ' ' + str(height / 2 - frame_top - frame_bottom))
+        viewport_x, viewport_y = ewmh.get_viewport()
+        offset_y = y - viewport_y
+        print ("Snapping window to: y: " +  str(height / 2 + offset_y) + 'height: ' + str(height / 2 - frame_top - frame_bottom))
         ewmh.set_window_state(win, 0, '_NET_WM_STATE_MAXIMIZED_VERT')
         ewmh.set_window_state(win, 1, '_NET_WM_STATE_MAXIMIZED_HORZ')
-        ewmh.set_move_resize_window(win, x=x, y=height / 2, height=height / 2 - frame_top - frame_bottom)
+        ewmh.set_move_resize_window(win, y=height / 2 + offset_y, height=height / 2 - frame_top - frame_bottom)
 
 def get_window_geometry(win):
     """Returns a list containing the window's x, y, width and height coordinates in that order.
