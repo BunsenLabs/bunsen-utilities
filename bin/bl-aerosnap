@@ -233,6 +233,12 @@ def get_window_geometry(win):
     :param win: the X Window object"""
     window_geom = win.get_geometry()
     parent_geom = win.query_tree().parent.get_geometry()
+    if parent_geom.x < 0:
+        sys.stderr.write("Warning: cannot restore to negative x-coordinate, setting to 0\n")
+        parent_geom.x = 0
+    if parent_geom.y < 0:
+        sys.stderr.write("Warning: cannot restore to negative y-coordinate, setting to 0\n")
+        parent_geom.y = 0
     return [parent_geom.x, parent_geom.y, window_geom.width, window_geom.height]
 
 def get_window_id(ewmh, win):
