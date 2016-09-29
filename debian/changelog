@@ -1,3 +1,9 @@
+bunsen-utilities (8.7.1-1) bunsen-hydrogen; urgency=medium
+
+  * Add bl-notify-broadcast utility and systemd service.
+
+ -- John Crawley <john@bunsenlabs.org>  Thu, 29 Sep 2016 17:05:56 +0900
+
 bunsen-utilities (8.7-2) bunsen-hydrogen; urgency=high
 
   * Jens John: debian/control: Add dependency on python-dbus.

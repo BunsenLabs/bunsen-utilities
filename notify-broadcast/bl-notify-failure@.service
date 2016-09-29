@@ -1,0 +1,6 @@
+[Unit]
+Description=Send failure notification
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/bl-notify-broadcast "Service Failed" "%I" --icon=dialog-error --expire-time=30000

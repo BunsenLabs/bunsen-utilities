@@ -1,2 +1,4 @@
 bin usr
 bl-exitrc etc/bl-exit/
+notify-broadcast/bl-notify-failure@.service lib/systemd/system
+notify-broadcast/bl-notify-broadcast usr/sbin

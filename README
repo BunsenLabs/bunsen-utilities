@@ -2,7 +2,7 @@ bunsen-utilities
 ================
 
 A collection of small scripts to provide various functions
-which might be useful to BunsenLinux users.
+which might be useful to BunsenLinux users and system administrators.
 
 bl-exit:    Logout dialog box with various options.
 bl-lock:    Script to lock the display.
@@ -24,5 +24,7 @@ bl-tint2zen:    Yad-based tint2 manager.
 
 bl-kb:  Script to read openbox keyboard shortcuts and write them to a text file.
 bl-obthemes:    Script to save or restore openbox gui configurations.
+
 bl-package-versions:    Utility to display the versions of BunsenLabs packages in the apt repository and on GitHub.
 bl-github-upgrade:  Script to upgrade the BunsenLabs packages from GitHub.
+bl-notify-broadcast: Script to send user notification popups from root processes.

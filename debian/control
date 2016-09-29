@@ -2,7 +2,7 @@ Source: bunsen-utilities
 Section: misc
 Priority: extra
 Maintainer: John Crawley <john@bunsenlabs.org>
-Build-Depends: debhelper (>= 9)
+Build-Depends: debhelper (>= 9), dh-systemd (>= 1.5)
 Standards-Version: 3.9.5
 Homepage: https://github.com/BunsenLabs/bunsen-utilities
 Vcs-Git: https://github.com/BunsenLabs/bunsen-utilities.git
@@ -33,6 +33,7 @@ Description: Small scripts to use with BunsenLabs.
   - bl-tint2zen: Yad-based tint2 manager.
   - bl-package-versions: Utility to display the versions of BunsenLabs packages.
   - bl-github-upgrade: Script to upgrade the BunsenLabs packages from GitHub.
+  - bl-notify-broadcast: Script to send user notifications from root processes.
  .
  Originally imported from cb-exit, cb-lock and cb-wmhacks,
  made for CrunchBang Linux and subsequently modified for BunsenLabs.
