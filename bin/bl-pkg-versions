@@ -86,7 +86,7 @@ tput sgr0
 while read -r pkgname apt_version
 do
     git_version=$(lookup_github "$pkgname")
-    [[ $git_version != $apt_version ]] && tput bold
+    [[ $git_version != "$apt_version" ]] && tput bold
     printf '%-30s %-12s %-12s\n' "$pkgname" "$apt_version" "$git_version"
     tput sgr0
 done <<<"$repo_list"
