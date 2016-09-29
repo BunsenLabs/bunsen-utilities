@@ -5,7 +5,7 @@
 
 style "window"
 {
-  bg[NORMAL] = '#1e25a7'
+  bg[NORMAL] = '#841010'
 }
 
 
@@ -13,8 +13,8 @@ style "button"
 {
 # This shows all the possible states for a button.  
   
-    bg[PRELIGHT] = '#121ac3'
-    bg[ACTIVE] = '#121ac3'
+    bg[PRELIGHT] = '#832020'
+    bg[ACTIVE] = '#832020'
 }
 
 # These set the widget types to use the styles defined above.
@@ -23,3 +23,4 @@ style "button"
 
 widget "blexit" style "window"
 class "GtkButton"  style:highest "button"
+
