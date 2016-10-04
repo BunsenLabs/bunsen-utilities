@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-#    bl-obthemes-helper: script to determine dimensions of the monitor
-#    from the current cursor position.
+#    bl-xinerama-prop: script to get xinerama properties in a shell script
 #    Copyright (C) 2016 xaos52 <xaos52@bunsenlabs.org>
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -25,7 +24,7 @@ import sys
 import argparse
 
 
-ap = argparse.ArgumentParser(description="""Helper pyton script.
+ap = argparse.ArgumentParser(description="""Helper python script.
 Using the current cursor position, this script prints the dimensions 
 of the monitor that the cursor is on.
 """)

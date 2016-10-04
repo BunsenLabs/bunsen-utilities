@@ -77,9 +77,6 @@
 show = always
 onerror = novisual
 
-[cancel]
-show = always
-
 [logout]
 show = always
 onerror = novisual

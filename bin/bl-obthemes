@@ -180,7 +180,7 @@ OK="--button=OK:0"
 CANCEL="--button=gtk-cancel:1"
 EXIT="--button=gtk-quit:1"
 CLOSE="--button=gtk-close:1"
-TXTINTRO='<big><b>BunsenLabs 
+TXTINTRO='<big><b>BunsenLabs
 Openbox Configuration Manager</b></big>
 
 
@@ -262,7 +262,7 @@ function getSet(){      # get name of currently set BLOB config
 
 function getActiveMonitorDimensions(){   # Set width and height for View dialog
     declare -a dim=()
-    dim=($(bl-obthemes-helper))
+    dim=($(bl-xinerama-prop))
     W=$(( ${dim[0]} / 3 ))
     H=$(( ${dim[1]} / 3 * 2 ))
     [[ $W =~ ^[0-9]+$ ]] && [[ $H =~ ^[0-9]+$ ]] || {
