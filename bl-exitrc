@@ -1,6 +1,7 @@
 # DEFAULT BUTTON CONFIGURATION FOR bl-exit
 #
 # USING THE CLASSICAL STYLE
+# -------------------------
 #
 # CASE:
 #   Use only lowercase in the BUTTONS section
@@ -12,31 +13,38 @@
 #
 # CONFIGURATION:
 #   To configure bl-exit buttons, copy this file to
-#      $HOME/.config/bl-exit/bl-exitrc
+#
+#      "$HOME/.config/bl-exit/bl-exitrc"
+#
 #   and edit it according to your wishes.
+#
 #   It is possible to group configurations for several buttons by adding a
 #      [default]
 #   section. All buttons that do not have a specific section will take the
 #   show and onerror values from this default section.
 #   show can take the values always | never | maybe
+#
 #     maybe:
 #       the button will be shown and clickable when the action is
 #       possible. When the action is not possible (e.g. suspend when
 #       no swap file is present) the button will be inactive.
+#
 #   onerror can take the values visual | novisual for feedback on error.
 #
 # USING THE MODERN STYLE
+# ----------------------
 #
 # ICONS:
-#   Icon images are installed in /usr/share/images/bunsen/exit/dark
-#   You can use your own images by placing them in a direcory of your
-#   choice in your HOME directory. We recommend ~/.local/share/bl-exit,
+#   Icon images are installed in "/usr/share/images/bunsen/exit/dark"
+#   You can use your own images by placing them in a directory of your
+#   choice in your HOME directory. We recommend "~/.local/share/bl-exit",
 #   but you are free to choose any directory you want.
 #   To activate those images, edit the 'iconpath' configuration option
 #   to:
 #     iconpath=~/.local/share/bl-exit:/usr/share/images/bunsen/exit/light
+#
 #   This path is searched from left to right - just like PATH - to find
-#   your configuraed images.
+#   your configured images.
 #
 # THEMES:
 #   The height of the bl-exit window will not be displayed less than the icon height.
@@ -49,13 +57,13 @@
 #
 # STYLE:
 #   When the [style] section is not present or the combination of the values
-#   of options 'dir' and 'rcfile' point to a non-existant file, the buttons
+#   of options 'dir' and 'rcfile' point to a non-existent file, the buttons
 #   will take colors from the active gtk theme.
 #   So you can keep the section [style] and just switch the value of 'rcfile'
-#   from an existant file to 'None' for instance - to switch from a custom
+#   from an existent file to 'None' for instance - to switch from a custom
 #   style to the current active gtk theme. (presuming there is no file 'None'
 #   in the directory 'dir')
-#   TL;DR
+#
 #     non-existing rcfile  --> use current GTK theme
 #     existing rcfile      --> use custom colors
 #
@@ -64,12 +72,12 @@
 #     entry in the [theme] section to 'classic'
 #
 #   To use custom styles, you MUST
-#      - create a subdirectory in $HOME/.config/bl-exit
+#      - create a subdirectory in "$HOME/.config/bl-exit"
 #      - specify that subdirectory in entry 'dir' of section [style]
 #      - specify the filename in entry 'rcfile' of section [style]
 #
-#   We install example custom styles in /etc/bl-exit/styles that you can copy
-#   to $HOME/.config/bl-exit/...
+#   We install example custom styles in "/etc/bl-exit/styles" that you can copy
+#   to "$HOME/.config/bl-exit/"...
 #
 
 ### BUTTONS ############################################################
@@ -139,7 +147,7 @@ buttonImageSuspend=sleep.png
 buttonImageLogout=logout.png
 buttonImageHybridSleep=hibernate.png
 buttonImageHibernate=hibernate.png
-# windowWidthAdjustment - subtract this number from monitor width to get window width
+# windowWidthAdjustment - subtract this number (px) from monitor width to get window width
 windowWidthAdjustment=
 
 [light]
@@ -163,7 +171,7 @@ buttonImageSuspend=sleep.png
 buttonImageLogout=logout.png
 buttonImageHybridSleep=hibernate.png
 buttonImageHibernate=hibernate.png
-# windowWidthAdjustment - subtract this number from monitor width to get window width
+# windowWidthAdjustment - subtract this number (px) from monitor width to get window width
 windowWidthAdjustment=
 
 [minimal]
@@ -183,5 +191,5 @@ buttonImageSuspend=sleep.png
 buttonImageLogout=logout.png
 buttonImageHybridSleep=hibernate.png
 buttonImageHibernate=hibernate.png
-# windowWidthAdjustment - subtract this number from monitor width to get window width
+# windowWidthAdjustment - subtract this number (px) from monitor width to get window width
 windowWidthAdjustment=
