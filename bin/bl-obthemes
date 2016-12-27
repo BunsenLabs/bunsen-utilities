@@ -77,6 +77,7 @@ DMENUDIR="$HOME/.config/dmenu"
 DMENU="dmenu-bind.sh"
 XFILE=".Xresources"
 BASHFILE=".bashrc"
+SHELLFILE=$(echo "$ENV" | awk -F'/' '{print $NF}')
 PICKOBCFGS="OB menu.xml rc.xml autostart"
 PICKOB="OB theme"
 PICKGTK="GTK theme"
@@ -526,7 +527,10 @@ function getXconfig(){
     if [[ -f $BASHFILE ]];then
         cp "$BASHFILE" "$CONFIGDIR"
     fi
-    TXT="X terminal config:  $BASHFILE;$XFILE\n"
+    if [[ -f $ENV ]];then
+	cp "$ENV" "$CONFIGDIR"
+    fi
+    TXT="X terminal config:  $BASHFILE; $XFILE; $ENV\n"
     echo -e "\n  Saved $TXT"
     echo "[XFILES]" >> "$SETTINGS"
     echo "$TXT" >> "$LISTMSG"
@@ -1081,7 +1085,7 @@ function restoreSettings(){
                                 ;;
             "[LIGHTDM]"     )   restoreLightdm "$FPATH/$LDM"
                                 ;;
-            "[XFILES]"      )   restoreXsettings "$FPATH/.bashrc" "$FPATH/.Xresources"
+            "[XFILES]"      )   restoreXsettings "$FPATH/.bashrc" "$FPATH/.Xresources" "$FPATH/$SHELLFILE"
                                 ;;
             "[TERMINATOR]"  )   restoreTerminator "$FPATH/config"
                                 ;;
