@@ -154,6 +154,8 @@ DMENUDIR="$HOME/.config/dmenu"
 DMENU="dmenu-bind.sh"
 XFILE=".Xresources"
 BASHFILE=".bashrc"
+SHELLFILE=$(echo "$ENV" | awk -F'/' '{print $NF}')
+ZSHFILE=".zshrc"
 PICKOB="OB theme"
 PICKGTK="GTK theme"
 PICKCONKY="Conky"
@@ -584,13 +586,20 @@ function getTerminator(){
 function getXconfig(){
     XFILE="$HOME/.Xresources"
     BASHFILE="$HOME/.bashrc"
+    ZSHFILE="$HOME/.zshrc"
     if [[ -f $XFILE ]];then
         cp "$XFILE" "$CONFIGDIR"
     fi
     if [[ -f $BASHFILE ]];then
         cp "$BASHFILE" "$CONFIGDIR"
     fi
-    TXT="X terminal config:  $BASHFILE;$XFILE\n"
+    if [[ -f $ZSHFILE ]];then
+	cp "$ZSHFILE" "$CONFIGDIR"
+    fi
+    if [[ -f $ENV ]];then
+	cp "$ENV" "$CONFIGDIR"
+    fi
+    TXT="X terminal config:  $BASHFILE; $XFILE; $ZSHFILE; $ENV\n"
     echo -e "\n  Saved $TXT"
     echo "[XFILES]" >> "$SETTINGS"
     echo "$TXT" >> "$LISTMSG"
@@ -1175,7 +1184,7 @@ function restoreSettings(){
                                 ;;
             "[EXITRC]"      )   restoreBLexitrc "$FPATH/bl-exitrc"
                                 ;;
-            "[XFILES]"      )   restoreXsettings "$FPATH/.bashrc" "$FPATH/.Xresources"
+            "[XFILES]"      )   restoreXsettings "$FPATH/.bashrc" "$FPATH/.Xresources" "$FPATH/.zshrc" "$FPATH/$SHELLFILE"
                                 ;;
             "[TERMINATOR]"  )   restoreTerminator "$FPATH/config"
                                 ;;
