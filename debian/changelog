@@ -1,3 +1,10 @@
+bunsen-utilities (8.7.2-1) bunsen-hydrogen; urgency=medium
+
+  * debian/control: add dependency on libnotify-bin
+  * capn-damo: bl-exitrc: Edit comments, fix some typos
+
+ -- John Crawley <john@bunsenlabs.org>  Sat, 14 Jan 2017 15:23:24 +0900
+
 bunsen-utilities (8.7.1-1) bunsen-hydrogen; urgency=medium
 
   * Add bl-notify-broadcast utility and systemd service.
