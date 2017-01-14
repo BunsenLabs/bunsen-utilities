@@ -186,8 +186,8 @@ if display:
         def set_custom_style(self):
             try:
                 stylesdir = self.cp.get('style', 'dir')
-                stylerc = os.path.join(os.path.dirname(self.config_file),
-                                       stylesdir, self.cp.get('style', 'rcfile'))
+                rcfile = self.cp.get('style', 'rcfile')
+                stylerc = os.path.join(os.path.dirname(self.config_file), stylesdir, rcfile)
                 if not os.path.isfile(stylerc):
                     self.on_debug("custom style rc file does not exist")
                     return None

@@ -73,7 +73,7 @@
 #
 #   To use custom styles, you MUST
 #      - create a subdirectory in "$HOME/.config/bl-exit"
-#      - specify that subdirectory in entry 'dir' of section [style]
+#      - specify that subdirectory in entry 'dir' of section [style] as an absolute path
 #      - specify the filename in entry 'rcfile' of section [style]
 #
 #   We install example custom styles in "/etc/bl-exit/styles" that you can copy

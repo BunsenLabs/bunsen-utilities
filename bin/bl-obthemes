@@ -152,11 +152,8 @@ LDMDIR="/etc/lightdm"
 LDM="lightdm-gtk-greeter.conf"
 DMENUDIR="$HOME/.config/dmenu"
 DMENU="dmenu-bind.sh"
-EXITDIR="$HOME/.config/bl-exit"
-EXITRC="bl-exitrc"
 XFILE=".Xresources"
 BASHFILE=".bashrc"
-PICKOBCFGS="OB menu.xml rc.xml autostart"
 PICKOB="OB theme"
 PICKGTK="GTK theme"
 PICKCONKY="Conky"
@@ -165,10 +162,8 @@ PICKBG="Background Wallpaper"
 PICKDMENU="dmenu (Alt menu)"
 PICKLDM="Lightdm Login theme"
 PICKEXIT="Exit dialog theme"
-PICKSCROT="Save screenshot"
 PICKTERM="Terminator"
 PICKX="X configs"
-PICKEXIT="Exit dialog"
 ### END CONFIGS VARIABLES
 
 ### DIALOG VARIABLES
@@ -211,8 +206,8 @@ KEYDOWN=13           # adjust this for where "Preferences" is in the menu
 function Intro(){
     local INTRO RET
     getSet
-    #  If blob/ is empty, then don't display "Save Settings" option in Intro dialog
-    if (( $NUMDIRS > 0 ));then
+    #  If blob/ is empty, then don't display "View Saved" option in Intro dialog
+    if (( NUMDIRS > 0 ));then
         INTRO=$($DIALOGDEC "$T$TXTINTRO" \
         --title="$TITLE" \
         --button="Save Settings:0" --button="View Saved:2" $CLOSE \
@@ -251,12 +246,12 @@ function Intro(){
 function getSet(){      # get name of currently set BLOB config
     NUMDIRS=0
     NUMDIRS=$(ls -l "$CONFIGPATH" | grep -c ^d) # check if any dirs present
-    if (( $NUMDIRS == 0 ));then
+    if (( NUMDIRS == 0 ));then
         if [[ -f $CURSESSION ]];then
-            rm $CURSESSION
+            rm "$CURSESSION"
         fi
-    elif (( $NUMDIRS > 0 )) && [[ -f $CURSESSION ]];then
-        SET=$(cat $CURSESSION)
+    elif (( NUMDIRS > 0 )) && [[ -f $CURSESSION ]];then
+        SET=$(cat "$CURSESSION")
     fi
 }
 
@@ -291,7 +286,7 @@ function setName(){  # set name of collection, make dir and session settings fil
             2>/dev/null
             RET=$?
             echo -e "\n  No name entered for new collection!" 2>&1
-            if (( $RET == 0 ));then
+            if (( RET == 0 ));then
                 continue
             else
                 Intro
@@ -309,7 +304,7 @@ function setName(){  # set name of collection, make dir and session settings fil
                 2>/dev/null
 
                 if (( $? == 0 ));then
-                    mv {"$CONFIGDIR","$CONFIGDIR-BKP"} && mkdir -p "$CONFIGDIR"
+                    mv "$CONFIGDIR" "$CONFIGDIR-BKP" && mkdir -p "$CONFIGDIR"
                     DEL=1
                     SETTINGS="$CONFIGDIR/settings.cfg"
                     > "$SETTINGS"
@@ -333,7 +328,7 @@ function setName(){  # set name of collection, make dir and session settings fil
 
 function setText(){
     TIME=$(date)
-    if (( $DEL == 1 ));then
+    if (( DEL == 1 ));then
         TXT="  (Existing session overwritten)"
     else
         TXT=""
@@ -395,7 +390,7 @@ function bgFeh(){    # get Feh saved backgrounds
         \t$FEHFILE\n\t$BG"
         echo "Background set with feh:\n\t$BG" >> "$LISTMSG"
     else
-        echo "\n  $FFILE not found" 2>&1
+        echo -e "\n  $FFILE not found" 2>&1
     fi
 }
 
@@ -413,7 +408,7 @@ function getNitrogen(){  # get Nitrogen saved backgrounds
         echo -e "$BG"
         echo "Background set with nitrogen:\n$BG" >> "$LISTMSG"
     else
-        echo "\n  $NFILE not found" 2>&1
+        echo -e "\n  $NFILE not found" 2>&1
     fi
 }
 
@@ -576,16 +571,6 @@ function getLightdm(){
     fi
 }
 
-function getExit(){
-    if [[ -f $EXITDIR/$EXITRC ]];then
-        cp "$EXITDIR/$EXITRC" "$CONFIGDIR"
-        TXT="bl-exit config:  $EXITDIR/$EXITRC\n"
-        echo -e "\n  Saved $TXT"
-        echo "[BL_EXIT]" >> "$SETTINGS"
-        echo "$TXT" >> "$LISTMSG"
-    fi
-}
-
 function getTerminator(){
     if [[ -e $TERMFILE ]];then
         cp "$TERMFILE" "$CONFIGDIR"
@@ -659,7 +644,7 @@ function getScrot(){
     screenH=$(xrandr -q | awk '/Screen/ {print $10}')
     screenH=${screenH%,}
 
-    if (( $MONS == 1 ));then # single monitor
+    if (( MONS == 1 ));then # single monitor
         appX=$(( (screenW/20)*8 ))
         menuX=$(( (screenW/20)*2 ))
     else
@@ -688,22 +673,22 @@ function getScrot(){
     LX=$(xdotool getwindowfocus)
     xdotool windowmove --sync $LX $appX $appY && sleep 0.1 && \
     xdotool mousemove --sync --window $LX -- -50 0 && xdotool click 1
-    xdotool mousemove --sync $menuX $menuY && xdotool key --clearmodifiers "super+space"
+    xdotool mousemove --sync $menuX $menuY && xdotool key --clearmodifiers $MENUMODIFIER
 
     i=1
-    while (( $i <= $KEYDOWN ));do
+    while (( i <= KEYDOWN ));do
         xdotool key --delay 50 Down
-        i=$(( $i+1 ))
+        i=$(( i+1 ))
     done
     xdotool key --delay 20 Right && sleep 0.3
 
     # take scrot
     scrot -t 9 "$SCROT.jpg"    # scrot thumbnail @9% fullsize
-    THUMB=$(find $CONFIGPATH -maxdepth 1 -type f -name "*-thumb.jpg" 2>/dev/null)
-    mv $THUMB $CONFIGDIR
+    THUMB=$(find "$CONFIGPATH" -maxdepth 1 -type f -name "*-thumb.jpg" 2>/dev/null)
+    mv "$THUMB" "$CONFIGDIR"
 
     # close root menu
-    xdotool mousemove_relative --sync --polar 0 10 click 3
+    xdotool mousemove_relative --sync --polar 0 10 $MOUSECMD
     # kill lxappearance
     if [[ $(pgrep lxappearance | grep $pid) ]];then
         kill -9 $pid &>/dev/null
@@ -713,7 +698,7 @@ function getScrot(){
     while read line; do
         WINDOW=$(echo $line | awk '{print $1}') # Window_ID is first field
         DTOP=$(echo $line | awk '{print $2}' )  # Desktop number is second field
-        if (( $DTOP == $CURRDTOP )) &>/dev/null;then
+        if (( DTOP == CURRDTOP )) &>/dev/null;then
             xdotool windowactivate "$WINDOW"
         fi
     done < "$TMPSCROT"
@@ -743,7 +728,7 @@ function restoreGTK(){   # $1 is chosen saved config dir
         else
             echo -e "\n  ${GTKSAVED[i]} not found" 2>&1
         fi
-        i=$(($i+1))
+        i=$((i+1))
     done
 }
 
@@ -757,20 +742,20 @@ function restoreOBrc(){
         RCBKP="$RCFILE.blob.$NOW"
         cp "$RCFILE" "$RCBKP"
         # remove older backups
-        for f in $(find $OBPATH -type f|grep .blob. );do
+        for f in $(find "$OBPATH" -type f|grep .blob. );do
             if [[ $f -ot $RCBKP ]];then
                 rm "$f"
             fi
         done
         ## put placeholder in place of <theme> section, write to tempfile
-        sed -n "/<theme>/{:a;N;/<\/theme>/!ba;N;s/.*\n/THEMESECTION\n/};p" "$RCFILE" > $FTEMP
+        sed -n "/<theme>/{:a;N;/<\/theme>/!ba;N;s/.*\n/THEMESECTION\n/};p" "$RCFILE" > "$FTEMP"
         # replace placeholder from theme file
         sed -i "/THEMESECTION/{
             s/THEMESECTION//g
             r $THEMEFILE
-        }" $FTEMP
-        sed -i '/^$/d' $FTEMP   # remove empty lines
-        cp $FTEMP "$RCFILE"     # overwrite rc.xml
+        }" "$FTEMP"
+        sed -i '/^$/d' "$FTEMP"   # remove empty lines
+        cp "$FTEMP" "$RCFILE"     # overwrite rc.xml
         echo -e "\n  rc.xml backed up and edited for OB theme"
         rm -f "$FTEMP"
     fi
@@ -835,19 +820,6 @@ function restoreLightdm(){   # need sudo to restore lightdm-gtk-greeter.conf
     done
 }
 
-function restoreExit(){
-    EXITFILE="$1"
-    if [[ -e $EXITDIR ]];then        # backup bl-exitrc first
-        EXITBKP="$EXITDIR/$EXITRC.bkp"
-        cp "$EXITDIR/$EXITRC" "$EXITBKP"
-        cp "$EXITFILE" "$EXITDIR"
-        echo -e "\n  $EXITDIR/$EXITRC backed up and restored"
-    else
-        cp "$EXITFILE" "$EXITDIR/$EXITRC"
-        echo -e "\n  $EXITDIR/$EXITRC restored"
-    fi
-}
-
 function restoreXsettings(){
     XBKP=""
     for var in "$@";do
@@ -897,7 +869,7 @@ function cleanup(){
             echo -e "\n  Deleted $CONFIGDIR"
         fi
         if [[ -d $CONFIGDIR-BKP ]];then
-            mv {"$CONFIGDIR-BKP","$CONFIGDIR"}
+            mv "$CONFIGDIR-BKP" "$CONFIGDIR"
             echo -e "\n  Cancelled\n..Temporary $CONFIGDIR restored\n"
         fi
         rm -f /tmp/blob.*
@@ -908,7 +880,7 @@ function cleanup(){
 
 function saveSettings(){
     SHOW=0
-    if (( $COLS == 0 ));then
+    if (( COLS == 0 ));then
         SELECT="FALSE"
     else
         SELECT="TRUE"
@@ -923,15 +895,14 @@ function saveSettings(){
         $SELECT "$PICKLDM" \
         $SELECT "$PICKEXIT" \
         $SELECT "$PICKX" \
-        $SELECT "$PICKEXIT" \
         )
     # add terminator to array if set as default
-    if  echo $(readlink -f /usr/bin/x-terminal-emulator ) | grep terminator &>/dev/null;then
+    if  readlink -f /usr/bin/x-terminal-emulator | grep terminator &>/dev/null;then
         COLUMNS=("${COLUMNS[@]}" $SELECT "$PICKTERM")
     fi
 
     SLOOP=1
-    while (( $SLOOP == 1 ));do
+    while (( SLOOP == 1 ));do
         CHOICE=$($DIALOGDEC --list --checklist \
             --title="Choose the configs to save..." \
             --button="Select All:2" \
@@ -940,11 +911,11 @@ function saveSettings(){
             --column="Select" --column="Config" "${COLUMNS[@]}" \
             2>/dev/null )
             ret=$?
-        if (( $ret == 1 )); then # cancel button pressed
+        if (( ret == 1 )); then # cancel button pressed
             COLS=0
             cleanup all
             restoreSettings
-        elif (( $ret == 2 ));then
+        elif (( ret == 2 ));then
             COLS=1
             saveSettings
             SHOW=1
@@ -969,7 +940,7 @@ function saveSettings(){
                         continue
                     fi
                     retChoice[$i]="$ret"
-                    i=$(($i+1))
+                    i=$((i+1))
                 done
                 IFS=$OIFS # reset IFS back to default
                 len=${#retChoice[@]}
@@ -990,13 +961,11 @@ function saveSettings(){
                                         ;;
                         "$PICKLDM"  )   getLightdm
                                         ;;
-                        "$PICKEXIT" )   getExit
+                        "$PICKEXIT" )   getBLexitrc
                                         ;;
                         "$PICKTERM" )   getTerminator
                                         ;;
                         "$PICKX"    )   getXconfig
-                                        ;;
-                        "$PICKEXIT" )   getBLexitrc
                                         ;;
                         *           )   echo -e "\n  Unknown value!" 2>&1
                                         exit 1
@@ -1007,13 +976,13 @@ function saveSettings(){
             fi
         fi
     done
-    if (( $SHOW == 0 ));then
+    if (( SHOW == 0 ));then
         COLS=0      # reset columns unselected
         TXT="<big><b><u>Openbox Configurations to be saved:</u></b></big>\n\n"
         TXT2=$(cat "$LISTMSG")
         NEW=$($DIALOG --text="$TXT$TXT2") 2>/dev/null
         ret=$?
-        if (( $ret == 1 ));then
+        if (( ret == 1 ));then
             cleanup all
             restoreSettings
         else
@@ -1024,7 +993,7 @@ function saveSettings(){
 
 function ViewRestoreDialog(){  #   Display saved theme collections
     getSet          # get name of latest set BLOB config
-    if (( $NUMDIRS == 0 ));then   # no saved configs; go back to Intro dialog
+    if (( NUMDIRS == 0 ));then   # no saved configs; go back to Intro dialog
         Intro
     fi
     DLGLIST=""
@@ -1057,7 +1026,7 @@ function ViewRestoreDialog(){  #   Display saved theme collections
                 CONFIGS="$CONFIGS\""
                 configARR[$i]="$CONFIGS" # add saved configs to array
             fi
-            i=$(($i+1))
+            i=$((i+1))
         fi
     done
     for ((j=0; j<${#namesARR[*]}; j++));do
@@ -1148,7 +1117,7 @@ function restoreSettings(){
                 ;;
             5)  Intro
                 ;;
-            *)  if (( $RET == 252 ));then
+            *)  if (( RET == 252 ));then
                     echo -e "\n  Exited with \"ESC\" key"
                 else
                     echo -e "\n  Error= $RET" 2>&1
@@ -1171,14 +1140,14 @@ function restoreSettings(){
         VAL=$(echo $line | awk '{print $2}')
         case "$TAG" in
             "[TINT2]"       )   checkTint2zen # see if bl-tint2zen installed
-                                if (( $TZEN == 1 ));then
+                                if (( TZEN == 1 ));then
                                     > "$TINTSESSION" # overwrite tint2 session file
                                 fi
                                 TINTCMD=$(echo $line | cut -d ' ' -f2-)
                                 restoreTint2 "$TINTCMD"
                                 ;;
             "[CONKY]"       )   checkConkyzen # see if bl-conkyzen installed
-                                if (( $CZEN == 1 ));then
+                                if (( CZEN == 1 ));then
                                     > "$CONKYSESSION" # overwrite conky session file
                                 fi
                                 CONKYCMD=$(echo $line | cut -d ' ' -f2-)
@@ -1204,13 +1173,11 @@ function restoreSettings(){
                                 ;;
             "[LIGHTDM]"     )   restoreLightdm "$FPATH/$LDM"
                                 ;;
-            "[BL_EXIT]"     )   restoreExit "$FPATH/$EXITRC"
+            "[EXITRC]"      )   restoreBLexitrc "$FPATH/bl-exitrc"
                                 ;;
             "[XFILES]"      )   restoreXsettings "$FPATH/.bashrc" "$FPATH/.Xresources"
                                 ;;
             "[TERMINATOR]"  )   restoreTerminator "$FPATH/config"
-                                ;;
-            "[EXITRC]"      )   restoreBLexitrc "$FPATH/bl-exitrc"
                                 ;;
             *               )   echo -e "  Unknown value!" 2>&1
                                 restoreSettings
@@ -1230,7 +1197,7 @@ if [[ ! -f $CURSESSION ]] &>/dev/null;then
 fi
 getActiveMonitorDimensions
 getSet
-if (( $NUMDIRS == 0 ));then
+if (( NUMDIRS == 0 ));then
     Intro
 else
     restoreSettings
