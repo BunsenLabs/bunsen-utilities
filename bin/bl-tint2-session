@@ -57,7 +57,7 @@ testSessionfile(){
         echo -e "Created sessionfile \"$1\"\nRunning default tint2rc" 2>&1
         echo "$TINT2PATH/tint2rc" > "$SESSIONFILE"
         killTints
-        tint2 -c "$TINT2PATH/tint2rc" &>/dev/null
+        tint2 -c "$TINT2PATH/tint2rc" &
     fi
 }
 

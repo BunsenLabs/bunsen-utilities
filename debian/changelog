@@ -1,3 +1,9 @@
+bunsen-utilities (8.8.1-1) bunsen-hydrogen; urgency=high
+
+  * bl-tint2-session: fork tint2, also when no tint2-sessionfile exists.
+
+ -- John Crawley <john@bunsenlabs.org>  Mon, 30 Jan 2017 11:26:50 +0900
+
 bunsen-utilities (8.8-1) bunsen-hydrogen; urgency=medium
 
   * Version bump for deuterium merge
