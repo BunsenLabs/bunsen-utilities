@@ -154,8 +154,8 @@ if display:
             self.debug = True
             self.selectedAction = None
             self.window.set_decorated(True)
-            self.window.connect("delete_event", self.window.destroy)
-            self.window.connect("destroy_event", self.window.destroy)
+            self.window.connect("delete_event", self.destroy)
+            self.window.connect("destroy_event", self.destroy)
             self.window.set_resizable(False)
             self.window.set_keep_above(True)
             self.window.stick()
@@ -244,7 +244,7 @@ if display:
             self.window.add(vbox)
             self.window.show_all()
 
-        def destroy(self):
+        def destroy(self, widget=None, event=None, data=None):
             self.window.hide_all()
             gtk.main_quit()
 
