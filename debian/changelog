@@ -1,3 +1,9 @@
+bunsen-utilities (8.8.2-1) bunsen-hydrogen; urgency=medium
+
+  * bl-exit: fix error if window closed (issue #58)
+
+ -- John Crawley <john@bunsenlabs.org>  Sat, 18 Feb 2017 12:15:25 +0900
+
 bunsen-utilities (8.8.1-1) bunsen-hydrogen; urgency=high
 
   * bl-tint2-session: fork tint2, also when no tint2-sessionfile exists.
