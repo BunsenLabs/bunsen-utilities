@@ -1,3 +1,9 @@
+bunsen-utilities (8.8.2.1-1) bunsen-hydrogen; urgency=medium
+
+  * bl-exit: use "classic" theme by default.
+
+ -- John Crawley <john@bunsenlabs.org>  Fri, 07 Apr 2017 17:26:21 +0900
+
 bunsen-utilities (8.8.2-1) bunsen-hydrogen; urgency=medium
 
   * bl-exit: fix error if window closed (issue #58)

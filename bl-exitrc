@@ -115,7 +115,7 @@ onerror = novisual
 
 [style]
 dir = styles
-rcfile = None
+rcfile = none
 
 ### THEME to be used ###################################################
 # When the [theme] section is not present or commented out
@@ -123,9 +123,33 @@ rcfile = None
 # 'classic', use the 'classic' ButtonBox layout.
 [theme]
 # set the theme
-theme = dark
+theme = classic
 
 ### THEME settings #####################################################
+[bunsen-small]
+name = Default small Bunsen theme
+author = BunsenLabs
+#Overall height of the dialog.
+dialogHeight=130
+#Delay for the fade in counter
+sleepDelay=0.001
+#OverallOpacity of the dialog (0-100)
+overallOpacity=80
+#Space between Buttons
+buttonSpacing=0
+# path to icon files
+iconpath=/usr/share/images/bunsen/exit/dark
+#Button textures (i.e. the images on them)
+buttonImageCancel=cancel.png
+buttonImagePowerOff=poweroff.png
+buttonImageReboot=reboot.png
+buttonImageSuspend=sleep.png
+buttonImageLogout=logout.png
+buttonImageHybridSleep=hibernate.png
+buttonImageHibernate=hibernate.png
+# windowWidthAdjustment - subtract this number (px) from monitor width to get window width
+windowWidthAdjustment=480
+
 [dark]
 name=Dark Theme
 author=MerlinElMago
