@@ -1,4 +1,4 @@
-bunsen-utilities (8.8.2.1-1) bunsen-hydrogen; urgency=medium
+bunsen-utilities (8.8.3-1) bunsen-hydrogen; urgency=medium
 
   * bl-exit: use "classic" theme by default.
 
