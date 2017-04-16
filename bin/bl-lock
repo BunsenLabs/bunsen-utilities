@@ -20,8 +20,10 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 if [ "$(dpkg-query --show --showformat='${db:Status-Abbrev;2}' xscreensaver 2>/dev/null)" = 'ii' ] &&  [ "$(dpkg-query --show --showformat='${db:Status-Abbrev;2}' light-locker 2>/dev/null)" = 'un' ]
-then LOCK_COMMAND=(xscreensaver-command --lock)
-else LOCK_COMMAND=(light-locker-command -l)
+then
+    LOCK_COMMAND=(xscreensaver-command --lock)
+else
+    LOCK_COMMAND=(light-locker-command -l)
 fi
 
 HELP="    bl-lock a wrapper for the '${LOCK_COMMAND[*]}' command
