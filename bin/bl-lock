@@ -19,9 +19,12 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-LOCK_COMMAND=(light-locker-command -l)
+if [ "$(dpkg-query --show --showformat='${db:Status-Abbrev;2}' xscreensaver 2>/dev/null)" = 'ii' ] &&  [ "$(dpkg-query --show --showformat='${db:Status-Abbrev;2}' light-locker 2>/dev/null)" = 'un' ]
+then LOCK_COMMAND=(xscreensaver-command --lock)
+else LOCK_COMMAND=(light-locker-command -l)
+fi
 
-HELP="    bl-lock a wrapper for the 'light-locker-command -l' command
+HELP="    bl-lock a wrapper for the '${LOCK_COMMAND[*]}' command
 
 Options:
     -h --help   show this message
