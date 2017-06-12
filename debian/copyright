@@ -4,12 +4,12 @@ Source: https://github.com/BunsenLabs/bunsen-utilities
 
 Files: *
 Copyright: 2012 Philip Newborough <corenominal@corenominal.org>
-           2015-2016 John Crawley <john@bunsenlabs.org>
-           2015 Craig Oakes <bunsen@craigoakes.com>
-           2015-2016 damo <damo@bunsenlabs.org>
            2015 Jens John <dev@2ion.de>
            2015 Jente Hidskes <hjdskes@gmail.com>
+           2015 Craig Oakes <bunsen@craigoakes.com>
+           2015-2016 damo <damo@bunsenlabs.org>
            2016 xaos52  <xaos52@gmail.com>
+           2015-2017 John Crawley <john@bunsenlabs.org>
 License: GPL-3.0+
 
 Files: debian/*

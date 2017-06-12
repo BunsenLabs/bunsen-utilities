@@ -26,5 +26,4 @@ bl-kb:  Script to read openbox keyboard shortcuts and write them to a text file.
 bl-obthemes:    Script to save or restore openbox gui configurations.
 
 bl-package-versions:    Utility to display the versions of BunsenLabs packages in the apt repository and on GitHub.
-bl-github-upgrade:  Script to upgrade the BunsenLabs packages from GitHub.
 bl-notify-broadcast: Script to send user notification popups from root processes.
