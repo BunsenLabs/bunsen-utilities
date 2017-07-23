@@ -364,7 +364,6 @@ function getBg(){    # find if feh or nitrogen was used. Save config file(s)
                     bgFeh
                     ;;
         NITROGEN)   echo "[BACKGROUND] $BGSET" >> "$SETTINGS"
-                    cp "$NITRODIR/nitrogen.cfg" "$CONFIGDIR"
                     cp "$NITROFILE" "$CONFIGDIR"
                     echo -e "\n  Saved Nitrogen file: $NITROFILE"
                     getNitrogen
@@ -530,7 +529,10 @@ function getGTKtheme(){
         if [[ -f $f ]];then
             cp "$f" "$CONFIGDIR"
         elif [[ -d $f ]];then
-            cp -r "$f" "$CONFIGDIR"
+			GTKDIR="$CONFIGDIR/$(basename $f)"
+			mkdir -p "$GTKDIR"
+            cp "$f/settings.ini" "$GTKDIR"
+            cp "$f/gtk.css" "$GTKDIR"
         fi
     done
     echo "[GTK]" >> "$SETTINGS"
@@ -718,10 +720,12 @@ function restoreGTK(){   # $1 is chosen saved config dir
         if [[ -e $f ]];then     # if destination exists
             if [[ -e ${GTKPATHS[i]} ]];then
                 if [[ ${GTKSAVED[i]} = $1/gtk-3.0 ]];then
-                    cp -r ${GTKSAVED[i]}/* ${GTKPATHS[i]} # restore contents of gtk-3.0
-                fi
-                cp ${GTKSAVED[i]} ${GTKPATHS[i]}
-                echo -e "\n  Restored: ${GTKSAVED[i]}"
+                    cp ${GTKSAVED[i]}/* ${GTKPATHS[i]} # restore contents of gtk-3.0
+                    echo -e "\n  Restored gtk-3.0 files"
+                else
+					cp ${GTKSAVED[i]} ${GTKPATHS[i]}
+					echo -e "\n  Restored: ${GTKSAVED[i]}"
+				fi
             else
                 echo -e "\n  Restore path ${GTKPATHS[i]} not found" 2>&1
             fi
