@@ -57,7 +57,11 @@ tintRunning(){
     pgrep -a tint2 | while read pid cmd; do
         if [[ ${cmd%% *} = tint2 ]]; then
             TPATH=$(echo $cmd | awk '{print $NF}')
-            echo $TPATH >> $TEMPFILE
+            if echo "$TPATH" | grep -v "$HOME";then	# in case started without full path
+				TPATH="$HOME/$TPATH"
+			fi
+         echo "$TPATH"
+            echo "$TPATH" >> $TEMPFILE
         fi
     done
 }
@@ -118,7 +122,6 @@ RET=$($DLGDEC $WINICON --list --title="$TITLE" \
     --column="Select" --column="tint2 Name" $LISTTINT --separator=":" \
     $OK $CANCEL \
     )
-
 if (( $? == 1 )); then # cancel button pressed
     exit 0
 else
