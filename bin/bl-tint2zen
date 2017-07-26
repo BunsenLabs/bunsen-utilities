@@ -37,11 +37,16 @@
 
 TINT2PATH="$HOME/.config/tint2"
 SESSIONFILE="$TINT2PATH/tint2-sessionfile"
-USAGE="\v\tUSAGE:\n\tWith no command argument, the script uses the chosen
-\tTint2 session file \"$TINT2PATH/tint2-sessionfile\",
-\tif it exists, otherwise the default tint2rc is used
-\v\tTo start them at login, add the following line to autostart:
-\v\t\t(sleep 2s && bl-tint2-session) &"
+USAGE='
+	USAGE:
+	With no command argument, the script uses the chosen
+	Tint2 session file "$TINT2PATH/tint2-sessionfile",
+	if it exists, otherwise the default tint2rc is used.
+
+	To start them at login, add the following line to autostart:
+
+		(sleep 2s && bl-tint2-session) &
+'
 
 ### DIALOG VARIABLES
 DLGDEC="yad --center --borders=20 "

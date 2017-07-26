@@ -62,7 +62,7 @@
 # "Configurations to be saved:" dialog.
 #
 
-HELP='bl-obthemes a script to save or restore openbox gui configurations
+HELP='bl-obthemes is a script to save or restore openbox gui configurations
 Options:
     -h --help   show this message
 

@@ -25,19 +25,29 @@
 ########################################################################
 CONKYPATH="$HOME/.config/conky"
 SESSIONFILE="$CONKYPATH/conky-sessionfile"
-USAGE="\vUSAGE:\tbl-conky-session [OPTION(S)]...FILES
-\n\tWith no command argument, the script uses the default
-\t\"\$CONKYPATH/conky-session\" sessionfile
-\vOPTIONS:\n\t--default\t: specify default sessionfile
-\t--autostart\t: no \"kill conky\" option asked for
-\tpath/to/sessionfile1  /path/to/sessionfile2 etc
-\vEXAMPLES:
-\tRun specified sessionfile at login:
-\t\"bl-conky-session --autostart /path/to/sessionfile\"
-\v\tRun default sessionfile, without killing running conkys:
-\t\"bl-conky-session --autostart\"
-\v\tRun several conky sessionfiles (option to kill conkys first):
-\t\"bl-conky-session --default sessionfile1 sessionfile2 etc\""
+USAGE='
+	USAGE:	bl-conky-session [OPTION(S)]...FILES
+
+	With no command argument, the script uses the default "$CONKYPATH/conky-session" sessionfile.
+
+	OPTIONS:
+		--default	: specify default sessionfile
+		--autostart	: no "kill conky" option asked for
+		path/to/sessionfile1  /path/to/sessionfile2 etc
+
+	EXAMPLES:
+	Run specified sessionfile at login:
+	
+		"bl-conky-session --autostart /path/to/sessionfile"
+
+	Run default sessionfile, without killing running conkys:
+	
+		"bl-conky-session --autostart"
+
+	Run several conky sessionfiles (option to kill conkys first):
+
+		"bl-conky-session --default sessionfile1 sessionfile2 etc"
+'
 
 ### DIALOG VARIABLES
 DLG="yad --center --undecorated --borders=20 "
