@@ -455,7 +455,7 @@ if display:
         buttonImageLogout=BlexitThemeDetail('logout.png', False, 'string'),
         buttonImageHybridSleep=BlexitThemeDetail('hibernate.png', False, 'string'),
         buttonImageHibernate=BlexitThemeDetail('hibernate.png', False, 'string'),
-        windowWidthAdjustment=BlexitThemeDetail(0, False, 'int')
+        windowWidthAdjustment=BlexitThemeDetail(0, False, 'float')
     )
 
 
@@ -523,17 +523,17 @@ if display:
                 display=gtk.gdk.Display(gtk.gdk.get_display())
                 screen, x, y, flags=display.get_pointer()
                 curmon = screen.get_monitor_at_point(x, y)
-                _, _, width, _ = screen.get_monitor_geometry(curmon)
+                _, _, screenwidth, _ = screen.get_monitor_geometry(curmon)
             except:
                 self.bl_exit.on_error('Error in construct_ui: Not running under X')
             finally:
                 del x, y, display, screen, curmon
 
             try:
-                _width_adjustment = int(self.configured_theme.settings.get('windowWidthAdjustment', 0))
-                if abs(_width_adjustment) < width:
-                    width -= abs(_width_adjustment)
-                if width < 0:
+                _width_adjustment = float(self.configured_theme.settings.get('windowWidthAdjustment', 0))
+                if _width_adjustment > 0:
+                    width = int( screenwidth*_width_adjustment)
+                if width > screenwidth:
                     width = -1
             except:
                 self.on_debug('Problem with windowWidthAdjustment')
