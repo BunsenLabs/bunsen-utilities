@@ -51,27 +51,26 @@ CANCEL="--button=gtk-cancel:1"
 ########## FUNCTIONS ###################################################
 
 fillArrays(){
-    num="$1"
+    local num="$1"
     conkysPath[$num]="$2"   # full filepath to conky
     conkysArr[$num]="$3"    # displayed name: "directory/*conky(rc)"
 }
 
 findConky(){
-# search dirs for conkys files - looking for "conky" in the name
-# if "*conky(rc)" then display it
-
-num=0
-# find files in CONKYPATH with conky in the name
-for x in $(find "$CONKYPATH" -type f );do
-    f=$(basename "$x")    # filename from filepath
-    if [[ $f = *conkyrc ]] || [[ $f = *conky ]];then
-        # filename ends with *conky or *conkyrc
-        # get directory/conkyname to display in list
-        CONKY=$( echo "$x" | awk -F"/" '{print $(NF-1)"/"$NF}')
-        fillArrays $num "$x" "$CONKY"
-        num=$(($num+1))
-    fi
-done
+   # search dirs for conkys files - looking for "conky" in the name
+   # if "*conky(rc)" then display it
+   local num=0
+   # find files in CONKYPATH with conky in the name
+   for x in $(find "$CONKYPATH" -type f );do
+       f=$(basename "$x")    # filename from filepath
+       if [[ $f = *conkyrc ]] || [[ $f = *conky ]];then
+           # filename ends with *conky or *conkyrc
+           # get directory/conkyname to display in list
+           CONKY=$( echo "$x" | awk -F"/" '{print $(NF-1)"/"$NF}')
+           fillArrays $num "$x" "$CONKY"
+           num=$(($num+1))
+       fi
+   done
 }
 
 ######## END FUNCTIONS #################################################
