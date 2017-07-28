@@ -1,8 +1,8 @@
 #!/bin/bash
 ##
 #    bl-conkypin: a script to set the position of a moveable Conky
-#    Copyright (C) 2015 damo    <damo@bunsenlabs.org>
-#    Copyright (C) 2015 John Crawley <john@bunsenlabs.org>
+#    Copyright (C) 2015-2017 damo    <damo@bunsenlabs.org>
+#    Copyright (C) 2015-2017 John Crawley <john@bunsenlabs.org>
 #    Copyright (C) 2016 xaos52  <xaos52@gmail.com>
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -32,11 +32,53 @@ to move a selected conky to a new position on the screen.
 ## check necessary tools are installed
 required_commands=(xwininfo xprop yad) # array, space-separated words
 
-DIALOG="yad --center --undecorated --borders=20 \
---window-icon=distributor-logo-bunsenlabs"
+BL_COMMON_LIBDIR='/usr/lib/bunsen/common'
+if ! . "$BL_COMMON_LIBDIR/yad-includes" 2> /dev/null; then
+    echo $"Error: Failed to locate yad-includes in $BL_COMMON_LIBDIR" >&2
+    exit 1
+fi
 
 # makes array "config"
 parse_conkyfile(){
+    [[ -f $1 ]] || { echo "$1 is not a file." >&2;return 1;}
+    unset config
+    declare -Ag config
+    local name value parse comment
+    parse=false
+    comment=false
+    while IFS='=' read -r name value
+    do
+        [[ $name = --[[* ]] && { comment=true; continue;} # ignore comment blocks
+        [[ $name = ']]' || $name = '--]]' ]] && { comment=false; continue;}
+        [[ $comment = true ]] && continue
+        name=${name%%--*}
+        value=${value%%--*}
+        [[ $name ]] || continue
+        [[ $name = conky.config ]] && { parse=true; continue;} # parse only config section
+        [[ $name = }* ]] && break # end of section
+        if [[ $parse = true ]]
+        then
+            value=${value%,}
+            case "$value" in
+            \'*\')
+                value=${value#\'}
+                value=${value%\'}
+                ;;
+            \"*\")
+                value=${value#\"}
+                value=${value%\"}
+                ;;
+            esac
+            config["$name"]="$value"
+        else
+            continue
+        fi
+    done < <(sed -r "s/[[:blank:]]*([^=[:blank:]]+)[[:blank:]]*=[[:blank:]](.*)/\1=\2/;" "$1") # trim leading and trailing spaces
+}
+
+# for version 1.09 conky files
+# makes array "config"
+parse_conkyfile_1.09(){
     [[ -f $1 ]] || { echo "$1 is not a file." >&2;return 1;}
     unset config
     declare -Ag config
@@ -51,13 +93,38 @@ parse_conkyfile(){
 
 
 # usage: edit_conkyfile file name=value [name2=value2...]
-# use absolute path to file
 # parse_conkyfile should already have been run
 edit_conkyfile(){
-    [[ "$1" = /* ]] || {
-        echo "$0: $1 is not an absolute path." >&2
-        return 1
-    }
+    file=$1
+    shift
+    local name value
+    declare -ag sed_args
+    while [[ $1 ]]; do
+        unset name value sed_pattern sed_replace
+        name="${1%%=*}"
+        value="${1#*=}"
+        shift
+        [[ ${config["$name"]+x} ]] || {
+            echo "$0: config key $name does not exist" >&2
+            return 1
+        }
+        [[ ${config["$name"]} = "${value}" ]] && continue
+        [[ $value =~ ^([0-9-]+|true|false)$ ]] || value=\'"$value"\' # add quotes
+        (( ${#sed_args[@]} == 0 )) && sed_args=("-ri")
+        sed_pattern="^[[:blank:]]*${name}[[:blank:]]*=.*$"
+        grep -q -- "-- bl-conkypin, original value for $name:" "$file" ||
+            sed_replace="-- bl-conkypin, original value for $name: ${config[$name]}\n"
+        sed_replace+="\t$name = $value,"
+        sed_args+=("-e")
+        sed_args+=("s/$sed_pattern/$sed_replace/")
+    done
+   (( ${#sed_args[@]} )) && sed "${sed_args[@]}" "$file"
+}
+
+# for version 1.09 conky files
+# usage: edit_conkyfile file name=value [name2=value2...]
+# parse_conkyfile should already have been run
+edit_conkyfile_1.09(){
     file=$1
     shift
     local name value
@@ -102,33 +169,51 @@ getStart(){    #   Get initial Conky position
     done < <(xwininfo)
     # info now contains all the output of xwininfo
 
-   CMD=$(xprop -id $ID  WM_COMMAND | awk -F '", "' '{
-       cmd=$1
-       sub(/^.*{ "/,"",cmd)
-       for (i=1;i<=NF;i++)
-        if($i ~ /-([a-zA-Z])?c/){
-            i++
-            sub(/\" }$/,"",$i)
-            gsub(/\\\"/,"\"",$i)
-            print cmd,$i
-            exit
+    wmc=$(xprop -id $ID  WM_COMMAND)
+    wmc=${wmc#*\"} # strip first & last quotes & everything outside
+    wmc=${wmc%\"*}
+    CMD=${wmc%% *} # separate first word
+    CMD=${CMD%\"*}
+    CONKYPATH=$(awk -F '", "' '{
+        for (i=1;i<=NF;i++){
+            if ($i ~ /^-[a-zA-Z]*c$/) {
+                i++
+                gsub(/\\\"/,"\"",$i) # unescape quotes
+                print $i
+                exit
             }
-       }'
-       )
+            if ($i ~ /^--config/) {
+                sub(/--config=/,"",$i)
+                gsub(/\\\"/,"\"",$i)
+                print $i
+                exit
+            }
+        }
+    }' <<< "$wmc")
 
-    if [[ ${CMD%% *} = conky ]];then
-        echo "Found a conky"
-        CONKYPATH=${CMD#* }
-        posX_1=${info1[Absolute upper-left X]}
-        posY_1=${info1[Absolute upper-left Y]}
-    else
-        echo "Selection is not a conky"
-        $DIALOG --button="OK:0" --button="Exit:1" --text="Selection is not a conky\n\nChoose again?"
+    [[ -z "$CONKYPATH" ]] && CONKYPATH="$HOME/.conkyrc"
+
+    redo_dialog(){
+        echo "$0: $1" >&2
+        # uncomment this line in v1.9 script
+        #$DIALOG --button="OK:0" --button="Exit:1" '--image=dialog-error' --text="$1\n\nChoose again?"
+        # comment this line in 1.9 script
+        yad_error '--button=Exit:1' "$1\n\nChoose again?"
         if (( $? == 1 ));then
             echo "  Cancelled: exiting..."
             exit 0
         fi
         getStart
+    }
+
+    if [[ $CMD != conky ]];then
+        redo_dialog 'Selection is not a conky'
+    elif [[ $CONKYPATH != /* ]];then
+        redo_dialog "$CONKYPATH is not an absolute path."
+    else
+        #echo "Found a conky"
+        posX_1=${info1[Absolute upper-left X]}
+        posY_1=${info1[Absolute upper-left Y]}
     fi
 }
 
@@ -150,8 +235,7 @@ getFinish(){   #   Get new Conky position
 
 getOffset(){   # parse_conkyfile should already have been run
     if [[ ${config[alignment]} = none ]];then   # placement managed by Openbox
-        TXT="This Conky has 'alignment none'\nso placement is handled by the Window Manager.\n"
-        $DIALOG --text="$TXT" --button="OK"
+        yad_info "This Conky has 'alignment none'\nso placement is handled by the Window Manager.\n"
         echo -e "\nConky has 'alignment none',\nso placement is handled by the Window Manager\nExiting...\n"
         exit 0
     fi
@@ -207,7 +291,7 @@ Please install the packages containing the missing commands
 and rerun the script."
 
 
-$DIALOG --text="Click 'Select Conky' to pick a conky.\n\nThen use the 'xwininfo' cursor on the chosen conky\nto record its position." \
+yad_question "Click 'Select Conky' to pick a conky.\n\nThen use the 'xwininfo' cursor on the chosen conky\nto record its position." \
      --button="Select Conky:0" --button="gtk-cancel:1"
 
 if (( $? == 0 ));then
@@ -217,7 +301,7 @@ else
     exit 0
 fi
 
-$DIALOG --text="Move the Conky to the desired location\nwith Alt+L-mousebutton Drag.\n\nClick 'OK' to set the new position." \
+yad_question "Move the Conky to the desired location\nwith Alt+L-mousebutton Drag.\n\nThen click 'OK' to record the new position." \
      --button="OK:0" --button="gtk-cancel:1"
 
 if (( $? == 0 ));then
@@ -227,10 +311,16 @@ else
     exit 0
 fi
 
-parse_conkyfile "$CONKYPATH"
-
-getOffset
-
-edit_conkyfile "$CONKYPATH" "gap_x"=$gapX "gap_y"=$gapY
+if grep -q '[[:blank:]]*conky.config[[:blank:]]*=' "$CONKYPATH"
+then
+    parse_conkyfile "$CONKYPATH"
+    getOffset
+    edit_conkyfile "$CONKYPATH" "gap_x=$gapX" "gap_y=$gapY"
+else
+    yad_info "This conky uses v1.09 syntax.\nIt is recommended to convert the conky to v1.10 syntax.\nSee: https://forums.bunsenlabs.org/viewtopic.php?id=3983"
+    parse_conkyfile_1.09 "$CONKYPATH"
+    getOffset
+    edit_conkyfile_1.09 "$CONKYPATH" "gap_x=$gapX" "gap_y=$gapY"
+fi
 
 exit 0

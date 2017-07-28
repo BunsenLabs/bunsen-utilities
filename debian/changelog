@@ -1,3 +1,15 @@
+bunsen-utilities (9.1-1) helium; urgency=medium
+
+  * bl-conkypin: Upgrade for conky v.1.10 syntax.
+  * damo: bl-exit: Add new "helium" style.
+     Add 60x60px icons.
+     Improve window width setting.
+     Improve USAGE/HELP strings.
+  * damo: bl-tint2zen & bl-conkyzen: Improve filepath handling.
+  * damo: bl-obthemes: Improve gtk theme handling.
+
+ -- John Crawley <john@bunsenlabs.org>  Fri, 28 Jul 2017 10:11:55 +0900
+
 bunsen-utilities (9.0-1) helium; urgency=medium
 
   * Version change for helium release
