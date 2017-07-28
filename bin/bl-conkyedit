@@ -26,7 +26,9 @@
 #
 ########################################################################
 
-CONKYPATH="$HOME/.config/conky"
+declare CONKYPATH="$HOME/.config/conky"
+declare -A CONKYS_PATH
+declare -A CONKYS_ARR
 
 HELP="    bl-conkyedit a BunsenLabs Conky Editor
 Options:
@@ -52,8 +54,8 @@ CANCEL="--button=gtk-cancel:1"
 
 fillArrays(){
     local num="$1"
-    conkysPath[$num]="$2"   # full filepath to conky
-    conkysArr[$num]="$3"    # displayed name: "directory/*conky(rc)"
+    CONKYS_PATH[$num]="$2"   # full filepath to conky
+    CONKYS_ARR[$num]="$3"    # displayed name: "directory/*conky(rc)"
 }
 
 findConky(){
@@ -91,8 +93,8 @@ findConky
 
 # loop through arrays, and build msg text for yad dialog
 unset LISTCONKY
-for ((j=0; j<${#conkysArr[*]}; j++));do
-    LISTCONKY="$LISTCONKY FALSE ${conkysArr[j]}"
+for ((j=0; j<${#CONKYS_ARR[*]}; j++));do
+    LISTCONKY="$LISTCONKY FALSE ${CONKYS_ARR[j]}"
 done
 
 ## Populate yad dialog from array, get return value(s)
@@ -117,8 +119,8 @@ else
 
     # Find the chosen conkys and edit them
     for name in ${retConky[*]};do       # loop through checkmarked conky names
-        for ((j=0; j<${#conkysPath[*]}; j++));do  # traverse through elements
-            for f in ${conkysPath[j]};do    # compare with choice from dialog
+        for ((j=0; j<${#CONKYS_PATH[*]}; j++));do  # traverse through elements
+            for f in ${CONKYS_PATH[j]};do    # compare with choice from dialog
                 display=$( echo "$f" | awk -F"/" '{print $(NF-1)"/"$NF}')
                 if [[ $display = $name ]];then
                     bl-text-editor "$f"
