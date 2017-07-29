@@ -32,7 +32,7 @@ import struct
 import ConfigParser
 
 __me__ = 'bl-exit'
-__version__ = '2.2.0'
+__version__ = '2.2.1'
 
 # Translate command-line option to method - command line only
 actionToMethod = dict(
