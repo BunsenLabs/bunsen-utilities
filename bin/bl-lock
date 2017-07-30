@@ -47,10 +47,10 @@ which ${LOCK_COMMAND[0]} >/dev/null 2>&1 || {
     exit 1
 }
 
-if [ -d /lib/live ] && [ ! -f /home/$USER/.config/bunsen/bl-lock ]; then
+if [[ -d /lib/live && ! -f $HOME/.config/bunsen/bl-lock ]]; then
     yad --image='bunsenlabs' --window-icon='distributor-logo-bunsenlabs' --center --borders=20 --button=gtk-ok --fixed --on-top --title='Lock screen info:' --text='Lock screen has detected you are running a live session.\nThe username needed to unlock the screen is "user" and the password is "live".\nThis notice will only be displayed once per live session.'
-    mkdir -p /home/$USER/.config/bunsen
-    touch /home/$USER/.config/bunsen/bl-lock
+    mkdir -p "$HOME/.config/bunsen"
+    touch "$HOME/.config/bunsen/bl-lock"
 fi
 
 "${LOCK_COMMAND[@]}"
