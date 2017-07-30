@@ -4,7 +4,6 @@ bunsen-utilities
 A collection of small scripts to provide various functions
 which might be useful to BunsenLinux users and system administrators.
 
-bl-exit:    Logout dialog box with various options.
 bl-lock:    Script to lock the display.
 bl-aerosnap:    Script to add aero style window snapping to Openbox.
 bl-hotcorners:  Script to add hot corners to Openbox.

@@ -1,7 +1,3 @@
 bin usr
-bl-exitrc etc/bl-exit/
-styles etc/bl-exit/
-dark usr/share/images/bunsen/exit/
-light usr/share/images/bunsen/exit/
 notify-broadcast/bl-notify-failure@.service lib/systemd/system
 notify-broadcast/bl-notify-broadcast usr/sbin

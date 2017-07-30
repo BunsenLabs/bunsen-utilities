@@ -195,9 +195,6 @@ getStart(){    #   Get initial Conky position
 
     redo_dialog(){
         echo "$0: $1" >&2
-        # uncomment this line in v1.9 script
-        #$DIALOG --button="OK:0" --button="Exit:1" '--image=dialog-error' --text="$1\n\nChoose again?"
-        # comment this line in 1.9 script
         yad_error '--button=Exit:1' "$1\n\nChoose again?"
         if (( $? == 1 ));then
             echo "  Cancelled: exiting..."

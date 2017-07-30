@@ -22,7 +22,6 @@ Description: Small scripts to use with BunsenLabs.
   - bl-conkyedit: Script to find and edit conky config files.
   - bl-conkypin: Script to assist the relocation of conky windows.
   - bl-conkyzen: Yad-based conky manager.
-  - bl-exit: Logout dialog box with various options.
   - bl-hotcorners: Script to add hot corners to Openbox.
   - bl-kb: Script to manage keyboard shortcuts.
   - bl-lock: Script to lock the display.
