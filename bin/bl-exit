@@ -151,7 +151,7 @@ if display:
             self.window.set_name('blexit')
             self.cp = cp
             self.config_file = config_file
-            self.debug = True
+            self.debug = False
             self.selectedAction = None
             self.window.set_decorated(True)
             self.window.connect("delete_event", self.destroy)
