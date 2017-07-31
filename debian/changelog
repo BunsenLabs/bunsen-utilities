@@ -1,3 +1,9 @@
+bunsen-utilities (9.2-1) helium; urgency=medium
+
+  * Split bl-exit into separate package bunsen-exit.
+
+ -- John Crawley <john@bunsenlabs.org>  Mon, 31 Jul 2017 11:59:44 +0900
+
 bunsen-utilities (9.1-1) helium; urgency=medium
 
   * bl-conkypin: Upgrade for conky v.1.10 syntax.
