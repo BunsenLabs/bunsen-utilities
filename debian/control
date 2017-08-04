@@ -10,14 +10,13 @@ Vcs-Browser: https://github.com/BunsenLabs/bunsen-utilities.git
 
 Package: bunsen-utilities
 Architecture: all
-Depends: ${misc:Depends}, bunsen-common, python2.7, python-gtk2, python-xlib, upower, yad, wmctrl, xdotool (>=1:2.20110530.1-3), python-dbus, libnotify-bin
+Depends: ${misc:Depends}, bunsen-common, python2.7, python-gtk2, python-xlib, yad, wmctrl, xdotool (>=1:2.20110530.1-3), libnotify-bin
 Conflicts: bunsen-lock, bunsen-user-setup, bunsen-wmhacks
-Recommends: bunsen-exit (>=9.1-1), bunsen-conky, gmrun, light-locker, openbox, nitrogen | feh, scrot, tint2, systemd
+Recommends: bunsen-exit (>=9.1-1), bunsen-conky, gmrun, light-locker, openbox, tint2, nitrogen | feh, scrot
 Description: Small scripts to use with BunsenLabs.
  A collection of small scripts to provide various functions
  which might be useful to BunsenLinux users and system administrators.
  .
-  - bl-aerosnap: Script to add aero style window snapping to Openbox.
   - bl-conky-session: Script to handle multiple conky sessions.
   - bl-conkyedit: Script to find and edit conky config files.
   - bl-conkypin: Script to assist the relocation of conky windows.
@@ -26,11 +25,10 @@ Description: Small scripts to use with BunsenLabs.
   - bl-kb: Script to manage keyboard shortcuts.
   - bl-lock: Script to lock the display.
   - bl-obthemes: Script to save or restore openbox gui configurations.
+  - bl-package-versions: Utility to display the versions of BunsenLabs packages.
   - bl-tint2-session: Script to handle multiple tint2 sessions.
   - bl-tint2edit: Script to find and edit tint2 config files.
   - bl-tint2restart: Script to restart all running tint2 processes.
   - bl-tint2zen: Yad-based tint2 manager.
-  - bl-package-versions: Utility to display the versions of BunsenLabs packages.
-  - bl-github-upgrade: Script to upgrade the BunsenLabs packages from GitHub.
-  - bl-xinerama-prop: Script to get xinerama properties in a shell script
+  - bl-xinerama-prop: Script to get xinerama properties in a shell script.
   - bl-notify-broadcast: Script to send user notifications from root processes.
