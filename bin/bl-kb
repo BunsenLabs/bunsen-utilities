@@ -83,6 +83,8 @@ def keyboard():
         strTxt=""
         strType="o "        # flag for pipemenu: Openbox window command
         if action_element!=None:
+            if action_element.get("name") == "UnmaximizeFull": # Don't show "tiling" keybinds
+                continue            
             arrShortcut.append((key,"",""))
             if action_element.get("name")=="Execute":
                 name_element=action_element.find(strRoot + "name")
