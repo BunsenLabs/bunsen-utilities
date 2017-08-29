@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 #    bl-obthemes: script to save or restore openbox gui configurations
-#    Copyright (C) 2015 damo    <damo@bunsenlabs.org>
+#    Copyright (C) 2015,2017 damo    <damo@bunsenlabs.org>
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -529,8 +529,8 @@ function getGTKtheme(){
         if [[ -f $f ]];then
             cp "$f" "$CONFIGDIR"
         elif [[ -d $f ]];then
-			GTKDIR="$CONFIGDIR/$(basename $f)"
-			mkdir -p "$GTKDIR"
+            GTKDIR="$CONFIGDIR/$(basename $f)"
+            mkdir -p "$GTKDIR"
             cp "$f/settings.ini" "$GTKDIR"
             cp "$f/gtk.css" "$GTKDIR"
         fi
@@ -539,14 +539,18 @@ function getGTKtheme(){
     getGTKname
 }
 
-function getGTKname(){   # get GTK theme name
+function getGTKname(){   # get GTK theme name and Icons name
     GTKFILE="$CONFIGDIR/.gtkrc-2.0"
     while read line;do
         if [[ $(echo $line | grep "gtk-theme-name" ) ]] &>/dev/null;then
             GTKTHEME=$(echo $line | awk -F '"' '{print $2}')
         fi
+        if [[ $(echo $line | grep "gtk-icon-theme-name" ) ]] &>/dev/null;then
+            ICONS=$(echo $line | awk -F '"' '{print $2}')
+            echo "[ICONS] $ICONS" >> "$SETTINGS"
+        fi
     done < "$GTKFILE"
-    TXT="GTK theme:  $GTKTHEME\n"
+    TXT="GTK theme:  $GTKTHEME;\nIcon Theme: $ICONS\n"
     echo -e "\n  Saved $TXT"
     echo "$TXT" >> "$LISTMSG"
 }
@@ -712,6 +716,28 @@ function getScrot(){
     rm -f "$TMPSCROT"
 }
 
+function checkICONS(){ # check if icon theme is still present
+    FOUNDICONS=0
+    ICOTXT="Icon theme <b>$1</b> not found"
+    ICONPATH_1="$HOME/.icons"
+    ICONPATH_2="$HOME/.local/share/icons"
+    ICONPATH_3="/usr/share/icons"
+    arrICONS=("$ICONPATH_1" "$ICONPATH_2" "$ICONPATH_3" )
+    
+    for i in "${arrICONS[@]}";do 
+        if [[ -d "$i/$1" ]];then 
+            echo -e "\n  Found $1 icon theme\n"
+            FOUNDICONS=1
+            break
+        fi
+    done
+    if (( FOUNDICONS == 0 ));then
+        echo -e "\n  Icon theme  $1  was not found\n"
+        $DIALOG --image="dialog-warning" "$T$ICOTXT" "$CLOSE" 2>/dev/null
+    fi
+    unset FOUNDICONS
+}
+
 function restoreGTK(){   # $1 is chosen saved config dir
     GTKPATHS=( "$HOME" "$HOME" "$GTK3" "$GTK3x" )
     GTKSAVED=( "$1/$GTK2" "$1/$GTK2MINE" "$1/gtk-3.0" "$1/xfce4-notifyd.xml" )
@@ -723,9 +749,9 @@ function restoreGTK(){   # $1 is chosen saved config dir
                     cp ${GTKSAVED[i]}/* ${GTKPATHS[i]} # restore contents of gtk-3.0
                     echo -e "\n  Restored gtk-3.0 files"
                 else
-					cp ${GTKSAVED[i]} ${GTKPATHS[i]}
-					echo -e "\n  Restored: ${GTKSAVED[i]}"
-				fi
+                    cp ${GTKSAVED[i]} ${GTKPATHS[i]}
+                    echo -e "\n  Restored: ${GTKSAVED[i]}"
+                fi
             else
                 echo -e "\n  Restore path ${GTKPATHS[i]} not found" 2>&1
             fi
@@ -818,7 +844,7 @@ function restoreLightdm(){   # need sudo to restore lightdm-gtk-greeter.conf
                     ;;
             *   )   MSG="  Password input failed\n\nlightdm-gtk-greeter.conf was not restored"
                     echo -e "\n  $MSG" 2>&1
-                    "$DIALOG" --image="dialog-warning" "$T$MSG" "$OK" 2>/dev/null
+                    $DIALOG --image="dialog-warning" "$T$MSG" "$OK" 2>/dev/null
                     ;;
         esac
     done
@@ -1159,6 +1185,8 @@ function restoreSettings(){
                                 echo $CONKYCMD | awk -F';' '{for(i=1; i<=NF; i++) print $i}' >> "$CONKYSESSION"
                                 killall conky
                                 source "$CONKYSESSION"
+                                ;;
+            "[ICONS]"       )   checkICONS "$VAL"
                                 ;;
             "[GTK]"         )   restoreGTK "$FPATH"
                                 reloadGTK
