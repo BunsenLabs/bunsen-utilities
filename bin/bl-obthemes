@@ -134,6 +134,10 @@ TZEN=0
 NUMDIRS=0
 CONKYCMD=""
 COLS=0
+THEMEPATH_1="$HOME/.themes"
+THEMEPATH_2="$HOME/.local/share/themes"
+THEMEPATH_3="/usr/share/themes"
+THEMEPATH_4="/usr/local/share/themes"
 ### CONFIGS VARIABLES
 EXITFILE="$HOME/.config/bl-exit/bl-exitrc"
 TERMDIR="$HOME/.config/terminator"
@@ -511,8 +515,8 @@ function getOBtheme(){   # copy <theme> section from rc.xml to obtheme.txt
     RCFILE="$OBPATH/rc.xml"
     tag="theme"
     sed -n "/<$tag>/,/<\/$tag>/p" "$RCFILE" > "$CONFIGDIR/obtheme.txt"
-    echo "[OBTHEME]" >> "$SETTINGS"
     getOBname
+    echo "[OBTHEME] $OBTHEME" >> "$SETTINGS"
 }
 
 function getOBname(){    # get OB theme name
@@ -535,7 +539,6 @@ function getGTKtheme(){
             cp "$f/gtk.css" "$GTKDIR"
         fi
     done
-    echo "[GTK]" >> "$SETTINGS"
     getGTKname
 }
 
@@ -544,15 +547,16 @@ function getGTKname(){   # get GTK theme name and Icons name
     while read line;do
         if [[ $(echo $line | grep "gtk-theme-name" ) ]] &>/dev/null;then
             GTKTHEME=$(echo $line | awk -F '"' '{print $2}')
+            echo "[GTK] $GTKTHEME" >> "$SETTINGS"
         fi
         if [[ $(echo $line | grep "gtk-icon-theme-name" ) ]] &>/dev/null;then
             ICONS=$(echo $line | awk -F '"' '{print $2}')
             echo "[ICONS] $ICONS" >> "$SETTINGS"
         fi
     done < "$GTKFILE"
-    TXT="GTK theme:  $GTKTHEME;\nIcon Theme: $ICONS\n"
+    TXT="GTK theme:  $GTKTHEME;  Icon Theme: $ICONS\n"
     echo -e "\n  Saved $TXT"
-    echo "$TXT" >> "$LISTMSG"
+    echo  "$TXT" >> "$LISTMSG"
 }
 
 function getDmenu(){
@@ -717,25 +721,43 @@ function getScrot(){
 }
 
 function checkICONS(){ # check if icon theme is still present
-    FOUNDICONS=0
-    ICOTXT="Icon theme <b>$1</b> not found"
-    ICONPATH_1="$HOME/.icons"
-    ICONPATH_2="$HOME/.local/share/icons"
-    ICONPATH_3="/usr/share/icons"
-    arrICONS=("$ICONPATH_1" "$ICONPATH_2" "$ICONPATH_3" )
+    local FOUNDICONS=0
+    local ICOTXT="Icon theme <b>$1</b> not found\n\n  The default icon theme will be used..."
+    local ICONPATH_1="$HOME/.icons"
+    local ICONPATH_2="$HOME/.local/share/icons"
+    local ICONPATH_3="/usr/share/icons"
+    local ICONPATH_4="/usr/local/share/icons"
+    local arrICONS=("$ICONPATH_1" "$ICONPATH_2" "$ICONPATH_3" "$ICONPATH_4" )
     
     for i in "${arrICONS[@]}";do 
         if [[ -d "$i/$1" ]];then 
-            echo -e "\n  Found $1 icon theme\n"
+            echo -e "\n  Found $1 icon theme"
             FOUNDICONS=1
             break
         fi
     done
     if (( FOUNDICONS == 0 ));then
-        echo -e "\n  Icon theme  $1  was not found\n"
+        echo -e "\n  Icon theme  $1  was not found\n  The default Icon theme will be used..."
         $DIALOG --image="dialog-warning" "$T$ICOTXT" "$CLOSE" 2>/dev/null
     fi
-    unset FOUNDICONS
+}
+
+function checkGTK(){    # check if gtk theme is still present
+    local FOUNDGTK=0
+    local GTKTXT="GTK theme <b>$1</b> not found\n\n  The default GTK theme will be used..."
+    local arrGTK=("$THEMEPATH_1" "$THEMEPATH_2" "$THEMEPATH_3" "$THEMEPATH_4" )
+
+    for i in "${arrGTK[@]}";do
+        if [[ -d "$i/$1" ]];then
+            echo -e "\n  Found $1 GTK theme"
+            FOUNDGTK=1
+            break
+        fi
+    done
+    if (( FOUNDGTK == 0 ));then
+        echo -e "\n  GTK theme  $1  was not found\n  The default GTK theme will be used..."
+        $DIALOG --image="dialog-warning" "$T$GTKTXT" "$CLOSE" 2>/dev/null
+    fi
 }
 
 function restoreGTK(){   # $1 is chosen saved config dir
@@ -760,6 +782,24 @@ function restoreGTK(){   # $1 is chosen saved config dir
         fi
         i=$((i+1))
     done
+}
+
+checkOBTHEME(){
+    local FOUNDOB=0
+    local OBTXT="Openbox theme <b>$1</b> not found\n\n  The default Openbox theme will be used..."
+    local arrOB=("$THEMEPATH_1" "$THEMEPATH_2" "$THEMEPATH_3" "$THEMEPATH_4" )
+
+    for i in "${arrOB[@]}";do
+        if [[ -d "$i/$1" ]];then
+            echo -e "\n  Found $1 Openbox theme"
+            FOUNDOB=1
+            break
+        fi
+    done
+    if (( FOUNDOB == 0 ));then
+        echo -e "\n  OB theme  $1  was not found\n  The default Openbox theme will be used..."
+        $DIALOG --image="dialog-warning" "$T$OBTXT" "$CLOSE" 2>/dev/null
+    fi
 }
 
 function restoreOBrc(){
@@ -834,7 +874,7 @@ function restoreLightdm(){   # need sudo to restore lightdm-gtk-greeter.conf
         gksudo -m "$TXT" "$CMD"
         DLG=$?
         case "$DLG" in
-            0   )   MSG="  Restored: lightdm-gtk-greeter.conf"
+            0   )   MSG="Restored: lightdm-gtk-greeter.conf"
                     echo -e "\n  $MSG"
                     break
                     ;;
@@ -918,9 +958,9 @@ function saveSettings(){
     COLUMNS=(\
         $SELECT "$PICKOB" \
         $SELECT "$PICKGTK" \
+        $SELECT "$PICKBG" \
         $SELECT "$PICKCONKY" \
         $SELECT "$PICKTINT" \
-        $SELECT "$PICKBG" \
         $SELECT "$PICKDMENU" \
         $SELECT "$PICKLDM" \
         $SELECT "$PICKEXIT" \
@@ -930,7 +970,6 @@ function saveSettings(){
     if  readlink -f /usr/bin/x-terminal-emulator | grep terminator &>/dev/null;then
         COLUMNS=("${COLUMNS[@]}" $SELECT "$PICKTERM")
     fi
-
     SLOOP=1
     while (( SLOOP == 1 ));do
         CHOICE=$($DIALOGDEC --list --checklist \
@@ -975,17 +1014,17 @@ function saveSettings(){
                 IFS=$OIFS # reset IFS back to default
                 len=${#retChoice[@]}
                 for (( i=0; i<${len}; i++ ));do
-                    item="${retChoice[$i-1]}"
+                    item="${retChoice[$i]}"
                     case "$item" in
                         "$PICKOB"   )   getOBtheme
                                         ;;
                         "$PICKGTK"  )   getGTKtheme
                                         ;;
+                        "$PICKBG"   )   getBg
+                                        ;;
                         "$PICKCONKY")   getConky
                                         ;;
                         "$PICKTINT" )   getTint
-                                        ;;
-                        "$PICKBG"   )   getBg
                                         ;;
                         "$PICKDMENU")   getDmenu
                                         ;;
@@ -1175,6 +1214,7 @@ function restoreSettings(){
                                 fi
                                 TINTCMD=$(echo $line | cut -d ' ' -f2-)
                                 restoreTint2 "$TINTCMD"
+                                echo -e "\n  Restored Tint2"
                                 ;;
             "[CONKY]"       )   checkConkyzen # see if bl-conkyzen installed
                                 if (( CZEN == 1 ));then
@@ -1185,13 +1225,29 @@ function restoreSettings(){
                                 echo $CONKYCMD | awk -F';' '{for(i=1; i<=NF; i++) print $i}' >> "$CONKYSESSION"
                                 killall conky
                                 source "$CONKYSESSION"
+                                echo -e "\n  Restored Conky\n"
                                 ;;
-            "[ICONS]"       )   checkICONS "$VAL"
+            "[ICONS]"       )   if [[ $VAL ]];then
+                                    checkICONS "$VAL"
+                                fi
                                 ;;
-            "[GTK]"         )   restoreGTK "$FPATH"
+            "[GTK]"         )   if [[ $VAL ]];then
+                                    checkGTK "$VAL"
+                                    #if (( FOUNDGTK == 1 ));then
+                                        #restoreGTK "$FPATH"
+                                        #reloadGTK
+                                    #fi
+                                fi
+                                restoreGTK "$FPATH"
                                 reloadGTK
                                 ;;
-            "[OBTHEME]"     )   restoreOBrc "$FPATH"
+            "[OBTHEME]"     )   if [[ $VAL ]];then
+                                    checkOBTHEME "$VAL"
+                                fi
+                                #if (( FOUNDOB == 1 ));then
+                                    #restoreOBrc "$FPATH"
+                                #fi
+                                restoreOBrc "$FPATH"
                                 ;;
             "[BACKGROUND]"  )   if [[ $VAL = FEH ]];then
                                     cp "$FPATH/.fehbg" "$HOME"
