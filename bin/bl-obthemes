@@ -129,7 +129,6 @@ OBPATH="$HOME/.config/openbox"
 CURSESSION="$CONFIGPATH/current"
 CONFIGDIR=""
 LISTMSG=""
-TZEN=0
 NUMDIRS=0
 CONKYCMD=""
 COLS=0
@@ -474,31 +473,33 @@ function getConky(){
     }
 
 function getTint(){
-    TEMPTINT=$(mktemp --tmpdir blob.XXXX) # make blank tempfile, to save running tint2 paths
+    declare -a arrTINT
     if [[ $(pidof tint2) ]];then
-        pgrep -a tint2 | while read pid cmd;do
-            if [[ ${cmd%% *} = tint2 ]];then
-                TPATH=$(echo "$cmd" | awk '{print $NF}')
-                echo "$TPATH;" >> "$TEMPTINT"
+        while read pid cmd;do
+            if [[ ${cmd%% *} == tint2 ]];then
+                TPATH=$(echo "$cmd" | awk '{print $NF";"}')
+                arrTINT+=("$TPATH")
             fi
-        done
+        done < <(pgrep -a tint2)
+
         TXT="Tint2s:\n\n"
         MSG="Running Tint2s:"
         TINTCMD=""
         LISTMSGTXT=""
-        while read line;do
-            TXT="$TXT$line"
-            LINE=$(echo "$line" | sed 's/;//')
-            if [[ $LINE = tint2 ]];then         # default command was used
-                TINTCMD="$TINTCMD$LINE;"
+
+        for i in "${arrTINT[@]}";do
+            TXT="$TXT$i"
+            TINT=$(echo "$i" | sed 's/;//')
+            if [[ "$TINT" == "tint2" ]];then
+                TINTCMD="$TINTCMD$TINT;"
                 LISTMSGTXT="$LISTMSGTXT\n\tDefault Tint2"
             else
-                TINTCMD="$TINTCMD$LINE;"
-                LISTMSGTXT="$LISTMSGTXT\n\t$LINE"
+                TINTCMD="$TINTCMD$TINT;"
+                LISTMSGTXT="$LISTMSGTXT\n\t$TINT"
             fi
-        done < "$TEMPTINT"
+        done
+
         echo "[TINT2] $TINTCMD" >> "$SETTINGS"
-        rm -f "$TEMPTINT"
         echo "$MSG\t$LISTMSGTXT\n" >> "$LISTMSG"
         echo -e "\n  Saved running Tint2(s)"
     else
@@ -515,14 +516,6 @@ function killTints(){
             kill "$pid"
         fi
     done
-}
-
-function checkTint2zen(){    # see if bl-tint2zen and session file present
-    if type bl-tint2zen &>/dev/null;then
-        if [[ -f $TINTSESSION ]]; then
-            TZEN=1          # set flag for Restore choice
-        fi
-    fi
 }
 
 function getOBtheme(){   # copy <theme> section from rc.xml to obtheme.txt
@@ -716,7 +709,7 @@ function getScrot(){
     fi
     checkTint2 stop     # stop running Tint2s for the scrot, if not selected to be saved
     # start lxappearance
-    lxappearance &
+    lxappearance 2>/dev/null &
     pid=$!
     sleep 0.5
     # get lx window, make sure it loses focus, then move mouse and start root-menu
@@ -818,7 +811,7 @@ function restoreGTK(){   # arg is chosen saved config dir
     done
 }
 
-checkOBTHEME(){
+function checkOBTHEME(){
     local FOUNDOB=0
     local OBTXT="Openbox theme <b>$1</b> not found\n\n  The default Openbox theme will be used..."
     local arrOB=("$THEMEPATH_1" "$THEMEPATH_2" "$THEMEPATH_3" "$THEMEPATH_4" )
@@ -884,13 +877,41 @@ function restoreConky(){    # arg= $line from $SETCFG
     wmctrl -s $currDESKTOP # return to desktop that BLOB was started on, if conkys used 'wmctrl -s'
 }
 
-function restoreTint2(){      # write to tint2 session file
-    echo "$1" | awk -F';' '{for(i=1; i<=NF; i++) print $i}' >> "$TINTSESSION"
-    killTints
-    while read tintline;do
-        (tint2 -c "$tintline" &) &>/dev/null
-        sleep 1s
-    done < "$TINTSESSION"
+function restoreTint2(){    # arg= $line from $SETCFG
+    TINTCMD=$(echo $1 | cut -d ' ' -f2-)
+    TINTCMD="$(echo $TINTCMD | awk -F';' '{for(i=1; i<=NF; i++) print $i}')"
+    if type bl-tint2zen >/dev/null;then    # see if bl-tint2zen is installed
+        if [[ -f $TINTSESSION ]] 2>/dev/null; then
+            > "$TINTSESSION"    # create/overwrite tint2 session file
+            # write to tint2 session file...
+            echo "$TINTCMD" >> "$TINTSESSION"
+            killTints
+            while read tintline;do
+                if [[ "$tintline" == "tint2" ]];then
+                    tint2 & >/dev/null
+                    sleep 1
+                    echo -e "\n  Restored Tint2: $tintline\n"
+                else
+                    tint2 -c "$tintline" & >/dev/null
+                    sleep 1s
+                    echo -e "\n  Restored Tint2: $tintline\n"
+                fi
+            done < "$TINTSESSION"
+        fi
+    else                    # no bl-tint2zen, so just run tint2 commands
+        killTints
+        for tintpath in $(echo $TINTCMD);do
+            if [[ "$tintpath" == "tint2" ]] >/dev/null;then 
+                tint2 & >/dev/null     # default tint2 command
+                sleep 1
+                echo -e "\n  Restored Tint2: $tintpath\n"
+            else
+                tint2 -c "$tintpath" & >/dev/null
+                sleep 1s
+                echo -e "\n  Restored Tint2: $tintpath\n"
+            fi
+        done 
+    fi
 }
 
 function restoreDmenu(){
@@ -1259,15 +1280,13 @@ function restoreSettings(){
         TAG=$(echo $line | awk '{print $1}')
         VAL=$(echo $line | awk '{print $2}')
         case "$TAG" in
-            "[TINT2]"       )   checkTint2zen # see if bl-tint2zen installed
-                                if (( TZEN == 1 ));then
-                                    > "$TINTSESSION" # overwrite tint2 session file
+            "[TINT2]"       )   if [[ $VAL ]];then
+                                    restoreTint2 "$line"
                                 fi
-                                TINTCMD=$(echo $line | cut -d ' ' -f2-)
-                                restoreTint2 "$TINTCMD"
-                                echo -e "\n  Restored Tint2"
                                 ;;
-            "[CONKY]"       )   restoreConky "$line"
+            "[CONKY]"       )   if [[ $VAL ]];then
+                                    restoreConky "$line"
+                                fi
                                 ;;
             "[ICONS]"       )   if [[ $VAL ]];then
                                     checkICONS "$VAL"
