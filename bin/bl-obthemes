@@ -414,7 +414,7 @@ function getNitrogen(){  # get Nitrogen saved backgrounds
 }
 
 function getConky(){
-    CONKYCMD=""
+    local CONKYCMD=""
     LISTMSGTXT="Running Conkys:"
     CMDTXT="[CONKY] "
     CONKYTXT=""
@@ -440,7 +440,7 @@ function getConky(){
                         CONKYTXT="$CONKYTXT\n\tDesktop $i:  $CONKYCMD"
                     fi
                     # command to start on specified desktop with wmctrl
-                    CONKYCMD="wmctrl -s $i && $CONKYCMD & sleep 1;"
+                    CONKYCMD="sleep 1 && wmctrl -s $i && $CONKYCMD &;"
                     CMDTXT="$CMDTXT$CONKYCMD"
                 fi
             done <<< $(xdotool search --desktop $i --class conky)
@@ -457,7 +457,7 @@ function getConky(){
                 else
                     CONKYTXT="$CONKYTXT\n\t$CONKYCMD"
                 fi
-                CONKYCMD="$CONKYCMD & sleep 1;"
+                CONKYCMD="sleep 1 && $CONKYCMD &;"
                 CMDTXT="$CMDTXT$CONKYCMD"
             fi
         done
@@ -683,7 +683,7 @@ function getWINDOWS(){  # Minimize/Activate windows for scrot. Args= 'min', 'rai
 function getScrot(){
     local conkyFLAG=1
     local pid=""
-    local currDESKTOP=$(xdotool get_desktop)
+    local currDESKTOP=$(xprop -root _NET_CURRENT_DESKTOP | tail -c -2)
     SCROT="$CONFIGPATH/$ANS"
     MONS=$(xrandr -q | grep -c " connected")    # number of monitors
     # set mouse position, for appearance of root-menu
@@ -858,8 +858,8 @@ function restoreOBrc(){
 }
 
 function restoreConky(){    # arg= $line from $SETCFG
-    local currDESKTOP=$(xdotool get_desktop)  # Conkys may have been started on different desktops
-    CONKYCMD=$(echo $1 | cut -d ' ' -f2-)
+    local currDESKTOP=$(xprop -root _NET_CURRENT_DESKTOP | tail -c -2)   # Conkys may have been started on different desktops
+    local CONKYCMD=$(echo $1 | cut -d ' ' -f2-)
     
     if type bl-conkyzen &>/dev/null;then    # see if bl-conkyzen is installed
         if [[ -f $CONKYSESSION ]] &>/dev/null; then
@@ -868,13 +868,15 @@ function restoreConky(){    # arg= $line from $SETCFG
             echo "$CONKYCMD" | awk -F';' '{for(i=1; i<=NF; i++) print $i}' >> "$CONKYSESSION"
             killall conky
             source "$CONKYSESSION"  # run conky commands
+            wait
         fi
     else
         killall conky
         eval "$CONKYCMD"    # no bl-conkyzen, so just run conky commands
+        wait
     fi
     echo -e "\n  Restored Conky\n"
-    wmctrl -s $currDESKTOP # return to desktop that BLOB was started on, if conkys used 'wmctrl -s'
+    wmctrl -s $currDESKTOP && sleep 1 # return to desktop that BLOB was started on, if conkys used 'wmctrl -s'
 }
 
 function restoreTint2(){    # arg= $line from $SETCFG
