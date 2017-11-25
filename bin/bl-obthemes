@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 #    bl-obthemes: script to save or restore openbox gui configurations
-#    Copyright (C) 2015 damo    <damo@bunsenlabs.org>
+#    Copyright (C) 2015,2017 damo    <damo@bunsenlabs.org>
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -129,11 +129,13 @@ OBPATH="$HOME/.config/openbox"
 CURSESSION="$CONFIGPATH/current"
 CONFIGDIR=""
 LISTMSG=""
-CZEN=0
-TZEN=0
 NUMDIRS=0
 CONKYCMD=""
 COLS=0
+THEMEPATH_1="$HOME/.themes"
+THEMEPATH_2="$HOME/.local/share/themes"
+THEMEPATH_3="/usr/share/themes"
+THEMEPATH_4="/usr/local/share/themes"
 ### CONFIGS VARIABLES
 EXITFILE="$HOME/.config/bl-exit/bl-exitrc"
 TERMDIR="$HOME/.config/terminator"
@@ -167,7 +169,7 @@ PICKX="X configs"
 ### END CONFIGS VARIABLES
 
 ### DIALOG VARIABLES
-DIALOG="yad --center --undecorated --borders=20 --window-icon=distributor-logo-bunsenlabs"
+DIALOG="yad --center --undecorated --borders=20 --window-icon=distributor-logo-bunsenlabs --fixed"
 DIALOGDEC="yad --center  --borders=20 --window-icon=distributor-logo-bunsenlabs"
 TITLE="BLOB Configuration Manager"
 T="--text="
@@ -206,7 +208,7 @@ KEYDOWN=13           # adjust this for where "Preferences" is in the menu
 function Intro(){
     local INTRO RET
     getSet
-    #  If blob/ is empty, then don't display "View Saved" option in Intro dialog
+    #  if blob/ is empty, then don't display "View Saved" option in Intro dialog
     if (( NUMDIRS > 0 ));then
         INTRO=$($DIALOGDEC "$T$TXTINTRO" \
         --title="$TITLE" \
@@ -255,7 +257,7 @@ function getSet(){      # get name of currently set BLOB config
     fi
 }
 
-function getActiveMonitorDimensions(){   # Set width and height for View dialog
+function getActiveMonitorDimensions(){   # set width and height for View dialog
     declare -a dim=()
     dim=($(bl-xinerama-prop))
     W=$(( ${dim[0]} / 3 ))
@@ -337,7 +339,7 @@ function setText(){
     if [[ $1 = repeat ]];then
         > "$LISTMSG"    # reset LISTMSG.txt
     fi
-    # Store list in listfile
+    # store list in listfile
     echo -e "<b>Configuration name: $ANS</b>\t$TXT\nSaved at $TIME\n" >> "$LISTMSG"
 }
 
@@ -412,32 +414,55 @@ function getNitrogen(){  # get Nitrogen saved backgrounds
 }
 
 function getConky(){
-    CONKYCMD=""
-    LISTMSGTXT=""
-    TXT=""
-    CONKYTEMP=$(mktemp --tmpdir blob.XXXX)
-    if [[ $(pidof conky) ]];then    # get full command of running conkys
-        > "$CONKYTEMP"
-        pgrep -a conky | while read pid CMD;do
-            echo "$CMD;" >> "$CONKYTEMP"
+    local CONKYCMD=""
+    LISTMSGTXT="Running Conkys:"
+    CMDTXT="[CONKY] "
+    CONKYTXT=""
+    NUM_DESKTOPS=$(xdotool get_num_desktops)
+        
+    declare -a arrALL
+    declare -a arrDESKTOP
+    declare -a arrSTICKY
+
+    if [[ $(pidof conky) ]];then
+        while read line;do  # get all running conky id's
+            arrALL+=("$line")
+        done <<< $(xdotool search --class conky)
+        
+        for (( i=0; i<$NUM_DESKTOPS; i++ ));do  # get all conkys running on specific desktops
+            while read id;do
+                arrDESKTOP+=("$id")
+                if ! [[ -z "$id" ]];then
+                    CONKYCMD=$(xprop -id "$id" | grep WM_COMMAND | awk -F'{|}' '{gsub ("[\"|,]",""); print $2}' | awk '{$1=$1};1')
+                    if [[ "$CONKYCMD" == "conky" ]] || [[ "$CONKYCMD" == "conky -q" ]];then
+                        CONKYTXT="$CONKYTXT\n\tDesktop $i:  Default Conky"
+                    else
+                        CONKYTXT="$CONKYTXT\n\tDesktop $i:  $CONKYCMD"
+                    fi
+                    # command to start on specified desktop with wmctrl
+                    CONKYCMD="sleep 1 && wmctrl -s $i && $CONKYCMD &;"
+                    CMDTXT="$CMDTXT$CONKYCMD"
+                fi
+            done <<< $(xdotool search --desktop $i --class conky)
         done
-        TXT="Conkys:\n\n"
-        DEF="Default"
-        MSG="Running Conkys:"
-        while read line;do
-            LINE=$(echo "$line" | sed 's/;//')
-            CONKYCMD="$CONKYCMD $LINE & sleep 1s;"
-            if [[ $LINE = "conky" ]] || [[ $LINE = "conky -q" ]];then
-                line="$DEF"
-            else
-                line=${line##*" "}      # get full filepath
+    
+        # get the conkys sticky on all workspaces (difference between previous 2 arrays)
+        arrSTICKY=($(echo ${arrALL[@]}  ${arrDESKTOP[@]} | tr ' ' '\n' | sort | uniq -u))
+        
+        for id in "${arrSTICKY[@]}";do  # get commands - we don't need wmctrl for these
+            if ! [[ -z "$id" ]];then
+                CONKYCMD=$(xprop -id "$id" | grep WM_COMMAND | awk -F'{|}' '{gsub ("[\"|,]",""); print $2}' | awk '{$1=$1};1')
+                if [[ "$CONKYCMD" == "conky" ]] || [[ "$CONKYCMD" == "conky -q" ]];then
+                    CONKYTXT="$CONKYTXT\n\tDefault Conky"
+                else
+                    CONKYTXT="$CONKYTXT\n\t$CONKYCMD"
+                fi
+                CONKYCMD="sleep 1 && $CONKYCMD &;"
+                CMDTXT="$CMDTXT$CONKYCMD"
             fi
-            TXT="$TXT$line"
-            LISTMSGTXT="$LISTMSGTXT\n\t$line"
-        done < "$CONKYTEMP"
-        echo "[CONKY] $CONKYCMD" >> "$SETTINGS"
-        rm -f "$CONKYTEMP"
-        echo "$MSG\t$LISTMSGTXT\n" >> "$LISTMSG"
+        done
+        echo "$CMDTXT" >> "$SETTINGS"
+        echo "$LISTMSGTXT\t$CONKYTXT\n" >> "$LISTMSG"
         echo -e "\n  Saved running Conky(s)"
     else
         DLG=$($DIALOG --form --image="dialog-warning" \
@@ -445,42 +470,36 @@ function getConky(){
         "$OK" \
         --width=300) 2>/dev/null
     fi
-}
-
-function checkConkyzen(){    # see if bl-conkyzen and session file present
-    if type bl-conkyzen &>/dev/null;then
-        if [[ -f $CONKYSESSION ]]; then
-            CZEN=1  # set flag for Restore choice
-        fi
-    fi
-}
+    }
 
 function getTint(){
-    TEMPTINT=$(mktemp --tmpdir blob.XXXX) # make blank tempfile, to save running tint2 paths
+    declare -a arrTINT
     if [[ $(pidof tint2) ]];then
-        pgrep -a tint2 | while read pid cmd;do
-            if [[ ${cmd%% *} = tint2 ]];then
-                TPATH=$(echo "$cmd" | awk '{print $NF}')
-                echo "$TPATH;" >> "$TEMPTINT"
+        while read pid cmd;do
+            if [[ ${cmd%% *} == tint2 ]];then
+                TPATH=$(echo "$cmd" | awk '{print $NF";"}')
+                arrTINT+=("$TPATH")
             fi
-        done
+        done < <(pgrep -a tint2)
+
         TXT="Tint2s:\n\n"
         MSG="Running Tint2s:"
         TINTCMD=""
         LISTMSGTXT=""
-        while read line;do
-            TXT="$TXT$line"
-            LINE=$(echo "$line" | sed 's/;//')
-            if [[ $LINE = tint2 ]];then         # default command was used
-                TINTCMD="$TINTCMD$LINE;"
+
+        for i in "${arrTINT[@]}";do
+            TXT="$TXT$i"
+            TINT=$(echo "$i" | sed 's/;//')
+            if [[ "$TINT" == "tint2" ]];then
+                TINTCMD="$TINTCMD$TINT;"
                 LISTMSGTXT="$LISTMSGTXT\n\tDefault Tint2"
             else
-                TINTCMD="$TINTCMD$LINE;"
-                LISTMSGTXT="$LISTMSGTXT\n\t$LINE"
+                TINTCMD="$TINTCMD$TINT;"
+                LISTMSGTXT="$LISTMSGTXT\n\t$TINT"
             fi
-        done < "$TEMPTINT"
+        done
+
         echo "[TINT2] $TINTCMD" >> "$SETTINGS"
-        rm -f "$TEMPTINT"
         echo "$MSG\t$LISTMSGTXT\n" >> "$LISTMSG"
         echo -e "\n  Saved running Tint2(s)"
     else
@@ -499,23 +518,15 @@ function killTints(){
     done
 }
 
-function checkTint2zen(){    # see if bl-tint2zen and session file present
-    if type bl-tint2zen &>/dev/null;then
-        if [[ -f $TINTSESSION ]]; then
-            TZEN=1          # set flag for Restore choice
-        fi
-    fi
-}
-
 function getOBtheme(){   # copy <theme> section from rc.xml to obtheme.txt
     RCFILE="$OBPATH/rc.xml"
     tag="theme"
     sed -n "/<$tag>/,/<\/$tag>/p" "$RCFILE" > "$CONFIGDIR/obtheme.txt"
-    echo "[OBTHEME]" >> "$SETTINGS"
     getOBname
+    echo "[OBTHEME] $OBTHEME" >> "$SETTINGS"
 }
 
-function getOBname(){    # get OB theme name
+function getOBname(){    # get Openbox theme name
     OBFILE="$CONFIGDIR/obtheme.txt"
     OBTHEME=$(awk 'NR==2 {print;exit}' $OBFILE | awk -F'[>|<]' '{print $3}')
     TXT="Openbox theme:  $OBTHEME\n"
@@ -529,26 +540,30 @@ function getGTKtheme(){
         if [[ -f $f ]];then
             cp "$f" "$CONFIGDIR"
         elif [[ -d $f ]];then
-			GTKDIR="$CONFIGDIR/$(basename $f)"
-			mkdir -p "$GTKDIR"
+            GTKDIR="$CONFIGDIR/$(basename $f)"
+            mkdir -p "$GTKDIR"
             cp "$f/settings.ini" "$GTKDIR"
             cp "$f/gtk.css" "$GTKDIR"
         fi
     done
-    echo "[GTK]" >> "$SETTINGS"
     getGTKname
 }
 
-function getGTKname(){   # get GTK theme name
+function getGTKname(){   # get GTK theme name and Icons name
     GTKFILE="$CONFIGDIR/.gtkrc-2.0"
     while read line;do
         if [[ $(echo $line | grep "gtk-theme-name" ) ]] &>/dev/null;then
             GTKTHEME=$(echo $line | awk -F '"' '{print $2}')
+            echo "[GTK] $GTKTHEME" >> "$SETTINGS"
+        fi
+        if [[ $(echo $line | grep "gtk-icon-theme-name" ) ]] &>/dev/null;then
+            ICONS=$(echo $line | awk -F '"' '{print $2}')
+            echo "[ICONS] $ICONS" >> "$SETTINGS"
         fi
     done < "$GTKFILE"
-    TXT="GTK theme:  $GTKTHEME\n"
+    TXT="GTK theme:  $GTKTHEME;  Icon Theme: $ICONS\n"
     echo -e "\n  Saved $TXT"
-    echo "$TXT" >> "$LISTMSG"
+    echo  "$TXT" >> "$LISTMSG"
 }
 
 function getDmenu(){
@@ -635,13 +650,43 @@ function checkTint2(){   # kill or restart tint2s for screenshot, if necessary
     fi
 }
 
+function getWINDOWS(){  # Minimize/Activate windows for scrot. Args= 'min', 'raise', 'all'
+    declare -a arrWINDOWS
+    
+    if [[ "$1" == "min" ]];then
+        xdoCOMMAND="xdotool windowminimize"
+    elif [[ "$1" == "raise" ]] || [[ "$1" == "all" ]];then
+        xdoCOMMAND="xdotool windowactivate --sync"
+    fi
+
+    # get window id's on current desktop, which aren't sticky; convert hexcode to int.
+    # add window ids to array, if not conky
+    dtop=$(xdotool get_desktop)
+    for id in $(wmctrl -l | awk -v var="$dtop" '$2==var {print strtonum($1)}');do
+        arrWINDOWS+=($id)
+    done
+
+    # minimize/activate non-conky windows
+    conk="$(xdotool search --desktop "$dtop" --class 'Conky')"
+    for win in "${arrWINDOWS[@]}";do
+        if ! [[ $win = $conk ]];then 
+            ($xdoCOMMAND $win) 2>/dev/null
+        fi
+    done
+    if [[ "$1" == "all" ]];then # activate any hidden conkys
+        for CONK in $(xdotool search --class 'Conky');do
+            xdotool windowactivate "$CONK" 2>/dev/null
+        done
+    fi
+}
+
 function getScrot(){
-    pid=""
-    TMPSCROT=$(mktemp --tmpdir blob.XXXX)
+    local conkyFLAG=1
+    local pid=""
+    local currDESKTOP=$(xprop -root _NET_CURRENT_DESKTOP | tail -c -2)
     SCROT="$CONFIGPATH/$ANS"
-    CURRDTOP=$(xprop -root _NET_CURRENT_DESKTOP | tail -c -2) # desktop number
     MONS=$(xrandr -q | grep -c " connected")    # number of monitors
-    # Set mouse position, for appearance of root-menu
+    # set mouse position, for appearance of root-menu
     screenW=$(xrandr -q | awk '/Screen/ {print $8}')
     screenH=$(xrandr -q | awk '/Screen/ {print $10}')
     screenH=${screenH%,}
@@ -656,19 +701,15 @@ function getScrot(){
     appY=$(( (screenH/20)*4 ))
     menuY=$(( (screenH/20)*4 ))
 
-    wmctrl -l -x > "$TMPSCROT"      # store window list in tempfile
-    wmctrl -k on                    # hide windows, show desktop
-    # show any conkys which have been hidden by wmctrl, (ie not own_window_type desktop);
-    # unless Conkys weren't selected to be saved
-    if cat "$SETTINGS" | grep "CONKY" &>/dev/null;then
-        for CONK in $(xdotool search --classname "Conky");do
-            xdotool windowactivate "$CONK" 2>/dev/null
-        done
+    if ! cat "$SETTINGS" | grep "CONKY" &>/dev/null;then    # Conkys not to be saved
+        wmctrl -k on    # hide windows, show desktop
+        conkyFLAG=0
+    else                # Conkys will be saved, so don't hide them for the scrot
+        getWINDOWS min  # minimize windows
     fi
-    checkTint2 stop     # stop running Tint2s for the scrot,
-                        # if not selected to be saved
+    checkTint2 stop     # stop running Tint2s for the scrot, if not selected to be saved
     # start lxappearance
-    lxappearance &
+    lxappearance 2>/dev/null &
     pid=$!
     sleep 0.5
     # get lx window, make sure it loses focus, then move mouse and start root-menu
@@ -697,22 +738,56 @@ function getScrot(){
     fi
 
     # restore hidden windows
-    while read line; do
-        WINDOW=$(echo $line | awk '{print $1}') # Window_ID is first field
-        DTOP=$(echo $line | awk '{print $2}' )  # Desktop number is second field
-        if (( DTOP == CURRDTOP )) &>/dev/null;then
-            xdotool windowactivate "$WINDOW"
-        fi
-    done < "$TMPSCROT"
-    # restore any hidden Conkys
-    for CONK in $(xdotool search --classname "Conky");do
-        xdotool windowactivate "$CONK" 2>/dev/null
-    done
-    checkTint2 start        # restore any stopped Tint2s
-    rm -f "$TMPSCROT"
+    if (( conkyFLAG == 0 ));then
+        getWINDOWS all              # including hidden conkys
+    else
+        getWINDOWS raise            # Conkys weren't closed for scrot
+    fi
+    wmctrl -s $currDESKTOP # return to desktop that BLOB was started on, if conkys used 'wmctrl -s'
+    checkTint2 start                # restore any stopped Tint2s
 }
 
-function restoreGTK(){   # $1 is chosen saved config dir
+function checkICONS(){ # check if icon theme is still present
+    local FOUNDICONS=0
+    local ICOTXT="Icon theme <b>$1</b> not found\n\n  The default icon theme will be used..."
+    local ICONPATH_1="$HOME/.icons"
+    local ICONPATH_2="$HOME/.local/share/icons"
+    local ICONPATH_3="/usr/share/icons"
+    local ICONPATH_4="/usr/local/share/icons"
+    local arrICONS=("$ICONPATH_1" "$ICONPATH_2" "$ICONPATH_3" "$ICONPATH_4" )
+    
+    for i in "${arrICONS[@]}";do 
+        if [[ -d "$i/$1" ]];then 
+            echo -e "\n  Found $1 icon theme"
+            FOUNDICONS=1
+            break
+        fi
+    done
+    if (( FOUNDICONS == 0 ));then
+        echo -e "\n  Icon theme  $1  was not found\n  The default Icon theme will be used..."
+        $DIALOG --image="dialog-warning" "$T$ICOTXT" "$CLOSE" 2>/dev/null
+    fi
+}
+
+function checkGTK(){    # check if gtk theme is still present
+    local FOUNDGTK=0
+    local GTKTXT="GTK theme <b>$1</b> not found\n\n  The default GTK theme will be used..."
+    local arrGTK=("$THEMEPATH_1" "$THEMEPATH_2" "$THEMEPATH_3" "$THEMEPATH_4" )
+    
+    for i in "${arrGTK[@]}";do 
+        if [[ -d "$i/$1" ]];then 
+            echo -e "\n  Found $1 GTK theme"
+            FOUNDGTK=1
+            break
+        fi
+    done
+    if (( FOUNDGTK == 0 ));then
+        echo -e "\n  GTK theme  $1  was not found\n  The default GTK theme will be used..."
+        $DIALOG --image="dialog-warning" "$T$GTKTXT" "$CLOSE" 2>/dev/null
+    fi
+}
+
+function restoreGTK(){   # arg is chosen saved config dir
     GTKPATHS=( "$HOME" "$HOME" "$GTK3" "$GTK3x" )
     GTKSAVED=( "$1/$GTK2" "$1/$GTK2MINE" "$1/gtk-3.0" "$1/xfce4-notifyd.xml" )
     i=0
@@ -723,9 +798,9 @@ function restoreGTK(){   # $1 is chosen saved config dir
                     cp ${GTKSAVED[i]}/* ${GTKPATHS[i]} # restore contents of gtk-3.0
                     echo -e "\n  Restored gtk-3.0 files"
                 else
-					cp ${GTKSAVED[i]} ${GTKPATHS[i]}
-					echo -e "\n  Restored: ${GTKSAVED[i]}"
-				fi
+                    cp ${GTKSAVED[i]} ${GTKPATHS[i]}
+                    echo -e "\n  Restored: ${GTKSAVED[i]}"
+                fi
             else
                 echo -e "\n  Restore path ${GTKPATHS[i]} not found" 2>&1
             fi
@@ -736,6 +811,23 @@ function restoreGTK(){   # $1 is chosen saved config dir
     done
 }
 
+function checkOBTHEME(){
+    local FOUNDOB=0
+    local OBTXT="Openbox theme <b>$1</b> not found\n\n  The default Openbox theme will be used..."
+    local arrOB=("$THEMEPATH_1" "$THEMEPATH_2" "$THEMEPATH_3" "$THEMEPATH_4" )
+    
+    for i in "${arrOB[@]}";do 
+        if [[ -d "$i/$1" ]];then 
+            echo -e "\n  Found $1 Openbox theme"
+            FOUNDOB=1
+            break
+        fi
+    done
+    if (( FOUNDOB == 0 ));then
+        echo -e "\n  OB theme  $1  was not found\n  The default Openbox theme will be used..."
+        $DIALOG --image="dialog-warning" "$T$OBTXT" "$CLOSE" 2>/dev/null
+    fi
+}
 function restoreOBrc(){
     RCFILE="$OBPATH/rc.xml"
     THEMEFILE="$1/obtheme.txt"
@@ -765,13 +857,63 @@ function restoreOBrc(){
     fi
 }
 
-function restoreTint2(){      # write to tint2 session file
-    echo "$1" | awk -F';' '{for(i=1; i<=NF; i++) print $i}' >> "$TINTSESSION"
-    killTints
-    while read tintline;do
-        (tint2 -c "$tintline" &) &>/dev/null
-        sleep 1s
-    done < "$TINTSESSION"
+function restoreConky(){    # arg= $line from $SETCFG
+    local currDESKTOP=$(xprop -root _NET_CURRENT_DESKTOP | tail -c -2)   # Conkys may have been started on different desktops
+    local CONKYCMD=$(echo $1 | cut -d ' ' -f2-)
+    
+    if type bl-conkyzen &>/dev/null;then    # see if bl-conkyzen is installed
+        if [[ -f $CONKYSESSION ]] &>/dev/null; then
+            > "$CONKYSESSION" # create/overwrite conky session file
+            # write to conky session file...
+            echo "$CONKYCMD" | awk -F';' '{for(i=1; i<=NF; i++) print $i}' >> "$CONKYSESSION"
+            killall conky
+            source "$CONKYSESSION"  # run conky commands
+            wait
+        fi
+    else
+        killall conky
+        eval "$CONKYCMD"    # no bl-conkyzen, so just run conky commands
+        wait
+    fi
+    echo -e "\n  Restored Conky\n"
+    wmctrl -s $currDESKTOP && sleep 1 # return to desktop that BLOB was started on, if conkys used 'wmctrl -s'
+}
+
+function restoreTint2(){    # arg= $line from $SETCFG
+    TINTCMD=$(echo $1 | cut -d ' ' -f2-)
+    TINTCMD="$(echo $TINTCMD | awk -F';' '{for(i=1; i<=NF; i++) print $i}')"
+    if type bl-tint2zen >/dev/null;then    # see if bl-tint2zen is installed
+        if [[ -f $TINTSESSION ]] 2>/dev/null; then
+            > "$TINTSESSION"    # create/overwrite tint2 session file
+            # write to tint2 session file...
+            echo "$TINTCMD" >> "$TINTSESSION"
+            killTints
+            while read tintline;do
+                if [[ "$tintline" == "tint2" ]];then
+                    tint2 & >/dev/null
+                    sleep 1
+                    echo -e "\n  Restored Tint2: $tintline\n"
+                else
+                    tint2 -c "$tintline" & >/dev/null
+                    sleep 1s
+                    echo -e "\n  Restored Tint2: $tintline\n"
+                fi
+            done < "$TINTSESSION"
+        fi
+    else                    # no bl-tint2zen, so just run tint2 commands
+        killTints
+        for tintpath in $(echo $TINTCMD);do
+            if [[ "$tintpath" == "tint2" ]] >/dev/null;then 
+                tint2 & >/dev/null     # default tint2 command
+                sleep 1
+                echo -e "\n  Restored Tint2: $tintpath\n"
+            else
+                tint2 -c "$tintpath" & >/dev/null
+                sleep 1s
+                echo -e "\n  Restored Tint2: $tintpath\n"
+            fi
+        done 
+    fi
 }
 
 function restoreDmenu(){
@@ -808,7 +950,7 @@ function restoreLightdm(){   # need sudo to restore lightdm-gtk-greeter.conf
         gksudo -m "$TXT" "$CMD"
         DLG=$?
         case "$DLG" in
-            0   )   MSG="  Restored: lightdm-gtk-greeter.conf"
+            0   )   MSG="Restored: lightdm-gtk-greeter.conf"
                     echo -e "\n  $MSG"
                     break
                     ;;
@@ -818,7 +960,7 @@ function restoreLightdm(){   # need sudo to restore lightdm-gtk-greeter.conf
                     ;;
             *   )   MSG="  Password input failed\n\nlightdm-gtk-greeter.conf was not restored"
                     echo -e "\n  $MSG" 2>&1
-                    "$DIALOG" --image="dialog-warning" "$T$MSG" "$OK" 2>/dev/null
+                    $DIALOG --image="dialog-warning" "$T$MSG" "$OK" 2>/dev/null
                     ;;
         esac
     done
@@ -892,9 +1034,9 @@ function saveSettings(){
     COLUMNS=(\
         $SELECT "$PICKOB" \
         $SELECT "$PICKGTK" \
+        $SELECT "$PICKBG" \
         $SELECT "$PICKCONKY" \
         $SELECT "$PICKTINT" \
-        $SELECT "$PICKBG" \
         $SELECT "$PICKDMENU" \
         $SELECT "$PICKLDM" \
         $SELECT "$PICKEXIT" \
@@ -904,7 +1046,6 @@ function saveSettings(){
     if  readlink -f /usr/bin/x-terminal-emulator | grep terminator &>/dev/null;then
         COLUMNS=("${COLUMNS[@]}" $SELECT "$PICKTERM")
     fi
-
     SLOOP=1
     while (( SLOOP == 1 ));do
         CHOICE=$($DIALOGDEC --list --checklist \
@@ -947,19 +1088,17 @@ function saveSettings(){
                     i=$((i+1))
                 done
                 IFS=$OIFS # reset IFS back to default
-                len=${#retChoice[@]}
-                for (( i=0; i<${len}; i++ ));do
-                    item="${retChoice[$i-1]}"
+                for item in "${retChoice[@]}";do
                     case "$item" in
                         "$PICKOB"   )   getOBtheme
                                         ;;
                         "$PICKGTK"  )   getGTKtheme
                                         ;;
+                        "$PICKBG"   )   getBg
+                                        ;;
                         "$PICKCONKY")   getConky
                                         ;;
                         "$PICKTINT" )   getTint
-                                        ;;
-                        "$PICKBG"   )   getBg
                                         ;;
                         "$PICKDMENU")   getDmenu
                                         ;;
@@ -995,9 +1134,9 @@ function saveSettings(){
     fi
 }
 
-function ViewRestoreDialog(){  #   Display saved theme collections
-    getSet          # get name of latest set BLOB config
-    if (( NUMDIRS == 0 ));then   # no saved configs; go back to Intro dialog
+function ViewRestoreDialog(){   # display saved theme collections
+    getSet                      # get name of latest set BLOB config
+    if (( NUMDIRS == 0 ));then  # no saved configs; go back to Intro dialog
         Intro
     fi
     DLGLIST=""
@@ -1011,13 +1150,13 @@ function ViewRestoreDialog(){  #   Display saved theme collections
                 d=$(echo $dir | sed -e 's/ /_/g')    # replace any spaces in dir name
                 namesARR[$i]="<big>$(basename $d)</big>" # add theme collection name to array
                 d=${d##*/}  # get directory name
-                # Get name of current session, set icon for TRUE/FALSE
+                # get name of current session, set icon for TRUE/FALSE
                 if [[ $SET = $d ]];then
                     setARR[$i]="gtk-yes"
                 else
                     setARR[$i]="gtk-no"
                 fi
-                IMGTHUMB="None"     # Placeholder if no thumbnail found
+                IMGTHUMB="None"     # placeholder if no thumbnail found
                 f="$dir"/*"-thumb.jpg"
                 if [[ $f ]];then
                     IMGTHUMB="$f"
@@ -1131,7 +1270,7 @@ function restoreSettings(){
         esac
     done
     SETCFG="$FPATH/settings.cfg"
-    # Get chosen saved configs and restore them
+    # get chosen saved configs and restore them
     # kill conkys and tint2s, in case saved config doesn't include them
     if [[ $(pidof conky) ]];then
         killall conky
@@ -1143,27 +1282,28 @@ function restoreSettings(){
         TAG=$(echo $line | awk '{print $1}')
         VAL=$(echo $line | awk '{print $2}')
         case "$TAG" in
-            "[TINT2]"       )   checkTint2zen # see if bl-tint2zen installed
-                                if (( TZEN == 1 ));then
-                                    > "$TINTSESSION" # overwrite tint2 session file
+            "[TINT2]"       )   if [[ $VAL ]];then
+                                    restoreTint2 "$line"
                                 fi
-                                TINTCMD=$(echo $line | cut -d ' ' -f2-)
-                                restoreTint2 "$TINTCMD"
                                 ;;
-            "[CONKY]"       )   checkConkyzen # see if bl-conkyzen installed
-                                if (( CZEN == 1 ));then
-                                    > "$CONKYSESSION" # overwrite conky session file
+            "[CONKY]"       )   if [[ $VAL ]];then
+                                    restoreConky "$line"
                                 fi
-                                CONKYCMD=$(echo $line | cut -d ' ' -f2-)
-                                # write to conky session file...
-                                echo $CONKYCMD | awk -F';' '{for(i=1; i<=NF; i++) print $i}' >> "$CONKYSESSION"
-                                killall conky
-                                source "$CONKYSESSION"
                                 ;;
-            "[GTK]"         )   restoreGTK "$FPATH"
+            "[ICONS]"       )   if [[ $VAL ]];then
+                                    checkICONS "$VAL"
+                                fi
+                                ;;
+            "[GTK]"         )   if [[ $VAL ]];then
+                                    checkGTK "$VAL"
+                                fi
+                                restoreGTK "$FPATH"
                                 reloadGTK
                                 ;;
-            "[OBTHEME]"     )   restoreOBrc "$FPATH"
+            "[OBTHEME]"     )   if [[ $VAL ]];then
+                                    checkOBTHEME "$VAL"
+                                fi
+                                restoreOBrc "$FPATH"
                                 ;;
             "[BACKGROUND]"  )   if [[ $VAL = FEH ]];then
                                     cp "$FPATH/.fehbg" "$HOME"
