@@ -24,7 +24,7 @@
 #                       Background (uses Nitrogen or feh, depending which
 #                                   has the newer saved bg config file)
 #                       Alt Menu (dmenu)
-#                       Lightdm login gtk greeter
+#                       Lightdm login gtk greeter (currently disabled)
 #                       Exit dialog theme
 #                       X configs (.bashrc, .Xresources)
 #                       Terminator config
@@ -75,7 +75,7 @@ No other options are supported.
                        Background (uses Nitrogen or feh, depending which
                                    has the newer saved bg config file)
                        Alt Menu (dmenu)
-                       Lightdm login gtk greeter
+                       Lightdm login gtk greeter (currently disabled)
                        Exit dialog theme
                        X configs (.bashrc, .Xresources)
                        Terminator config
@@ -189,7 +189,7 @@ Openbox Configuration Manager</b></big>
     Tint2
     Desktop Background
     Alt Menu (dmenu)
-    LightDM theme
+    LightDM theme (currently disabled)
     Exit dialog theme
     X configs (.bashrc, .Xresources)
     Terminator (if default term)
@@ -1031,16 +1031,16 @@ function saveSettings(){
     else
         SELECT="TRUE"
     fi
-    COLUMNS=(\
-        $SELECT "$PICKOB" \
-        $SELECT "$PICKGTK" \
-        $SELECT "$PICKBG" \
-        $SELECT "$PICKCONKY" \
-        $SELECT "$PICKTINT" \
-        $SELECT "$PICKDMENU" \
-        $SELECT "$PICKLDM" \
-        $SELECT "$PICKEXIT" \
-        $SELECT "$PICKX" \
+    COLUMNS=(
+        $SELECT "$PICKOB"
+        $SELECT "$PICKGTK"
+        $SELECT "$PICKBG"
+        $SELECT "$PICKCONKY"
+        $SELECT "$PICKTINT"
+        $SELECT "$PICKDMENU"
+        #$SELECT "$PICKLDM"
+        $SELECT "$PICKEXIT"
+        $SELECT "$PICKX"
         )
     # add terminator to array if set as default
     if  readlink -f /usr/bin/x-terminal-emulator | grep terminator &>/dev/null;then
@@ -1315,7 +1315,7 @@ function restoreSettings(){
                                 ;;
             "[DMENU]"       )   restoreDmenu "$FPATH/$DMENU"
                                 ;;
-            "[LIGHTDM]"     )   restoreLightdm "$FPATH/$LDM"
+            "[LIGHTDM]"     )   echo "Lightdm settings not supported at this time" #restoreLightdm "$FPATH/$LDM"
                                 ;;
             "[EXITRC]"      )   restoreBLexitrc "$FPATH/bl-exitrc"
                                 ;;
