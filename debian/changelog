@@ -1,3 +1,10 @@
+bunsen-utilities (9.3.1-1) helium; urgency=medium
+
+  * bl-obthemes: Disable lightdm config handling.
+     (Directory structure has changed.)
+
+ -- John Crawley <john@bunsenlabs.org>  Sun, 26 Nov 2017 14:42:07 +0900
+
 bunsen-utilities (9.3-1) helium; urgency=medium
 
   * [Damo] Upgrade bl-obthemes.
