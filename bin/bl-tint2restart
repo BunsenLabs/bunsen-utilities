@@ -17,7 +17,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-HELP='    bl-tint2-restart a script to restart all running instances of tint2
+HELP='    bl-tint2restart a script to restart all running instances of tint2
 
 Options:
     -h --help   show this message
