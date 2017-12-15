@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
+#
 
 #    bl-xinerama-prop: script to get xinerama properties in a shell script
 #    Copyright (C) 2016 xaos52 <xaos52@bunsenlabs.org>
