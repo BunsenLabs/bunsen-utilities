@@ -1,6 +1,6 @@
 Source: bunsen-utilities
 Section: misc
-Priority: extra
+Priority: optional
 Maintainer: John Crawley <john@bunsenlabs.org>
 Build-Depends: debhelper (>= 9), dh-systemd (>= 1.5), help2man
 Standards-Version: 3.9.5

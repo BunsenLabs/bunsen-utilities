@@ -433,7 +433,7 @@ function getConky(){
     CMDTXT="[CONKY] "
     CONKYTXT=""
     NUM_DESKTOPS=$(xdotool get_num_desktops)
-        
+
     declare -a arrALL
     declare -a arrDESKTOP
     declare -a arrSTICKY
@@ -442,7 +442,7 @@ function getConky(){
         while read line;do  # get all running conky id's
             arrALL+=("$line")
         done <<< $(xdotool search --class conky)
-        
+
         for (( i=0; i<$NUM_DESKTOPS; i++ ));do  # get all conkys running on specific desktops
             while read id;do
                 arrDESKTOP+=("$id")
@@ -459,10 +459,10 @@ function getConky(){
                 fi
             done <<< $(xdotool search --desktop $i --class conky)
         done
-    
+
         # get the conkys sticky on all workspaces (difference between previous 2 arrays)
         arrSTICKY=($(echo ${arrALL[@]}  ${arrDESKTOP[@]} | tr ' ' '\n' | sort | uniq -u))
-        
+
         for id in "${arrSTICKY[@]}";do  # get commands - we don't need wmctrl for these
             if ! [[ -z "$id" ]];then
                 CONKYCMD=$(xprop -id "$id" | grep WM_COMMAND | awk -F'{|}' '{gsub ("[\"|,]",""); print $2}' | awk '{$1=$1};1')
@@ -666,7 +666,7 @@ function checkTint2(){   # kill or restart tint2s for screenshot, if necessary
 
 function getWINDOWS(){  # Minimize/Activate windows for scrot. Args= 'min', 'raise', 'all'
     declare -a arrWINDOWS
-    
+
     if [[ "$1" == "min" ]];then
         xdoCOMMAND="xdotool windowminimize"
     elif [[ "$1" == "raise" ]] || [[ "$1" == "all" ]];then
@@ -683,7 +683,7 @@ function getWINDOWS(){  # Minimize/Activate windows for scrot. Args= 'min', 'rai
     # minimize/activate non-conky windows
     conk="$(xdotool search --desktop "$dtop" --class 'Conky')"
     for win in "${arrWINDOWS[@]}";do
-        if ! [[ $win = $conk ]];then 
+        if ! [[ $win = $conk ]];then
             ($xdoCOMMAND $win) 2>/dev/null
         fi
     done
@@ -769,9 +769,9 @@ function checkICONS(){ # check if icon theme is still present
     local ICONPATH_3="/usr/share/icons"
     local ICONPATH_4="/usr/local/share/icons"
     local arrICONS=("$ICONPATH_1" "$ICONPATH_2" "$ICONPATH_3" "$ICONPATH_4" )
-    
-    for i in "${arrICONS[@]}";do 
-        if [[ -d "$i/$1" ]];then 
+
+    for i in "${arrICONS[@]}";do
+        if [[ -d "$i/$1" ]];then
             echo -e "\n  Found $1 icon theme"
             FOUNDICONS=1
             break
@@ -787,9 +787,9 @@ function checkGTK(){    # check if gtk theme is still present
     local FOUNDGTK=0
     local GTKTXT="GTK theme <b>$1</b> not found\n\n  The default GTK theme will be used..."
     local arrGTK=("$THEMEPATH_1" "$THEMEPATH_2" "$THEMEPATH_3" "$THEMEPATH_4" )
-    
-    for i in "${arrGTK[@]}";do 
-        if [[ -d "$i/$1" ]];then 
+
+    for i in "${arrGTK[@]}";do
+        if [[ -d "$i/$1" ]];then
             echo -e "\n  Found $1 GTK theme"
             FOUNDGTK=1
             break
@@ -829,9 +829,9 @@ function checkOBTHEME(){
     local FOUNDOB=0
     local OBTXT="Openbox theme <b>$1</b> not found\n\n  The default Openbox theme will be used..."
     local arrOB=("$THEMEPATH_1" "$THEMEPATH_2" "$THEMEPATH_3" "$THEMEPATH_4" )
-    
-    for i in "${arrOB[@]}";do 
-        if [[ -d "$i/$1" ]];then 
+
+    for i in "${arrOB[@]}";do
+        if [[ -d "$i/$1" ]];then
             echo -e "\n  Found $1 Openbox theme"
             FOUNDOB=1
             break
@@ -874,7 +874,7 @@ function restoreOBrc(){
 function restoreConky(){    # arg= $line from $SETCFG
     local currDESKTOP=$(xprop -root _NET_CURRENT_DESKTOP | tail -c -2)   # Conkys may have been started on different desktops
     local CONKYCMD=$(echo $1 | cut -d ' ' -f2-)
-    
+
     if type bl-conkyzen &>/dev/null;then    # see if bl-conkyzen is installed
         if [[ -f $CONKYSESSION ]] &>/dev/null; then
             > "$CONKYSESSION" # create/overwrite conky session file
@@ -917,7 +917,7 @@ function restoreTint2(){    # arg= $line from $SETCFG
     else                    # no bl-tint2zen, so just run tint2 commands
         killTints
         for tintpath in $(echo $TINTCMD);do
-            if [[ "$tintpath" == "tint2" ]] >/dev/null;then 
+            if [[ "$tintpath" == "tint2" ]] >/dev/null;then
                 tint2 & >/dev/null     # default tint2 command
                 sleep 1
                 echo -e "\n  Restored Tint2: $tintpath\n"
@@ -926,7 +926,7 @@ function restoreTint2(){    # arg= $line from $SETCFG
                 sleep 1s
                 echo -e "\n  Restored Tint2: $tintpath\n"
             fi
-        done 
+        done
     fi
 }
 
@@ -997,14 +997,14 @@ function restoreXsettings(){
 
 function restoreTerminator(){
     TFILE="$1"
-    if [[ -e $TERMDIR ]];then        # backup terminator/config first
+    if [[ -e $TERMFILE ]];then        # backup terminator/config first
         TERMBKP="$TERMDIR/config.bkp"
-        cp "$TFILE" "$TERMBKP"
-        cp "$TFILE" "$TERMDIR/config"
-        echo -e "\n  $TERMDIR/config backed up and restored"
+        mv "$TERMFILE" "$TERMBKP"
+        cp "$TFILE" "$TERMFILE"
+        echo -e "\n  $TERMFILE backed up and restored"
     else
-        cp "$TFILE" "$TERMDIR/config"
-        echo -e "\n  $TERMDIR/config restored"
+        cp "$TFILE" "$TERMFILE"
+        echo -e "\n  $TERMFILE restored"
     fi
 }
 
