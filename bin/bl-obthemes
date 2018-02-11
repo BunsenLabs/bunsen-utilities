@@ -621,7 +621,7 @@ function getXconfig(){
     if [[ -f $BASHFILE ]];then
         cp "$BASHFILE" "$CONFIGDIR"
     fi
-    TXT="X terminal config:  $BASHFILE;$XFILE\n"
+    TXT="X terminal config:  $BASHFILE; $XFILE ($BASHFILE will not be auto-restored)\n"
     echo -e "\n  Saved $TXT"
     echo "[XFILES]" >> "$SETTINGS"
     echo "$TXT" >> "$LISTMSG"
@@ -1333,7 +1333,7 @@ function restoreSettings(){
                                 ;;
             "[EXITRC]"      )   restoreBLexitrc "$FPATH/bl-exitrc"
                                 ;;
-            "[XFILES]"      )   restoreXsettings "$FPATH/.bashrc" "$FPATH/.Xresources"
+            "[XFILES]"      )   echo ".bashrc will not be overwritten: a copy is in $FPATH/.bashrc"; restoreXsettings "$FPATH/.Xresources" #"$FPATH/.bashrc" # do not restore .bashrc for now
                                 ;;
             "[TERMINATOR]"  )   restoreTerminator "$FPATH/config"
                                 ;;
