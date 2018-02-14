@@ -27,8 +27,8 @@
 ########################################################################
 
 declare CONKYPATH="$HOME/.config/conky"
-declare -A CONKYS_PATH
-declare -A CONKYS_ARR
+declare -a CONKYS_PATH
+declare -a CONKYS_ARR
 
 HELP="    bl-conkyedit a BunsenLabs Conky Editor
 Options:
