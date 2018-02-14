@@ -1,3 +1,9 @@
+bunsen-utilities (9.3.3-1) helium; urgency=high
+
+  * bl-conkyedit: fix bug with finding running conkys.
+
+ -- John Crawley <john@bunsenlabs.org>  Wed, 14 Feb 2018 17:15:07 +0900
+
 bunsen-utilities (9.3.2-1) helium; urgency=medium
 
   * bl-obthemes: Fix bug with terminator config restore.
