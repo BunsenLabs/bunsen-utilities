@@ -19,17 +19,13 @@
 HELP='bl-pkg-versions a script to check versions of BunsenLabs packages
 Options:
     -h --help   show this message
-
-No other options are supported.
+    <empty>|hydrogen    Display the Hydrogen packages.
+    helium|helium-dev   Display the Helium packages.
 
 It will check the versions of bunsen packages
 on the Debian and GitHub repositories.
 '
 
-# base url for GitHub repository names
-readonly GITHUB_ROOT=https://github.com/BunsenLabs
-readonly GITHUB_CONTENT_ROOT=https://raw.githubusercontent.com/BunsenLabs
-readonly BUNSEN_PACKAGE_LIST=http://pkg.bunsenlabs.org/debian/dists/bunsen-hydrogen/main/binary-i386/Packages
 required_commands='curl awk sed tput printf'
 
 # Associative array: packages whose names differ from the repository they are built by
@@ -38,12 +34,32 @@ required_commands='curl awk sed tput printf'
 declare -A REPOS=([bunsen-python-apt-template]=bunsen-os-release [bunsen-images-extra]=bunsen-images [bunsen-meta-printer-support]=bunsen-welcome [bunsen-meta-java]=bunsen-welcome [bunsen-meta-libreoffice]=bunsen-welcome [bunsen-meta-vcs]=bunsen-welcome [bunsen-meta-ssh]=bunsen-welcome [bunsen-meta-lamp]=bunsen-welcome [bunsen-meta-packaging]=bunsen-welcome)
 readonly REPOS
 
+# base url for GitHub repository names
+readonly GITHUB_ROOT=https://github.com/BunsenLabs
+readonly GITHUB_CONTENT_ROOT=https://raw.githubusercontent.com/BunsenLabs
+
 case $1 in
 --help|-h)
     echo "$HELP"
     exit
     ;;
+helium|helium-dev)
+    readonly GITHUB_BRANCH=helium-dev
+    readonly SERVER=https://kelaino.bunsenlabs.org/~johnraff
+    readonly RELEASE=helium
+    ;;
+''|hydrogen)
+    readonly GITHUB_BRANCH=master
+    readonly SERVER=http://pkg.bunsenlabs.org
+    readonly RELEASE=bunsen-hydrogen
+    ;;
+*)
+    echo "$1: no such option" >&2
+    exit 1
+    ;;
 esac
+
+readonly BUNSEN_PACKAGE_LIST="${SERVER}/debian/dists/${RELEASE}/main/binary-i386/Packages"
 
 missing_commands=
 for i in $required_commands
@@ -63,7 +79,7 @@ get_repo() {
 # get version of GitHub repo from packagename
 lookup_github() {
     reponame=$(get_repo "$1")
-    chlog="${GITHUB_CONTENT_ROOT}/${reponame}/master/debian/changelog"
+    chlog="${GITHUB_CONTENT_ROOT}/${reponame}/${GITHUB_BRANCH}/debian/changelog"
     remote_version="$(curl -s "$chlog" | sed -rn "0,/${reponame}/s/.+\(([0-9]+[a-zA-Z0-9.+~:-]*)\).*/\1/p;")"
     printf '%s' "$remote_version"
 }
