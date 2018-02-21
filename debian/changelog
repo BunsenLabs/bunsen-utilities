@@ -1,3 +1,9 @@
+bunsen-utilities (9.3.4-1) helium; urgency=medium
+
+  * bl-pkg-versions: add option to check Helium packages.
+
+ -- John Crawley <john@bunsenlabs.org>  Wed, 21 Feb 2018 17:27:08 +0900
+
 bunsen-utilities (9.3.3-1) helium; urgency=high
 
   * bl-conkyedit: fix bug with finding running conkys.
