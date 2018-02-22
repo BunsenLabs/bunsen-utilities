@@ -1,3 +1,9 @@
+bunsen-utilities (9.3.5-1) helium; urgency=medium
+
+  * bl-pkg-versions: bugfix.
+
+ -- John Crawley <john@bunsenlabs.org>  Thu, 22 Feb 2018 17:01:55 +0900
+
 bunsen-utilities (9.3.4-1) helium; urgency=medium
 
   * bl-pkg-versions: add option to check Helium packages.
