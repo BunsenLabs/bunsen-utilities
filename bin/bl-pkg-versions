@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 #    bl-pkg-versions: a script to check versions of BunsenLabs packages
-#    Copyright (C) 2015-2016  John Crawley <john@bunsenlabs.org>
+#    Copyright (C) 2015-2018  John Crawley <john@bunsenlabs.org>
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -16,23 +16,21 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-HELP='bl-pkg-versions a script to check versions of BunsenLabs packages
-Options:
-    -h --help   show this message
-    <empty>|hydrogen    Display the Hydrogen packages.
-    helium|helium-dev   Display the Helium packages.
+HELP="bl-pkg-versions: a script to check versions of BunsenLabs packages
 
-It will check the versions of bunsen packages
+Usage:
+    bl-pkg-versions [-h|--help][<release>]
+
+Options:
+        -h, --help   show this message
+        <empty>|hydrogen    Display the Hydrogen packages.
+        helium|helium-dev   Display the Helium packages.
+
+It will display the versions of bunsen packages
 on the Debian and GitHub repositories.
-'
+"
 
 required_commands='curl awk sed tput printf'
-
-# Associative array: packages whose names differ from the repository they are built by
-# format: [packagename]=repositoryname
-# Edit as necessary.
-declare -A REPOS=([bunsen-python-apt-template]=bunsen-os-release [bunsen-meta-printer-support]=bunsen-welcome [bunsen-meta-java]=bunsen-welcome [bunsen-meta-libreoffice]=bunsen-welcome [bunsen-meta-vcs]=bunsen-welcome [bunsen-meta-ssh]=bunsen-welcome [bunsen-meta-lamp]=bunsen-welcome [bunsen-meta-packaging]=bunsen-welcome)
-readonly REPOS
 
 # base url for GitHub repository names
 readonly GITHUB_ROOT=https://github.com/BunsenLabs
@@ -70,15 +68,9 @@ done
 Please install the packages containing the missing commands
 and rerun the script."
 
-# get name of repository which builds package
-# default is same as package name, unless listed in REPOS
-get_repo() {
-    printf '%s' "${REPOS[$1]:-$1}"
-}
-
 # get version of GitHub repo from packagename
 lookup_github() {
-    reponame=$(get_repo "$1")
+    reponame="$1"
     chlog="${GITHUB_CONTENT_ROOT}/${reponame}/${GITHUB_BRANCH}/debian/changelog"
     remote_version="$(curl -s "$chlog" | sed -rn "0,/${reponame}/s/.+\(([0-9]+[a-zA-Z0-9.+~:-]*)\).*/\1/p;")"
     printf '%s' "$remote_version"
