@@ -1,3 +1,9 @@
+bunsen-utilities (9.4-1) helium; urgency=medium
+
+  * bl-obthemes: Supply preset themes in /usr/share/bunsen/utilities/blob.
+
+ -- John Crawley <john@bunsenlabs.org>  Thu, 08 Mar 2018 16:47:17 +0900
+
 bunsen-utilities (9.3.5-1) helium; urgency=medium
 
   * bl-pkg-versions: bugfix.
