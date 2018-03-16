@@ -151,6 +151,19 @@ THEMEPATH_1="$HOME/.themes"
 THEMEPATH_2="$HOME/.local/share/themes"
 THEMEPATH_3="/usr/share/themes"
 THEMEPATH_4="/usr/local/share/themes"
+# packages needed for particular icon themes
+declare -A icon_pkgs=(
+[Faenza-Dark-Bunsen]='bunsen-faenza-icon-theme'
+[Faenza-Bunsen]='bunsen-faenza-icon-theme'
+[Paper-Bunsen]='bunsen-paper-icon-theme'
+)
+# theme packages
+declare -A theme_pkgs=(
+[Beam]=bunsen-themes
+[Bunsen-He]=bunsen-themes
+[Bunsen-Dark-He]=bunsen-themes
+[Bunsen-He-flatish]=bunsen-themes
+)
 ### CONFIGS VARIABLES
 EXITFILE="$HOME/.config/bl-exit/bl-exitrc"
 TERMDIR="$HOME/.config/terminator"
@@ -234,7 +247,7 @@ function Intro(){
         INTRO=$($DIALOGDEC \
         --title="$TITLE" \
         "$T$TXTINTRO" \
-        --button="Save Settings:0" --button="gtk-close:1" \
+        --button="Save Settings:0" $CLOSE \
         --borders=30 \
         2>/dev/null )
     fi
@@ -779,6 +792,26 @@ function checkICONS(){ # check if icon theme is still present
         fi
     done
     if (( FOUNDICONS == 0 ));then
+        local pkg="${icon_pkgs[$1]}"
+        if [[ -n "${pkg}" ]] && hash bl-install >/dev/null
+        then
+            echo -e "\n  Icon theme  $1  was not found\n  Offering to install $pkg..."
+            local INSTICOTXT="Needed icon theme <b>$1</b> not found\n Would you like to install the package <b>${pkg}</b> which contains that theme?"
+            $DIALOG --image="dialog-question" "$T$INSTICOTXT" "CANCEL" "OK" 2>/dev/null
+            if (( $? == 0 ))
+            then
+                local retfile="$( mktemp )"
+                bl-install -f "$retfile" "$pkg"
+                local retval="$(<"$retfile")"
+                rm "$retfile"
+                if [[ "$retval" = 0 ]]
+                then
+                    return 0
+                else
+                    $DIALOG --image="dialog-warning" "${T}Install failed." "$CLOSE" 2>/dev/null
+                fi
+            fi
+        fi
         echo -e "\n  Icon theme  $1  was not found\n  The default Icon theme will be used..."
         $DIALOG --image="dialog-warning" "$T$ICOTXT" "$CLOSE" 2>/dev/null
     fi
@@ -1002,6 +1035,7 @@ function restoreXsettings(){
             echo -e "\n  $var restored"
         fi
     done
+    xrdb ~/.Xresources
 }
 
 function restoreTerminator(){
@@ -1166,16 +1200,21 @@ function ViewRestoreDialog(){   # display saved theme collections
     setARR=()
     namesARR=()
     thumbsARR=()
+    declare -A uniqnames # hide duplicate directories
     i=0
     for dir in "$CONFIGPATH"/* "$SYSCONFIGPATH"/* ;do
         if [[ -d $dir ]];then
             if [[ -e $dir/settings.cfg ]];then
                 themename="${dir##*/}" # strip path
                 themename=$(echo $themename | sed -e 's/ /_/g')    # replace any spaces in dir name
+                [[ "${uniqnames["$themename"]}" = 'found' ]] && continue
+                uniqnames["$themename"]='found'
                 namesARR[$i]="<big>$themename</big>" # add theme collection name to array
                 # get name of current session, set icon for TRUE/FALSE
                 if [[ $SET = $themename ]];then
                     setARR[$i]="gtk-yes"
+                elif [[ "$dir" = "$SYSCONFIGPATH"/* ]]; then
+                    setARR[$i]="system"
                 else
                     setARR[$i]="gtk-no"
                 fi
@@ -1252,7 +1291,7 @@ function restoreSettings(){
                     fi
                 fi
 
-                SYSDIRTXT="Cannot delete system directory $FPATH"
+                SYSDIRTXT="Sorry, system preset theme <b>${DIR}</b> cannot be deleted"
                 if [[ "${FPATH%/*}" = "$SYSCONFIGPATH" ]]
                 then
                     $DIALOG --image="dialog-warning" "$T$SYSDIRTXT" "$CLOSE" 2>/dev/null
@@ -1380,9 +1419,10 @@ if [[ ! -f $CURSESSION ]] &>/dev/null;then
 fi
 getActiveMonitorDimensions
 getSet
-if (( NUMDIRS == 0 ));then
-    Intro
-else
-    restoreSettings
-fi
+Intro
+#if (( NUMDIRS == 0 ));then
+#    Intro
+#else
+#    restoreSettings
+#fi
 exit 0
