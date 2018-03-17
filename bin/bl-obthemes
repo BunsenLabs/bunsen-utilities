@@ -1216,7 +1216,7 @@ function ViewRestoreDialog(){   # display saved theme collections
                 elif [[ "$dir" = "$SYSCONFIGPATH"/* ]]; then
                     setARR[$i]="system"
                 else
-                    setARR[$i]="gtk-no"
+                    setARR[$i]="gtk-home"
                 fi
                 IMGTHUMB="None"     # placeholder if no thumbnail found
                 f="$dir"/*"-thumb.jpg"
