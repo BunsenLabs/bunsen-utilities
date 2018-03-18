@@ -35,6 +35,13 @@ If you have set these to something else, then edit the "MENUMODIFIER" and
 MOUSECMD variables. Set the variable "KEYDOWN" to where "Preferences" is
 in the root-menu (or anything else you might want displayed).
 
+User saved themes are stored in ~/.config/blob.
+Some system preset themes are stored in /usr/share/bunsen/utilities/blob.
+The contents of that directory will be displayed to the user
+along with any that might be in ~/.config/blob.
+If a user and preset theme have identical names,
+the system preset will be hidden.
+
 ****************************************************************************
 KNOWN ISSUES:
 Virtualbox does not allow the guest to move the host mouse cursor, using xdotool,
