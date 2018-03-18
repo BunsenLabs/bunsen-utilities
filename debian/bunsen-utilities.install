@@ -1,3 +1,4 @@
 bin usr
 notify-broadcast/bl-notify-failure@.service lib/systemd/system
 notify-broadcast/bl-notify-broadcast usr/sbin
+blob usr/share/bunsen/utilities

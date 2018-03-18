@@ -138,6 +138,7 @@ done
 
 #### VARIABLES #########################################################
 CONFIGPATH="$HOME/.config/blob"
+SYSCONFIGPATH="/usr/share/bunsen/utilities/blob"
 SETTINGS=""
 OBPATH="$HOME/.config/openbox"
 CURSESSION="$CONFIGPATH/current"
@@ -150,6 +151,19 @@ THEMEPATH_1="$HOME/.themes"
 THEMEPATH_2="$HOME/.local/share/themes"
 THEMEPATH_3="/usr/share/themes"
 THEMEPATH_4="/usr/local/share/themes"
+# packages needed for particular icon themes
+declare -A icon_pkgs=(
+[Faenza-Dark-Bunsen]='bunsen-faenza-icon-theme'
+[Faenza-Bunsen]='bunsen-faenza-icon-theme'
+[Paper-Bunsen]='bunsen-paper-icon-theme'
+)
+# theme packages
+declare -A theme_pkgs=(
+[Beam]=bunsen-themes
+[Bunsen-He]=bunsen-themes
+[Bunsen-Dark-He]=bunsen-themes
+[Bunsen-He-flatish]=bunsen-themes
+)
 ### CONFIGS VARIABLES
 EXITFILE="$HOME/.config/bl-exit/bl-exitrc"
 TERMDIR="$HOME/.config/terminator"
@@ -233,7 +247,7 @@ function Intro(){
         INTRO=$($DIALOGDEC \
         --title="$TITLE" \
         "$T$TXTINTRO" \
-        --button="Save Settings:0" --button="gtk-close:1" \
+        --button="Save Settings:0" $CLOSE \
         --borders=30 \
         2>/dev/null )
     fi
@@ -261,7 +275,7 @@ function Intro(){
 
 function getSet(){      # get name of currently set BLOB config
     NUMDIRS=0
-    NUMDIRS=$(ls -l "$CONFIGPATH" | grep -c ^d) # check if any dirs present
+    NUMDIRS=$(ls -l "$CONFIGPATH" "$SYSCONFIGPATH" | grep -c ^d) # check if any dirs present
     if (( NUMDIRS == 0 ));then
         if [[ -f $CURSESSION ]];then
             rm "$CURSESSION"
@@ -778,6 +792,26 @@ function checkICONS(){ # check if icon theme is still present
         fi
     done
     if (( FOUNDICONS == 0 ));then
+        local pkg="${icon_pkgs[$1]}"
+        if [[ -n "${pkg}" ]] && hash bl-install >/dev/null
+        then
+            echo -e "\n  Icon theme  $1  was not found\n  Offering to install $pkg..."
+            local INSTICOTXT="Needed icon theme <b>$1</b> not found\n Would you like to install the package <b>${pkg}</b> which contains that theme?"
+            $DIALOG --image="dialog-question" "$T$INSTICOTXT" "CANCEL" "OK" 2>/dev/null
+            if (( $? == 0 ))
+            then
+                local retfile="$( mktemp )"
+                bl-install -f "$retfile" "$pkg"
+                local retval="$(<"$retfile")"
+                rm "$retfile"
+                if [[ "$retval" = 0 ]]
+                then
+                    return 0
+                else
+                    $DIALOG --image="dialog-warning" "${T}Install failed." "$CLOSE" 2>/dev/null
+                fi
+            fi
+        fi
         echo -e "\n  Icon theme  $1  was not found\n  The default Icon theme will be used..."
         $DIALOG --image="dialog-warning" "$T$ICOTXT" "$CLOSE" 2>/dev/null
     fi
@@ -947,6 +981,10 @@ function restoreBLexitrc(){
     EFILE="$1"
     if [[ -e $EXITFILE ]];then        # backup bl-exitrc first
         EFILEBKP="$EFILE.bkp"
+        if [[ "$EFILE" = "$SYSCONFIGPATH"/* ]] # cannot make backup in system dir
+        then
+            EFILEBKP="${EXITFILE}.${DIR}.bkp"
+        fi
         cp "$EFILE" "$EFILEBKP"
         cp "$EFILE" "$EXITFILE"
         echo -e "\n  $EXITFILE backed up and restored"
@@ -985,6 +1023,10 @@ function restoreXsettings(){
     for var in "$@";do
         if [[ -e $var ]];then        # backup .bashrc & .Xresources first
             XBKP="$var.bkp"
+            if [[ "$var" = "$SYSCONFIGPATH"/* ]] # cannot make backup in system dir
+            then
+                XBKP="${HOME}/${var##*/}.${DIR}.bkp"
+            fi
             cp "$var" "$XBKP"
             cp "$var" "$HOME"
             echo -e "\n  $var backed up and restored"
@@ -993,6 +1035,7 @@ function restoreXsettings(){
             echo -e "\n  $var restored"
         fi
     done
+    xrdb ~/.Xresources
 }
 
 function restoreTerminator(){
@@ -1157,18 +1200,23 @@ function ViewRestoreDialog(){   # display saved theme collections
     setARR=()
     namesARR=()
     thumbsARR=()
+    declare -A uniqnames # hide duplicate directories
     i=0
-    for dir in "$CONFIGPATH"/* ;do
+    for dir in "$CONFIGPATH"/* "$SYSCONFIGPATH"/* ;do
         if [[ -d $dir ]];then
             if [[ -e $dir/settings.cfg ]];then
-                d=$(echo $dir | sed -e 's/ /_/g')    # replace any spaces in dir name
-                namesARR[$i]="<big>$(basename $d)</big>" # add theme collection name to array
-                d=${d##*/}  # get directory name
+                themename="${dir##*/}" # strip path
+                themename=$(echo $themename | sed -e 's/ /_/g')    # replace any spaces in dir name
+                [[ "${uniqnames["$themename"]}" = 'found' ]] && continue
+                uniqnames["$themename"]='found'
+                namesARR[$i]="<big>$themename</big>" # add theme collection name to array
                 # get name of current session, set icon for TRUE/FALSE
-                if [[ $SET = $d ]];then
+                if [[ $SET = $themename ]];then
                     setARR[$i]="gtk-yes"
+                elif [[ "$dir" = "$SYSCONFIGPATH"/* ]]; then
+                    setARR[$i]="system"
                 else
-                    setARR[$i]="gtk-no"
+                    setARR[$i]="gtk-home"
                 fi
                 IMGTHUMB="None"     # placeholder if no thumbnail found
                 f="$dir"/*"-thumb.jpg"
@@ -1213,7 +1261,14 @@ function restoreSettings(){
         RET=$?
         if [[ $CONFIG ]];then
             DIR=$(echo "$CONFIG" | awk -F'[>|<]' '{print $3}' )
-            FPATH="$CONFIGPATH/$DIR"
+             # If same name found, user directory will take precedence.
+            if [[ -d "$CONFIGPATH/$DIR" ]]
+            then
+                FPATH="$CONFIGPATH/$DIR"
+            elif [[ -d "$SYSCONFIGPATH/$DIR" ]]
+            then
+                FPATH="$SYSCONFIGPATH/$DIR"
+            fi
         fi
         case $RET in
             0)  SAVED="$FPATH/LISTMSG.txt"
@@ -1235,6 +1290,14 @@ function restoreSettings(){
                         exit 0
                     fi
                 fi
+
+                SYSDIRTXT="Sorry, system preset theme <b>${DIR}</b> cannot be deleted"
+                if [[ "${FPATH%/*}" = "$SYSCONFIGPATH" ]]
+                then
+                    $DIALOG --image="dialog-warning" "$T$SYSDIRTXT" "$CLOSE" 2>/dev/null
+                    continue
+                fi
+
                 TEXT="Delete saved configurations <b>$FPATH</b>\nand screenshot?"
                 $DIALOG "$T$TEXT" "$CANCEL" "$OK" 2>/dev/null
 
@@ -1265,7 +1328,8 @@ function restoreSettings(){
             4)  # show screenshot in image viewer
                 SEL=$(echo "$CONFIG" | awk -F'[>|<]' '{print $3}' )
                 if [[ $SEL ]];then
-                    img="$CONFIGPATH/$SEL.jpg"
+                    #img="$CONFIGPATH/$SEL.jpg"
+                    img="${FPATH%/*}/$SEL.jpg"
                     $IMGCMD "$img"
                 else
                     $DIALOG --text="Make a selection" 2>/dev/null
@@ -1355,9 +1419,10 @@ if [[ ! -f $CURSESSION ]] &>/dev/null;then
 fi
 getActiveMonitorDimensions
 getSet
-if (( NUMDIRS == 0 ));then
-    Intro
-else
-    restoreSettings
-fi
+Intro
+#if (( NUMDIRS == 0 ));then
+#    Intro
+#else
+#    restoreSettings
+#fi
 exit 0
