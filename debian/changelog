@@ -1,3 +1,10 @@
+bunsen-utilities (9.4.1-1) helium; urgency=medium
+
+  [Matthew T Hoare]
+  * Restore missing files in BLOB theme Helium_Flatish_Grey.
+
+ -- John Crawley <john@bunsenlabs.org>  Fri, 23 Mar 2018 18:40:40 +0900
+
 bunsen-utilities (9.4-1) helium; urgency=medium
 
   * bl-obthemes: Supply preset themes in /usr/share/bunsen/utilities/blob.
