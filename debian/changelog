@@ -1,3 +1,9 @@
+bunsen-utilities (9.4.2-1) helium; urgency=medium
+
+  * blob: Use .jpg Beam wallpapers instead of .png.
+
+ -- John Crawley <john@bunsenlabs.org>  Thu, 29 Mar 2018 15:45:45 +0900
+
 bunsen-utilities (9.4.1-1) helium; urgency=medium
 
   [Matthew T Hoare]
