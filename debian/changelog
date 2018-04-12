@@ -1,3 +1,10 @@
+bunsen-utilities (9.4.3-1) helium; urgency=medium
+
+  * bl-pkg-versions: upgrade to use new repositories.
+  * blob: Revert wallpapers to .png.
+
+ -- John Crawley <john@bunsenlabs.org>  Thu, 12 Apr 2018 17:35:27 +0900
+
 bunsen-utilities (9.4.2-1) helium; urgency=medium
 
   * blob: Use .jpg Beam wallpapers instead of .png.
