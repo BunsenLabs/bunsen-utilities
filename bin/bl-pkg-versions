@@ -22,9 +22,10 @@ Usage:
     bl-pkg-versions [-h|--help][<release>]
 
 Options:
-        -h, --help   show this message
-        <empty>|hydrogen    Display the Hydrogen packages.
-        helium|helium-dev   Display the Helium packages.
+        -h, --help      Show this message.
+        <empty>|helium  Display the Helium packages.
+        helium-dev      Display the packages on the helium-dev server.
+        hydrogen        Display the Hydrogen packages.
 
 It will display the versions of bunsen packages
 on the Debian and GitHub repositories.
@@ -41,13 +42,18 @@ case $1 in
     echo "$HELP"
     exit
     ;;
-helium|helium-dev)
-    readonly GITHUB_BRANCH=helium-dev
+''|helium)
+    readonly GITHUB_BRANCH=helium
+    readonly SERVER=http://pkg.bunsenlabs.org
+    readonly RELEASE=helium
+    ;;
+helium-dev)
+    readonly GITHUB_BRANCH=helium
     readonly SERVER=https://kelaino.bunsenlabs.org/~johnraff
     readonly RELEASE=helium
     ;;
-''|hydrogen)
-    readonly GITHUB_BRANCH=master
+hydrogen)
+    readonly GITHUB_BRANCH=hydrogen
     readonly SERVER=http://pkg.bunsenlabs.org
     readonly RELEASE=bunsen-hydrogen
     ;;
