@@ -1,3 +1,9 @@
+bunsen-utilities (9.4.4-1) helium; urgency=medium
+
+  * blob: Helium_Beam and Helium_Beam_clock: improve terminator colour palette.
+
+ -- John Crawley <john@bunsenlabs.org>  Tue, 17 Apr 2018 17:55:56 +0900
+
 bunsen-utilities (9.4.3-1) helium; urgency=medium
 
   * bl-pkg-versions: upgrade to use new repositories.
