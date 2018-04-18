@@ -1,3 +1,9 @@
+bunsen-utilities (9.4.5-1) helium; urgency=low
+
+  * blob: Helium_Beam and Helium_Beam_clock: improve urxvt colour palette.
+
+ -- John Crawley <john@bunsenlabs.org>  Wed, 18 Apr 2018 11:10:17 +0900
+
 bunsen-utilities (9.4.4-1) helium; urgency=medium
 
   * blob: Helium_Beam and Helium_Beam_clock: improve terminator colour palette.
