@@ -1,3 +1,9 @@
+bunsen-utilities (9.4.6-1) helium; urgency=medium
+
+  * blob: Helium_Beam and Helium_Beam_clock: improve urxvt dark blue.
+
+ -- John Crawley <john@bunsenlabs.org>  Thu, 26 Apr 2018 17:04:23 +0900
+
 bunsen-utilities (9.4.5-1) helium; urgency=low
 
   * blob: Helium_Beam and Helium_Beam_clock: improve urxvt colour palette.
