@@ -1,3 +1,9 @@
+bunsen-utilities (9.4.7-1) helium; urgency=medium
+
+  * bl-obthemes: bugfix: create ~/.config/bl-exit if needed.
+
+ -- John Crawley <john@bunsenlabs.org>  Tue, 29 May 2018 15:13:41 +0900
+
 bunsen-utilities (9.4.6-1) helium; urgency=medium
 
   * blob: Helium_Beam and Helium_Beam_clock: improve urxvt dark blue.
