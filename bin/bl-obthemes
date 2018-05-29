@@ -165,7 +165,8 @@ declare -A theme_pkgs=(
 [Bunsen-He-flatish]=bunsen-themes
 )
 ### CONFIGS VARIABLES
-EXITFILE="$HOME/.config/bl-exit/bl-exitrc"
+EXITDIR="$HOME/.config/bl-exit"
+EXITFILE="$EXITDIR/bl-exitrc"
 TERMDIR="$HOME/.config/terminator"
 TERMFILE="$TERMDIR/config"
 FEHFILE="$HOME/.fehbg"
@@ -989,6 +990,7 @@ function restoreBLexitrc(){
         cp "$EFILE" "$EXITFILE"
         echo -e "\n  $EXITFILE backed up and restored"
     else
+        mkdir -p "$EXITDIR" # ~/.config/bl-exit does not exist by default
         cp "$EFILE" "$EXITFILE"
         echo -e "\n  $EXITFILE restored"
     fi
