@@ -98,7 +98,7 @@ edit_conkyfile(){
     file=$1
     shift
     local name value
-    declare -ag sed_args
+    declare -a sed_args
     while [[ $1 ]]; do
         unset name value sed_pattern sed_replace
         name="${1%%=*}"
@@ -128,7 +128,7 @@ edit_conkyfile_1.09(){
     file=$1
     shift
     local name value
-    declare -ag sed_args
+    declare -a sed_args
     while [[ $1 ]]; do
         unset name value sed_pattern sed_replace
         name="${1%%=*}"
@@ -258,12 +258,27 @@ getOffset(){   # parse_conkyfile should already have been run
     esac
 }
 
+adjust_wintype() {
+    [[ ${CONKYPATH:-X} = 'X' || ${config[own_window_type]:-normal} = 'normal' ]] && return 0
+    original_wintype=${config[own_window_type]}
+    edit_conkyfile "$CONKYPATH" "own_window_type=normal"
+    config[own_window_type]=normal
+}
+restore_wintype() {
+    [[ ${CONKYPATH:-X} = 'X' || ${original_wintype:-X} = 'X' ]] && return 0
+    edit_conkyfile "$CONKYPATH" "own_window_type=$original_wintype"
+}
+
 error_exit(){
     echo "$0 error: $1" >&2
     exit 1
 }
 
 ########################################################################
+
+unset CONKYPATH config posX_1 posY_1 posX_2 posY_2 OFFSET_X OFFSET_Y gapX gapY
+
+trap restore_wintype EXIT
 
 # look for a help option somewhere
 for i in "$@"
@@ -276,8 +291,6 @@ do
     esac
 done
 
-unset CONKYPATH posX_1 posY_1 posX_2 posY_2 OFFSET_X OFFSET_Y gapX gapY
-
 missing_commands=()
 for i in "${required_commands[@]}"
 do
@@ -287,16 +300,29 @@ done
 Please install the packages containing the missing commands
 and rerun the script."
 
-
 yad_question "Click 'Select Conky' to pick a conky.\n\nThen use the 'xwininfo' cursor on the chosen conky\nto record its position." \
      --button="Select Conky:0" --button="gtk-cancel:1"
 
 if (( $? == 0 ));then
     getStart
+    if ! grep -q '[[:blank:]]*conky.config[[:blank:]]*=' "$CONKYPATH"
+    then
+        yad_info "This conky uses v1.09 syntax.\nIt is recommended to convert the conky to v1.10 syntax.\nSee: https://forums.bunsenlabs.org/viewtopic.php?id=3983"
+        parse_conkyfile() {
+            parse_conkyfile_1.09 "$@"
+        }
+        edit_conkyfile() {
+            edit_conkyfile_1.09 "$@"
+        }
+    fi
 else
     echo "  Cancelled: exiting..."
     exit 0
 fi
+
+parse_conkyfile "$CONKYPATH"
+
+adjust_wintype
 
 yad_question "Move the Conky to the desired location\nwith Alt+L-mousebutton Drag.\n\nThen click 'OK' to record the new position." \
      --button="OK:0" --button="gtk-cancel:1"
@@ -308,16 +334,8 @@ else
     exit 0
 fi
 
-if grep -q '[[:blank:]]*conky.config[[:blank:]]*=' "$CONKYPATH"
-then
-    parse_conkyfile "$CONKYPATH"
-    getOffset
-    edit_conkyfile "$CONKYPATH" "gap_x=$gapX" "gap_y=$gapY"
-else
-    yad_info "This conky uses v1.09 syntax.\nIt is recommended to convert the conky to v1.10 syntax.\nSee: https://forums.bunsenlabs.org/viewtopic.php?id=3983"
-    parse_conkyfile_1.09 "$CONKYPATH"
-    getOffset
-    edit_conkyfile_1.09 "$CONKYPATH" "gap_x=$gapX" "gap_y=$gapY"
-fi
+getOffset
+
+edit_conkyfile "$CONKYPATH" "gap_x=$gapX" "gap_y=$gapY"
 
 exit 0
