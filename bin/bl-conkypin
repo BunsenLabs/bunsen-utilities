@@ -305,7 +305,7 @@ yad_question "Click 'Select Conky' to pick a conky.\n\nThen use the 'xwininfo' c
 
 if (( $? == 0 ));then
     getStart
-    if ! grep -q '[[:blank:]]*conky.config[[:blank:]]*=' "$CONKYPATH"
+    if ! grep -Eq '(^|[[:blank:]])conky\.config[[:blank:]]*=?' "$CONKYPATH"
     then
         yad_info "This conky uses v1.09 syntax.\nIt is recommended to convert the conky to v1.10 syntax.\nSee: https://forums.bunsenlabs.org/viewtopic.php?id=3983"
         parse_conkyfile() {
