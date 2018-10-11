@@ -43,37 +43,53 @@ parse_conkyfile(){
     [[ -f $1 ]] || { echo "$1 is not a file." >&2;return 1;}
     unset config
     declare -Ag config
-    local name value parse comment
-    parse=false
-    comment=false
-    while IFS='=' read -r name value
+    local line parse=false comment=false conkyconf name value
+    while read -r line
     do
-        [[ $name = --[[* ]] && { comment=true; continue;} # ignore comment blocks
-        [[ $name = ']]' || $name = '--]]' ]] && { comment=false; continue;}
-        [[ $comment = true ]] && continue
-        name=${name%%--*}
-        value=${value%%--*}
-        [[ $name ]] || continue
-        [[ $name = conky.config ]] && { parse=true; continue;} # parse only config section
-        [[ $name = }* ]] && break # end of section
-        if [[ $parse = true ]]
+        if [[ $line =~ ^[[:blank:]]*'--[[' ]]
         then
-            value=${value%,}
-            case "$value" in
-            \'*\')
-                value=${value#\'}
-                value=${value%\'}
-                ;;
-            \"*\")
-                value=${value#\"}
-                value=${value%\"}
-                ;;
-            esac
-            config["$name"]="$value"
+            comment=true # ignore comment blocks
+            continue
         else
+            line=${line%%--*} # remove inline comments
+        fi
+        if [[ $comment = true ]]
+        then
+            if [[ $line = *']]'* ]]
+            then
+                comment=false
+                line=${line#*]]}
+            else
+                continue
+            fi
+        fi
+        [[ $line ]] || continue
+        if [[ $line =~ ^[[:blank:]]*'conky.config'[[:blank:]]*(=[[:blank:]]*'{'(.*))?$ ]]
+        then
+            parse=true
+            conkyconf=${BASH_REMATCH[2]}
             continue
         fi
-    done < <(sed -r "s/[[:blank:]]*([^=[:blank:]]+)[[:blank:]]*=[[:blank:]](.*)/\1=\2/;" "$1") # trim leading and trailing spaces
+        if [[ $parse = true ]]
+        then
+            if [[ $line =~ ([^}]*)'}' ]]
+            then
+                conkyconf+=${BASH_REMATCH[1]}
+                break
+            else
+                conkyconf+=$line
+            fi
+        fi
+    done < "$1"
+    entry_regex="([[:alnum:]_]+)[[:blank:]]*=[[:blank:]]*([[:alnum:]]+|'[^']+'|\"[^\"]+\")"
+    while [[ $conkyconf =~ $entry_regex ]]
+    do
+        name=${BASH_REMATCH[1]}
+        value=${BASH_REMATCH[2]#[\'\"]} # strip quotes
+        value=${value%[\'\"]}
+        config["${name}"]="${value}"
+        conkyconf=${conkyconf#*${BASH_REMATCH[0]}}
+    done
 }
 
 # for version 1.09 conky files
