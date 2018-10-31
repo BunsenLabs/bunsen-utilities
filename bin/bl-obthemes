@@ -252,22 +252,22 @@ PICKX="X configs"
 ### FUNCTIONS ##########################################################
 
 function Intro(){
-    local INTRO RET
+    local RET
     getSet
     #  if blob/ is empty, then don't display "View Saved" option in Intro dialog
     if (( NUMDIRS > 0 ));then
-        INTRO=$($DIALOGDEC "$T$TXTINTRO" \
+        $DIALOGDEC "$T$TXTINTRO" \
         --title="$TITLE" \
         --button="Save Settings:0" --button="View Saved:2" $CLOSE \
         --borders=30 \
-        2>/dev/null )
+        2>/dev/null
     else
-        INTRO=$($DIALOGDEC \
+        $DIALOGDEC \
         --title="$TITLE" \
         "$T$TXTINTRO" \
         --button="Save Settings:0" $CLOSE \
         --borders=30 \
-        2>/dev/null )
+        2>/dev/null
     fi
     RET=$?
     case $RET in
@@ -291,15 +291,20 @@ function Intro(){
     esac
 }
 
+# sets globals NUMDIRS and SET
 function getSet(){      # get name of currently set BLOB config
+    local dirs
     NUMDIRS=0
-    NUMDIRS=$(ls -l "$CONFIGPATH" "$SYSCONFIGPATH" | grep -c ^d) # check if any dirs present
+    shopt -s nullglob
+    dirs=( "$CONFIGPATH"/*/ "$SYSCONFIGPATH"/*/ )
+    NUMDIRS=${#dirs[@]}
+    shopt -u nullglob
     if (( NUMDIRS == 0 ));then
         if [[ -f $CURSESSION ]];then
             rm "$CURSESSION"
         fi
     elif (( NUMDIRS > 0 )) && [[ -f $CURSESSION ]];then
-        SET=$(cat "$CURSESSION")
+        SET=$(< "$CURSESSION")
     fi
 }
 
@@ -314,6 +319,7 @@ function getActiveMonitorDimensions(){   # set width and height for View dialog
     }
 }
 
+# sets globals CONFIGDIR SETTINGS LISTMSG for storing new theme
 function setName(){  # set name of collection, make dir and session settings file
     MSG="  Configurations will be saved to a new directory in  \
     \n  $CONFIGPATH\n\n  Enter name of new collection...  "
