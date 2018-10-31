@@ -136,20 +136,33 @@ do
 done
 
 #### VARIABLES #########################################################
+
+### USER SETTINGS
+IMGCMD="bl-image-viewer"    # application command to view screenshot
+MENUMODIFIER="super+space"  # keybind for show root-menu
+MOUSECMD="click 3"          # mouse r-click
+KEYDOWN=13           # adjust this for where "Preferences" is in the menu
+
+### GLOBALS
 CONFIGPATH="$HOME/.config/blob"
 SYSCONFIGPATH="/usr/share/bunsen/utilities/blob"
-SETTINGS=""
-OBPATH="$HOME/.config/openbox"
 CURSESSION="$CONFIGPATH/current"
+OBPATH="$HOME/.config/openbox"
+
+# globals set by setName() for storing current settings as theme
 CONFIGDIR=""
+SETTINGS=""
 LISTMSG=""
+
+# set by getSet() - number of stored themes
 NUMDIRS=0
-CONKYCMD=""
-COLS=0
-THEMEPATH_1="$HOME/.themes"
-THEMEPATH_2="$HOME/.local/share/themes"
-THEMEPATH_3="/usr/share/themes"
-THEMEPATH_4="/usr/local/share/themes"
+
+# local in getConky() and restoreConky()
+#CONKYCMD=""
+
+# local in saveSettings()
+#COLS=0
+
 # packages needed for particular icon themes
 declare -A icon_pkgs=(
 [Faenza-Dark-Bunsen]='bunsen-faenza-icon-theme'
@@ -163,9 +176,15 @@ declare -A theme_pkgs=(
 [Bunsen-Dark-He]=bunsen-themes
 [Bunsen-He-flatish]=bunsen-themes
 )
+THEMEPATH_1="$HOME/.themes"
+THEMEPATH_2="$HOME/.local/share/themes"
+THEMEPATH_3="/usr/share/themes"
+THEMEPATH_4="/usr/local/share/themes"
+
 ### CONFIGS VARIABLES
 EXITDIR="$HOME/.config/bl-exit"
-EXITFILE="$EXITDIR/bl-exitrc"
+SYSEXITDIR="/etc/bl-exit"
+#EXITFILE="$EXITDIR/bl-exitrc"
 TERMDIR="$HOME/.config/terminator"
 TERMFILE="$TERMDIR/config"
 FEHFILE="$HOME/.fehbg"
@@ -178,22 +197,14 @@ GTK2=".gtkrc-2.0"
 GTK2MINE=".gtkrc-2.0.mine"
 GTK3="$HOME/.config/gtk-3.0"
 GTK3x="$HOME/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-notifyd.xml"
-LDMDIR="/etc/lightdm"
-LDM="lightdm-gtk-greeter.conf"
 DMENUDIR="$HOME/.config/dmenu"
 DMENU="dmenu-bind.sh"
 XFILE=".Xresources"
 BASHFILE=".bashrc"
-PICKOB="OB theme"
-PICKGTK="GTK theme"
-PICKCONKY="Conky"
-PICKTINT="Tint2"
-PICKBG="Background Wallpaper"
-PICKDMENU="dmenu (Alt menu)"
-PICKLDM="Lightdm Login theme"
-PICKEXIT="Exit dialog theme"
-PICKTERM="Terminator"
-PICKX="X configs"
+
+LDMDIR="/etc/lightdm"
+LDM="lightdm-gtk-greeter.conf"
+
 ### END CONFIGS VARIABLES
 
 ### DIALOG VARIABLES
@@ -222,13 +233,20 @@ Openbox Configuration Manager</b></big>
     X configs (.bashrc, .Xresources)
     Terminator (if default term)
     + Screenshot'
+
+PICKOB="OB theme"
+PICKGTK="GTK theme"
+PICKCONKY="Conky"
+PICKTINT="Tint2"
+PICKBG="Background Wallpaper"
+PICKDMENU="dmenu (Alt menu)"
+PICKLDM="Lightdm Login theme"
+PICKEXIT="Exit dialog theme"
+PICKTERM="Terminator"
+PICKX="X configs"
+
 ### END DIALOG VARIABLES
 
-### USER SETTINGS
-IMGCMD="bl-image-viewer"    # application command to view screenshot
-MENUMODIFIER="super+space"  # keybind for show root-menu
-MOUSECMD="click 3"          # mouse r-click
-KEYDOWN=13           # adjust this for where "Preferences" is in the menu
 #### END VARIABLES #####################################################
 
 ### FUNCTIONS ##########################################################
