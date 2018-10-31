@@ -45,7 +45,7 @@ onerror = novisual
 
 [style]
 dir = styles
-rcfile = helium.rc
+rcfile = grey.rc
 
 ### THEME to be used ###################################################
 # When the [theme] section is not present or commented out
@@ -64,7 +64,7 @@ dialogHeight=66
 #Delay for the fade in counter
 sleepDelay=0.003
 #OverallOpacity of the dialog (0-100)
-overallOpacity=80
+overallOpacity=90
 #Space between Buttons
 buttonSpacing=10
 # path to icon files

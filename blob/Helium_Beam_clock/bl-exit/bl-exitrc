@@ -45,7 +45,7 @@ onerror = novisual
 
 [style]
 dir = styles
-rcfile =
+rcfile = helium.rc
 
 ### THEME to be used ###################################################
 # When the [theme] section is not present or commented out
@@ -53,7 +53,7 @@ rcfile =
 # 'classic', use the 'classic' GTK ButtonBox layout.
 [theme]
 # set the theme
-theme = classic
+theme = helium
 
 ### THEME settings #####################################################
 [helium]
@@ -64,7 +64,7 @@ dialogHeight=66
 #Delay for the fade in counter
 sleepDelay=0.003
 #OverallOpacity of the dialog (0-100)
-overallOpacity=80
+overallOpacity=90
 #Space between Buttons
 buttonSpacing=10
 # path to icon files
