@@ -932,15 +932,14 @@ function restoreOBrc(){
     fi
 }
 
-function restoreConky(){    # arg= $line from $SETCFG
+function restoreConky(){    # arg = $VAL from $SETCFG in restoreSettings()
     local currDESKTOP=$(xprop -root _NET_CURRENT_DESKTOP | tail -c -2)   # Conkys may have been started on different desktops
-    local CONKYCMD=$(echo $1 | cut -d ' ' -f2-)
-
+    local CONKYCMD="$1"
     if type bl-conkyzen &>/dev/null;then    # see if bl-conkyzen is installed
         if [[ -f $CONKYSESSION ]] &>/dev/null; then
             > "$CONKYSESSION" # create/overwrite conky session file
             # write to conky session file...
-            echo "$CONKYCMD" | awk -F';' '{for(i=1; i<=NF; i++) print $i}' >> "$CONKYSESSION"
+            echo "${CONKYCMD//;/$'\n'}" >> "$CONKYSESSION"
             killall conky
             source "$CONKYSESSION"  # run conky commands
             wait
@@ -954,9 +953,8 @@ function restoreConky(){    # arg= $line from $SETCFG
     wmctrl -s $currDESKTOP && sleep 1 # return to desktop that BLOB was started on, if conkys used 'wmctrl -s'
 }
 
-function restoreTint2(){    # arg= $line from $SETCFG
-    TINTCMD=$(echo $1 | cut -d ' ' -f2-)
-    TINTCMD="$(echo $TINTCMD | awk -F';' '{for(i=1; i<=NF; i++) print $i}')"
+function restoreTint2(){    # arg = $VAL from $SETCFG in restoreSettings()
+    TINTCMD="${VAL//;/$'\n'}"
     if type bl-tint2zen >/dev/null;then    # see if bl-tint2zen is installed
         if [[ -f $TINTSESSION ]] 2>/dev/null; then
             > "$TINTSESSION"    # create/overwrite tint2 session file
@@ -968,7 +966,7 @@ function restoreTint2(){    # arg= $line from $SETCFG
                     tint2 & >/dev/null
                     sleep 1
                     echo -e "\n  Restored Tint2: $tintline\n"
-                else
+                elif [[ -n "$tintline" ]];then
                     tint2 -c "$tintline" & >/dev/null
                     sleep 1s
                     echo -e "\n  Restored Tint2: $tintline\n"
