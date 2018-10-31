@@ -541,7 +541,7 @@ function getTint(){
 
         for i in "${arrTINT[@]}";do
             TXT="$TXT$i"
-            TINT=$(echo "$i" | sed 's/;//')
+            TINT=${i//;}
             if [[ "$TINT" == "tint2" ]];then
                 TINTCMD="$TINTCMD$TINT;"
                 LISTMSGTXT="$LISTMSGTXT\n\tDefault Tint2"
