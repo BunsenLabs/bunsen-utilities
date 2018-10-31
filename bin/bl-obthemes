@@ -708,9 +708,11 @@ function getWINDOWS(){  # Minimize/Activate windows for scrot. Args= 'min', 'rai
     # get window id's on current desktop, which aren't sticky; convert hexcode to int.
     # add window ids to array, if not conky
     dtop=$(xdotool get_desktop)
-    for id in $(wmctrl -l | awk -v var="$dtop" '$2==var {print strtonum($1)}');do
-        arrWINDOWS+=($id)
-    done
+	while read -r id dt other
+	do
+		[[ $dt = "$dtop" ]] || continue
+		arrWINDOWS+=($(( id )))
+	done < <(wmctrl -l)
 
     # minimize/activate non-conky windows
     conk="$(xdotool search --desktop "$dtop" --class 'Conky')"
