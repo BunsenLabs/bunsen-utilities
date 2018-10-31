@@ -1228,16 +1228,18 @@ function saveSettings(){
     fi
 }
 
-function ViewRestoreDialog(){   # display saved theme collections
+# $SET from getSet()
+function ViewRestoreDialog(){   # list saved theme collections for yad as DLGLIST
     getSet                      # get name of latest set BLOB config
     if (( NUMDIRS == 0 ));then  # no saved configs; go back to Intro dialog
         Intro
     fi
-    DLGLIST=""
-    setARR=()
-    namesARR=()
-    thumbsARR=()
+    local themename
+    declare -a setARR=()
+    declare -a namesARR=()
+    declare -a thumbsARR=()
     declare -A uniqnames # hide duplicate directories
+    DLGLIST=""
     i=0
     for dir in "$CONFIGPATH"/* "$SYSCONFIGPATH"/* ;do
         if [[ -d $dir ]];then
@@ -1248,7 +1250,7 @@ function ViewRestoreDialog(){   # display saved theme collections
                 uniqnames["$themename"]='found'
                 namesARR[$i]="<big>$themename</big>" # add theme collection name to array
                 # get name of current session, set icon for TRUE/FALSE
-                if [[ $SET = $themename ]];then
+                if [[ $SET = "$themename" ]];then
                     setARR[$i]="gtk-yes"
                 elif [[ "$dir" = "$SYSCONFIGPATH"/* ]]; then
                     setARR[$i]="system"
@@ -1256,17 +1258,11 @@ function ViewRestoreDialog(){   # display saved theme collections
                     setARR[$i]="gtk-home"
                 fi
                 IMGTHUMB="None"     # placeholder if no thumbnail found
-                f="$dir"/*"-thumb.jpg"
+                f="$dir/$themename-thumb.jpg"
                 if [[ $f ]];then
                     IMGTHUMB="$f"
                 fi
                 thumbsARR[$i]="$IMGTHUMB"
-                CONFIGS="\""
-                while read line;do
-                    CONFIGS="$CONFIGS $line\n"
-                done < "$dir/LISTMSG.txt"
-                CONFIGS="$CONFIGS\""
-                configARR[$i]="$CONFIGS" # add saved configs to array
             fi
             i=$((i+1))
         fi
