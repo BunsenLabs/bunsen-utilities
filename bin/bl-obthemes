@@ -28,7 +28,6 @@
 #                       Exit dialog theme
 #                       X configs (.bashrc, .Xresources)
 #                       Terminator config
-#                       Exit dialogue
 #
 # Paths are assumed to be BunsenLabs defaults
 #
@@ -323,7 +322,7 @@ function setName(){  # set name of collection, make dir and session settings fil
                 Intro
             fi
         else
-            ANS=$(echo $ANS | sed -e 's/ /_/g')    # replace any spaces in dir name
+            ANS=${ANS// /_}    # replace any spaces in dir name
             CONFIGDIR="$CONFIGPATH/$ANS"
             if [[ -d $CONFIGDIR ]];then
                 echo -e "\n  $CONFIGDIR already exists"
@@ -996,6 +995,7 @@ function restoreBLexitrc(){
     fi
 }
 
+## TODO: use pkexec instead of gksudo
 function restoreLightdm(){   # need sudo to restore lightdm-gtk-greeter.conf
     CMD="cp $1 $LDMDIR/$LDM"
     TXT="Authenticate restore of lightdm-gtk-greeter.conf"
@@ -1208,7 +1208,7 @@ function ViewRestoreDialog(){   # display saved theme collections
         if [[ -d $dir ]];then
             if [[ -e $dir/settings.cfg ]];then
                 themename="${dir##*/}" # strip path
-                themename=$(echo $themename | sed -e 's/ /_/g')    # replace any spaces in dir name
+                themename=${themename// /_}   # replace any spaces in dir name
                 [[ "${uniqnames["$themename"]}" = 'found' ]] && continue
                 uniqnames["$themename"]='found'
                 namesARR[$i]="<big>$themename</big>" # add theme collection name to array
