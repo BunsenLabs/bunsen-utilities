@@ -1453,7 +1453,7 @@ if [[ ! -f $CURSESSION ]] &>/dev/null;then
     touch "$CURSESSION"
 fi
 getActiveMonitorDimensions
-getSet
+#getSet
 Intro
 #if (( NUMDIRS == 0 ));then
 #    Intro
