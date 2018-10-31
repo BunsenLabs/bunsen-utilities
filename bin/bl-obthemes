@@ -445,7 +445,7 @@ function getNitrogen(){  # get Nitrogen saved backgrounds
     NFILE="$CONFIGDIR/bg-saved.cfg"
     if [[ -f $NFILE ]];then
         BG=""
-        while read line;do
+        while read -r line;do
             BGLINE=$(echo $line | awk -F"file=" '{print $2}')
             if [[ $BGLINE ]];then
                 BG="$BG$BGLINE;\n"
@@ -471,12 +471,12 @@ function getConky(){
     declare -a arrSTICKY
 
     if [[ $(pidof conky) ]];then
-        while read line;do  # get all running conky id's
+        while read -r line;do  # get all running conky id's
             arrALL+=("$line")
         done <<< $(xdotool search --class conky)
 
         for (( i=0; i<$NUM_DESKTOPS; i++ ));do  # get all conkys running on specific desktops
-            while read id;do
+            while read -r id;do
                 arrDESKTOP+=("$id")
                 if ! [[ -z "$id" ]];then
                     CONKYCMD=$(xprop -id "$id" | grep WM_COMMAND | awk -F'{|}' '{gsub ("[\"|,]",""); print $2}' | awk '{$1=$1};1')
@@ -521,7 +521,7 @@ function getConky(){
 function getTint(){
     declare -a arrTINT
     if [[ $(pidof tint2) ]];then
-        while read pid cmd;do
+        while read -r pid cmd;do
             if [[ ${cmd%% *} == tint2 ]];then
                 TPATH=$(echo "$cmd" | awk '{print $NF";"}')
                 arrTINT+=("$TPATH")
@@ -557,7 +557,7 @@ function getTint(){
 }
 
 function killTints(){
-    pgrep -a tint2 | while read pid cmd; do
+    pgrep -a tint2 | while read -r pid cmd; do
         if [[ ${cmd%% *} = tint2 ]]; then
             kill "$pid"
         fi
@@ -597,7 +597,7 @@ function getGTKtheme(){
 
 function getGTKname(){   # get GTK theme name and Icons name
     GTKFILE="$CONFIGDIR/.gtkrc-2.0"
-    while read line;do
+    while read -r line;do
         if [[ $(echo $line | grep "gtk-theme-name" ) ]] &>/dev/null;then
             GTKTHEME=$(echo $line | awk -F '"' '{print $2}')
             echo "[GTK] $GTKTHEME" >> "$SETTINGS"
@@ -676,7 +676,7 @@ function checkTint2(){   # kill or restart tint2s for screenshot, if necessary
         if ! cat "$SETTINGS" | grep "TINT2" &>/dev/null;then
             tmpTINT=$(mktemp --tmpdir blob.XXXX) # make blank tempfile, to save running tint2 paths
             if [[ $(pidof tint2) ]];then
-                pgrep -a tint2 | while read pid cmd;do
+                pgrep -a tint2 | while read -r pid cmd;do
                     if [[ ${cmd%% *} = tint2 ]];then
                         echo $cmd >> "$tmpTINT"
                     fi
@@ -687,7 +687,7 @@ function checkTint2(){   # kill or restart tint2s for screenshot, if necessary
     fi
     if [[ $1 = start ]];then
         if [[ -f "$tmpTINT" ]] 2>/dev/null;then
-            while read line;do
+            while read -r line;do
                 ($line &) &>/dev/null
                 sleep 1s
             done < "$tmpTINT"
@@ -954,7 +954,7 @@ function restoreTint2(){    # arg= $line from $SETCFG
             # write to tint2 session file...
             echo "$TINTCMD" >> "$TINTSESSION"
             killTints
-            while read tintline;do
+            while read -r tintline;do
                 if [[ "$tintline" == "tint2" ]];then
                     tint2 & >/dev/null
                     sleep 1
@@ -1376,7 +1376,7 @@ function restoreSettings(){
     if [[ $(pidof tint2) ]];then
         killall tint2
     fi
-    while read line;do
+    while read -r line;do
         TAG=$(echo $line | awk '{print $1}')
         VAL=$(echo $line | awk '{print $2}')
         case "$TAG" in
