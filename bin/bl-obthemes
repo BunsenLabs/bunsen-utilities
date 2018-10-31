@@ -666,15 +666,16 @@ function getXconfig(){
 }
 
 function getBLexitrc(){
-    if [[ -f $EXITFILE ]];then
-        cp "$EXITFILE" "$CONFIGDIR"
-        echo "[EXITRC]" >> "$SETTINGS"
-        TXT="bl-exitrc config:  $EXITFILE\n"
-        echo -e "\n  Saved $TXT"
-        echo "$TXT" >> "$LISTMSG"
+    if [[ -d $EXITDIR ]];then # whole directory is needed
+        cp -r "$EXITDIR" "$CONFIGDIR"
     else
-        echo "  $EXITFILE not found"
+        echo "$EXITDIR not found, using default settings"
+        cp -r "$SYSEXITDIR" "$CONFIGDIR"
     fi
+    echo "[EXITRC]" >> "$SETTINGS"
+    TXT="bl-exitrc config:  $EXITDIR\n"
+    echo -e "\n  Saved $TXT"
+    echo "$TXT" >> "$LISTMSG"
 }
 
 function checkTint2(){   # kill or restart tint2s for screenshot, if necessary
@@ -1003,22 +1004,32 @@ function restoreDmenu(){
     fi
 }
 
+# $1 is path to theme config dir, from $FPATH by restoreSettings()
+# $NOW is global, set by restoreSettings()
 function restoreBLexitrc(){
-    EFILE="$1"
-    if [[ -e $EXITFILE ]];then        # backup bl-exitrc first
-        EFILEBKP="$EFILE.bkp"
-        if [[ "$EFILE" = "$SYSCONFIGPATH"/* ]] # cannot make backup in system dir
-        then
-            EFILEBKP="${EXITFILE}.${DIR}.bkp"
-        fi
-        cp "$EFILE" "$EFILEBKP"
-        cp "$EFILE" "$EXITFILE"
-        echo -e "\n  $EXITFILE backed up and restored"
+    local CONFPATH=$1
+    local CONFEXITDIR="$1/bl-exit"
+    local themename=${CONFPATH##*/}
+    local bkp_sfx="-${themename}-${NOW}.bkp"
+    if [[ "$CONFEXITDIR" = "$SYSCONFIGPATH"/* ]] # cannot make backup in system dir
+    then
+        EXITDIRBKP="${EXITDIR}.bkp"
     else
-        mkdir -p "$EXITDIR" # ~/.config/bl-exit does not exist by default
-        cp "$EFILE" "$EXITFILE"
-        echo -e "\n  $EXITFILE restored"
+        EXITDIRBKP="${CONFEXITDIR}.bkp"
     fi
+    if [[ -d ${CONFEXITDIR} ]]
+    then
+        rsync --recursive --checksum --backup --suffix="$bkp_sfx" --backup-dir="${EXITDIRBKP}" "${CONFEXITDIR}"/ "$EXITDIR"
+    elif [[ -f $CONFPATH/bl-exitrc ]] # old-style user blobtheme dir
+    then
+        cp -r --no-clobber "$SYSEXITDIR" "$EXITDIR"
+        mkdir -p "$EXITDIRBKP"
+        [[ -f "$EXITDIR/bl-exitrc" ]] && cp "$EXITDIR/bl-exitrc" "$EXITDIRBKP/bl-exitrc${bkp_sfx}"
+        cp "$CONFPATH/bl-exitrc" "$EXITDIR"
+    else
+        echo "No bl-exit theme files found." >&2
+    fi
+    echo -e "\n  $EXITDIR backed up and restored"
 }
 
 ## TODO: use pkexec instead of gksudo
