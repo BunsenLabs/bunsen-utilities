@@ -3,7 +3,7 @@
 #    bl-kb: a script to read openbox's rc.xml and write out the keybinds
 #    Copyright (C) 2010 wlourf
 #    Copyright (C) 2015 damo    <damo@bunsenlabs.org>
-#    Copyright (C) 2018 2ion
+#    Copyright (C) 2018 Jens John <dev@2ion.de>
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
