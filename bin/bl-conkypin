@@ -29,14 +29,41 @@ After invoking the script, follow the displayed instructions
 to move a selected conky to a new position on the screen.
 "
 
+# look for a help option somewhere
+for i in "$@"
+do
+    case "$i" in
+    -h|--help)
+        echo "$HELP"
+        exit 0
+        ;;
+    esac
+done
+
+error_exit(){
+    echo "$0 error: $1" >&2
+    exit 1
+}
+
 ## check necessary tools are installed
 required_commands=(xwininfo xprop yad) # array, space-separated words
+
+missing_commands=()
+for i in "${required_commands[@]}"
+do
+    hash $i || missing_commands+=(" $i")
+done
+[[ ${missing_commands[0]} ]] && error_exit "This script requires the following commands: ${missing_commands[*]}
+Please install the packages containing the missing commands
+and rerun the script."
 
 BL_COMMON_LIBDIR='/usr/lib/bunsen/common'
 if ! . "$BL_COMMON_LIBDIR/yad-includes" 2> /dev/null; then
     echo $"Error: Failed to locate yad-includes in $BL_COMMON_LIBDIR" >&2
     exit 1
 fi
+
+#####FUNCTIONS#####
 
 # makes array "config"
 parse_conkyfile(){
@@ -285,36 +312,11 @@ restore_wintype() {
     edit_conkyfile "$CONKYPATH" "own_window_type=$original_wintype"
 }
 
-error_exit(){
-    echo "$0 error: $1" >&2
-    exit 1
-}
-
 ########################################################################
 
 unset CONKYPATH config posX_1 posY_1 posX_2 posY_2 OFFSET_X OFFSET_Y gapX gapY
 
 trap restore_wintype EXIT
-
-# look for a help option somewhere
-for i in "$@"
-do
-    case "$i" in
-    -h|--help)
-        echo "$HELP"
-        exit 0
-        ;;
-    esac
-done
-
-missing_commands=()
-for i in "${required_commands[@]}"
-do
-    hash $i || missing_commands+=(" $i")
-done
-[[ ${missing_commands[0]} ]] && error_exit "This script requires the following commands: ${missing_commands[*]}
-Please install the packages containing the missing commands
-and rerun the script."
 
 yad_question "Click 'Select Conky' to pick a conky.\n\nThen use the 'xwininfo' cursor on the chosen conky\nto record its position." \
      --button="Select Conky:0" --button="gtk-cancel:1"
