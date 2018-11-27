@@ -1,3 +1,12 @@
+bunsen-utilities (9.6-1) helium; urgency=medium
+
+  * Add Build-Depends needed for building man pages.
+
+  [Jens John]
+  * bl-kb: handle keybinds with multiple actions.
+
+ -- John Crawley <john@bunsenlabs.org>  Tue, 27 Nov 2018 13:01:30 +0900
+
 bunsen-utilities (9.5-1) helium; urgency=medium
 
   * bl-obthemes: Fix handling of bl-exit config, and tweak code.
