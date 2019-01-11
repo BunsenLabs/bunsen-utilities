@@ -24,7 +24,7 @@
 ########################################################################
 #
 #   Conkys must be in $CONKYPATH
-#   The name must end with "conky" or "conkyrc"
+#   The name must end with "conky" or "conky.conf"
 #
 #   When the dialog opens, any running conkys will be checkmarked.
 #
@@ -49,8 +49,8 @@
 CONKYPATH="$HOME/.config/conky"
 SESSIONFILE="$CONKYPATH/conky-sessionfile"
 SESSIONS="$CONKYPATH/saved-sessions"    # to be used by a pipemenu
-CRC="$HOME/.conkyrc"
-BLDEFAULT="$CONKYPATH/BL-Default.conkyrc"
+CRC="$HOME/.config/conky/conky.conf"
+BLDEFAULT="$CONKYPATH/BL-Default-conky.conf"
 
 USAGE1='
 	USAGE:	bl-conkyzen [OPTION]...FILES
@@ -125,12 +125,12 @@ fillArrays(){
     if (( $1 != 0 ));then
         num="$1"    # 1st arg: array index
     else
-        num=0   # '~/.conkyrc' added to array
+        num=0   # '~/.config/conky/conky.conf' added to array
     fi
 
     if (( $num == 0 ));then
         cPATH="$CRC"
-        cARR="$USER/.conkyrc"
+        cARR="$USER/.config/conky/conky.conf"
     else
         cPATH="$2"   # 2nd arg: full filepath to conky
         cARR="$3"    # 3rd arg: displayed name: "directory/*conky(rc)"
@@ -148,13 +148,13 @@ fillArrays(){
 findConky(){
 # search dirs for conkys files - looking for "conky" in the name
 # if "*conky(rc)" then display it
-    num=0   # added default .conkyrc
-    fillArrays $num "$CRC" "$USER/.conkyrc"
+    num=0   # added default ~/.config/conky/conky.conf
+    fillArrays $num "$CRC" "$USER/.config/conky/conky.conf"
     num=1
     # find files in CONKYPATH with conky in the name
     for x in $(find "$CONKYPATH" -type f );do
         f=$(basename "$x")    # filename from filepath
-        if [[ $f = *conkyrc ]] || [[ $f = *conky ]];then    # filename ends with *conky or *conkyrc
+        if [[ $f = *conky.conf ]] || [[ $f = *conky ]];then    # filename ends with *conky or *conky.conf
             # get directory/conkyname to display in list
             CONKY=$( echo "$x" | awk -F"/" '{print $(NF-1)"/"$NF}')
             fillArrays $num "$x" "$CONKY"
@@ -236,12 +236,12 @@ for arg in "$@";do
     esac
 done
 
-# test for ~/.conkyrc, create a link to the default conky if necessary
+# test for ~/.config/conky/conky.conf, create a link to the default conky if necessary
 if ! [[ -e $CRC ]];then
     if [[ -e $BLDEFAULT ]];then
         ln -s "$BLDEFAULT" "$CRC"
     else
-        echo "Default conkyrc not found"
+        echo "Default conky.conf not found"
     fi
 fi
 

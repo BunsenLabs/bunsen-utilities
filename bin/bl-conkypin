@@ -234,7 +234,7 @@ getStart(){    #   Get initial Conky position
         }
     }' <<< "$wmc")
 
-    [[ -z "$CONKYPATH" ]] && CONKYPATH="$HOME/.conkyrc"
+    [[ -z "$CONKYPATH" ]] && CONKYPATH="$HOME/.config/conky/conky.conf"
 
     redo_dialog(){
         echo "$0: $1" >&2

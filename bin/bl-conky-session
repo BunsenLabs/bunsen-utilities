@@ -37,11 +37,11 @@ USAGE='
 
 	EXAMPLES:
 	Run specified sessionfile at login:
-	
+
 		"bl-conky-session --autostart /path/to/sessionfile"
 
 	Run default sessionfile, without killing running conkys:
-	
+
 		"bl-conky-session --autostart"
 
 	Run several conky sessionfiles (option to kill conkys first):
@@ -86,8 +86,8 @@ findArgs(){     # get command args (switches & sessionfile paths)
         if [[ -f $SESSIONFILE ]] && (( $NOKILL == 1 )); then
             source "$SESSIONFILE"   # use conky-sessionfile
         else
-            echo -e "ERROR: sessionfile \"$SESSIONFILE\" not found. Using default" >&2
-            conky -c $HOME/.conkyrc     # run default conky
+            echo -e "WARNING: sessionfile \"$SESSIONFILE\" not found. Using default" >&2
+            conky -c $HOME/.config/conky/conky.conf     # run default conky
             exit 0
         fi
     fi
@@ -107,8 +107,8 @@ NOKILL=0
 if (( $# == 0 )); then    # if no args, then run default sessionfile
     killConkys
     if [[ ! -f "$SESSIONFILE" ]]; then     # run default conky
-        echo -e "ERROR: sessionfile \"$SESSIONFILE\" not found. Using default" >&2
-        conky -c $HOME/.conkyrc
+        echo -e "WARNING: sessionfile \"$SESSIONFILE\" not found. Using default" >&2
+        conky -c $HOME/.config/conky/conky.conf
         exit 0
     else
         source "$SESSIONFILE"

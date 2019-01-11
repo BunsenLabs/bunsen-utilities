@@ -19,7 +19,7 @@
 ########################################################################
 #
 #   Conkys must be in $CONKYPATH
-#   The name must end with "conky" or "conkyrc"
+#   The name must end with "conky" or -conky.conf"
 #
 #   Checkmarked conkys will be opened in the text editor
 #   Multiple conkys can be chosen
@@ -37,7 +37,7 @@ Options:
 No other options are supported.
 
    Conkys must be in $CONKYPATH
-   The name must end with 'conky' or 'conkyrc'
+   The name must end with 'conky' or -conky.conf'
 
    Checkmarked conkys will be opened in the text editor.
    Multiple conkys can be chosen.
@@ -65,8 +65,8 @@ findConky(){
    # find files in CONKYPATH with conky in the name
    for x in $(find "$CONKYPATH" -type f );do
        f=$(basename "$x")    # filename from filepath
-       if [[ $f = *conkyrc ]] || [[ $f = *conky ]];then
-           # filename ends with *conky or *conkyrc
+       if [[ $f = *conky.conf ]] || [[ $f = *conky ]];then
+           # filename ends with *conky or *conky.conf
            # get directory/conkyname to display in list
            CONKY=$( echo "$x" | awk -F"/" '{print $(NF-1)"/"$NF}')
            fillArrays $num "$x" "$CONKY"
