@@ -1,3 +1,9 @@
+bunsen-utilities (10.0-2) lithium; urgency=medium
+
+  * debian/genman.sh: fix broken copy.
+
+ -- John Crawley <john@bunsenlabs.org>  Mon, 14 Jan 2019 16:55:52 +0900
+
 bunsen-utilities (10.0-1) lithium; urgency=medium
 
   * Migrate to Lithium repository.
