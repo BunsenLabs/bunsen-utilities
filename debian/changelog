@@ -1,3 +1,13 @@
+bunsen-utilities (10.0-1) lithium; urgency=medium
+
+  * Migrate to Lithium repository.
+  * Standards to 4.3.0, debhelper to 10
+  * Update copyright.
+  * Remove dh_systemd references, now unnecessary.
+  * Adjust default conky config file path to ~/.config/conky/conky.conf
+
+ -- John Crawley <john@bunsenlabs.org>  Mon, 14 Jan 2019 16:47:29 +0900
+
 bunsen-utilities (9.6-1) helium; urgency=medium
 
   * Add Build-Depends needed for building man pages.
