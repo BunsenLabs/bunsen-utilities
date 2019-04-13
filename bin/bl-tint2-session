@@ -49,12 +49,12 @@ findArgs(){     # get command args
 }
 
 testSessionfile(){
-    if test -f  "$1" &>/dev/null;then # sessionfile found
+    if test -s  "$1" &>/dev/null;then # sessionfile found
         killTints
         while read line;do
             tint2 -c "$line" &
             sleep 1s
-        done < "$1"
+        done < <( cat "$1" )
     else
         echo -e "Created sessionfile \"$1\"\nRunning default tint2rc" 2>&1
         echo "$TINT2PATH/tint2rc" > "$SESSIONFILE"
