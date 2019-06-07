@@ -1,3 +1,10 @@
+bunsen-utilities (10.0.1-1) lithium; urgency=medium
+
+  * Conky utilities: Rationalize code, fix default config file path,
+     apply shellcheck suggestions.
+
+ -- John Crawley <john@bunsenlabs.org>  Fri, 07 Jun 2019 16:59:27 +0900
+
 bunsen-utilities (10.0-3) lithium; urgency=medium
 
   * Add extra python build-depends, needed for manuals.
