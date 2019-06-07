@@ -24,11 +24,12 @@
 #
 ########################################################################
 CONKYPATH="$HOME/.config/conky"
+CONKYDEFAULT="$CONKYPATH/conky.conf"
 SESSIONFILE="$CONKYPATH/conky-sessionfile"
 USAGE='
 	USAGE:	bl-conky-session [OPTION(S)]...FILES
 
-	With no command argument, the script uses the default "$CONKYPATH/conky-session" sessionfile.
+	With no command argument, the script uses the default "$CONKYPATH/conky-sessionfile" sessionfile.
 
 	OPTIONS:
 		--default	: specify default sessionfile
@@ -69,25 +70,25 @@ findArgs(){     # get command args (switches & sessionfile paths)
         fi
         if [[ -f  $arg ]]; then # sessionfile exists
             rawArr[$i]="$arg"       # add sessionfiles to array
-            i=$(($i+1))
+            i=$((i+1))
         fi
     done
     # check if sessionfiles were passed to bl-conky-session
     if (( ${#rawArr[@]} != 0 )); then
         # remove duplicate args
-        sessArr=(`printf "%s\n" "${rawArr[@]}" | sort -u`)
-        if (( $NOKILL == 0 )); then
+        sessArr=($(printf "%s\n" "${rawArr[@]}" | sort -u))
+        if (( NOKILL == 0 )); then
             killConkys
         fi
         for SESSION in "${sessArr[@]}";do # run the conkys in the sessionfiles
             source "$SESSION"
         done
     else    # --autostart used, but no sessionfiles passed to bl-conkyzen
-        if [[ -f $SESSIONFILE ]] && (( $NOKILL == 1 )); then
+        if [[ -f $SESSIONFILE ]] && (( NOKILL == 1 )); then
             source "$SESSIONFILE"   # use conky-sessionfile
         else
             echo -e "WARNING: sessionfile \"$SESSIONFILE\" not found. Using default" >&2
-            conky -c $HOME/.config/conky/conky.conf     # run default conky
+            conky -c "$CONKYDEFAULT"    # run default conky
             exit 0
         fi
     fi
@@ -108,7 +109,7 @@ if (( $# == 0 )); then    # if no args, then run default sessionfile
     killConkys
     if [[ ! -f "$SESSIONFILE" ]]; then     # run default conky
         echo -e "WARNING: sessionfile \"$SESSIONFILE\" not found. Using default" >&2
-        conky -c $HOME/.config/conky/conky.conf
+        conky -c "$CONKYDEFAULT"
         exit 0
     else
         source "$SESSIONFILE"
@@ -117,7 +118,7 @@ elif [[ $1 = "-h" ]] || [[ $1 = "--help" ]]; then
     echo -e "$USAGE"
     exit 0
 else
-    findArgs $@    # get the sessionfile paths from the command args
+    findArgs "$@"    # get the sessionfile paths from the command args
 fi
 
 exit 0

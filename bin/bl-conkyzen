@@ -49,7 +49,7 @@
 CONKYPATH="$HOME/.config/conky"
 SESSIONFILE="$CONKYPATH/conky-sessionfile"
 SESSIONS="$CONKYPATH/saved-sessions"    # to be used by a pipemenu
-CRC="$HOME/.config/conky/conky.conf"
+CONKYDEFAULT="$CONKYPATH/conky.conf"
 BLDEFAULT="$CONKYPATH/BL-Default-conky.conf"
 
 USAGE1='
@@ -96,49 +96,50 @@ OK="--button=OK:0"
 CANCEL="--button=gtk-cancel:1"
 
 ########## FUNCTIONS ###################################################
-conkyRunning(){    # find running conkys
-    # make blank tempfile, to save running conky paths
-    TEMPFILE=$(mktemp --tmpdir conky.XXXX)
-    if [[ $(pidof conky) ]];then
-        # test if default conky was started
-        for ARG in $(ps aux | grep  [c]onky | awk '{print $(NF-1)}');do
-            if [[ $ARG = "conky" ]]; then
-                echo "$CRC" >> "$TEMPFILE"  # 'conky -q' probably used
-            else                            # send conky filepath to tempfile
-                for ARG in $(ps aux | grep  [c]onkyrc | awk '{print $(NF)}');do
-                    if [[ $ARG != "-q" ]];then
-                        if echo "$ARG" | grep -v "$HOME";then	# in case started without full path
-							ARG="$HOME/$ARG"
-						fi
-                        echo "$ARG" >> "$TEMPFILE"
-                    fi
-                done
-            fi
-        done
-    fi
-    # remove any duplicates in tempfile
-    TEMPFILE2=$(mktemp --tmpdir conky.XXXX)
-    awk '!x[$0]++' "$TEMPFILE" > "$TEMPFILE2" && mv "$TEMPFILE2" "$TEMPFILE"
-}
+#conkyRunning(){    # find running conkys
+##     make blank tempfile, to save running conky paths
+#    TEMPFILE=$(mktemp --tmpdir conky.XXXX)
+#    if [[ $(pidof conky) ]];then
+##         test if default conky was started
+#        for ARG in $(ps aux | grep  [c]onky | awk '{print $(NF-1)}');do
+#            if [[ $ARG = "conky" ]]; then
+#                echo "$CONKYDEFAULT" >> "$TEMPFILE"  # 'conky -q' probably used
+#            else                            # send conky filepath to tempfile
+#                for ARG in $(ps aux | grep  [c]onkyrc | awk '{print $(NF)}');do
+#                    if [[ $ARG != "-q" ]];then
+#                        if echo "$ARG" | grep -v "$HOME";then	# in case started without full path
+#							ARG="$HOME/$ARG"
+#						fi
+#                        echo "$ARG" >> "$TEMPFILE"
+#                    fi
+#                done
+#            fi
+#        done
+#    fi
+##     remove any duplicates in tempfile
+#    TEMPFILE2=$(mktemp --tmpdir conky.XXXX)
+#    awk '!x[$0]++' "$TEMPFILE" > "$TEMPFILE2" && mv "$TEMPFILE2" "$TEMPFILE"
+#}
 
 fillArrays(){
-    if (( $1 != 0 ));then
-        num="$1"    # 1st arg: array index
-    else
-        num=0   # '~/.config/conky/conky.conf' added to array
-    fi
+#    if (( $1 != 0 ));then
+    local num="$1"    # 1st arg: array index
+#    else
+#        num=0   # '~/.config/conky/conky.conf' added to array
+#    fi
 
-    if (( $num == 0 ));then
-        cPATH="$CRC"
-        cARR="$USER/.config/conky/conky.conf"
-    else
+#    if (( num == 0 ));then
+#        return #cPATH="$CONKYDEFAULT"
+#          cARR="$USER/.config/conky/conky.conf"
+#    else
         cPATH="$2"   # 2nd arg: full filepath to conky
         cARR="$3"    # 3rd arg: displayed name: "directory/*conky(rc)"
-    fi
+#    fi
 
     conkysPath[$num]="$cPATH"
     conkysArr[$num]="$cARR"
-    if grep -qx "$cPATH" "$TEMPFILE";then # if conky is running (read from tempfile)
+#    if grep -qx "$cPATH" "$TEMPFILE";then # if conky is running (read from tempfile)
+    if pgrep -fc "^conky .*$cPATH( |$)";then # if conky is running (use pgrep)
         checkArr[$num]="TRUE"       # make checkmark in dialog
     else
         checkArr[$num]="FALSE"
@@ -148,19 +149,29 @@ fillArrays(){
 findConky(){
 # search dirs for conkys files - looking for "conky" in the name
 # if "*conky(rc)" then display it
-    num=0   # added default ~/.config/conky/conky.conf
-    fillArrays $num "$CRC" "$USER/.config/conky/conky.conf"
-    num=1
+#    num=0   # added default ~/.config/conky/conky.conf
+#    fillArrays $num "$CONKYDEFAULT" "$USER/.config/conky/conky.conf"
+    local num=0
     # find files in CONKYPATH with conky in the name
-    for x in $(find "$CONKYPATH" -type f );do
+#    for x in $(find "$CONKYPATH" -type f );do
+#        f=$(basename "$x")    # filename from filepath
+#        if [[ $f = *conky.conf ]] || [[ $f = *conky ]] || [[ $f = *conkyrc ]];then    # filename ends with *conkyrc, *conky or *conky.conf
+#             #get directory/conkyname to display in list
+#            CONKY=$( echo "$x" | awk -F"/" '{print $(NF-1)"/"$NF}')
+#            fillArrays $num "$x" "$CONKY"
+#            num=$((num+1))
+#        fi
+#    done
+    while IFS= read -r -d '' x;do
         f=$(basename "$x")    # filename from filepath
-        if [[ $f = *conky.conf ]] || [[ $f = *conky ]];then    # filename ends with *conky or *conky.conf
+        if [[ $f = *conky.conf ]] || [[ $f = *conky ]] || [[ $f = *conkyrc ]];then    # filename ends with *conkyrc, *conky or *conky.conf
             # get directory/conkyname to display in list
             CONKY=$( echo "$x" | awk -F"/" '{print $(NF-1)"/"$NF}')
             fillArrays $num "$x" "$CONKY"
-            num=$(($num+1))
+            num=$((num+1))
         fi
-    done
+    done < <(find "$CONKYPATH" -type f -print0)
+
 }
 
 writeSessions(){    # save a new sessionfile name for use by a menu
@@ -177,18 +188,17 @@ writeSessions(){    # save a new sessionfile name for use by a menu
             fi
         else    # commandline is being used
             echo "Session was previously saved with the same name. Overwrite it? (y|N)"
-            read ans
+            read -r ans
             case "$ans" in
-                y|Y )   break
+                y|Y )   : #break
                         ;;
                 *   )   exit 0
                         ;;
             esac
         fi
-    else
-        cp "$SESSIONS" "$SESSIONS.bkp"
-        echo "$SESSIONFILE" >> "$SESSIONS"
     fi
+    cp "$SESSIONS" "$SESSIONS.bkp"
+    echo "$SESSIONFILE" >> "$SESSIONS"
 }
 ######## END FUNCTIONS #################################################
 
@@ -237,9 +247,9 @@ for arg in "$@";do
 done
 
 # test for ~/.config/conky/conky.conf, create a link to the default conky if necessary
-if ! [[ -e $CRC ]];then
+if ! [[ -e $CONKYDEFAULT ]];then
     if [[ -e $BLDEFAULT ]];then
-        ln -s "$BLDEFAULT" "$CRC"
+        ln -s "$BLDEFAULT" "$CONKYDEFAULT"
     else
         echo "Default conky.conf not found"
     fi
@@ -268,7 +278,7 @@ while ! [[ $RET ]];do
     if [[ $? == 1 ]]; then # cancel button pressed
         # restore previous saved-sessions file
         [[ -f $SESSIONS.bkp ]] && mv "$SESSIONS.bkp" "$SESSIONS"
-        rm "$TEMPFILE"
+#        rm "$TEMPFILE"
         exit 0
     fi
     if ! [[ $RET ]];then  # No conkys chosen
@@ -277,7 +287,7 @@ while ! [[ $RET ]];do
         if [[ $? = 1 ]];then
             # restore previous saved-sessions file
             mv "$SESSIONS.bkp" "$SESSIONS"
-            rm "$TEMPFILE"
+#            rm "$TEMPFILE"
             continue
         else
             killall conky
@@ -291,7 +301,7 @@ while ! [[ $RET ]];do
         IFS=":"     # separator is ":" in returned choices
         for name in $RET; do
             retConky[$i]="$name"
-            i=$(($i+1))
+            i=$((i+1))
         done
         IFS=$OIFS   # reset IFS back to default
 
@@ -305,7 +315,7 @@ while ! [[ $RET ]];do
             for ((j=0; j<${#conkysPath[*]}; j++));do  # traverse through elements
                 for f in ${conkysPath[j]};do    # compare with choice from dialog
                     display=$( echo "$f" | awk -F"/" '{print $(NF-1)"/"$NF}')
-                    if [[ $display = $name ]];then
+                    if [[ $display = "$name" ]];then
                         echo -e "conky -c $f & sleep 1s" >> "$SESSIONFILE"
                         #start the conky (adjust the sleep time if required)
                         conky -c "$f" & sleep 1s
@@ -315,6 +325,6 @@ while ! [[ $RET ]];do
         done
     fi
 done
-rm "$TEMPFILE"
+#rm "$TEMPFILE"
 
 exit 0

@@ -63,16 +63,26 @@ findConky(){
    # if "*conky(rc)" then display it
    local num=0
    # find files in CONKYPATH with conky in the name
-   for x in $(find "$CONKYPATH" -type f );do
-       f=$(basename "$x")    # filename from filepath
-       if [[ $f = *conky.conf ]] || [[ $f = *conky ]];then
-           # filename ends with *conky or *conky.conf
-           # get directory/conkyname to display in list
-           CONKY=$( echo "$x" | awk -F"/" '{print $(NF-1)"/"$NF}')
-           fillArrays $num "$x" "$CONKY"
-           num=$(($num+1))
-       fi
-   done
+#   for x in $(find "$CONKYPATH" -type f );do
+#       f=$(basename "$x")    # filename from filepath
+#       if [[ $f = *conky.conf ]] || [[ $f = *conky ]];then
+#           # filename ends with *conky or *conky.conf
+#           # get directory/conkyname to display in list
+#           CONKY=$( echo "$x" | awk -F"/" '{print $(NF-1)"/"$NF}')
+#           fillArrays $num "$x" "$CONKY"
+#           num=$((num+1))
+#       fi
+#   done
+    while IFS= read -r -d '' x;do
+        f=$(basename "$x")    # filename from filepath
+        if [[ $f = *conky.conf ]] || [[ $f = *conky ]] || [[ $f = *conkyrc ]];then    # filename ends with *conkyrc, *conky or *conky.conf
+            # get directory/conkyname to display in list
+            CONKY=$( echo "$x" | awk -F"/" '{print $(NF-1)"/"$NF}')
+            fillArrays $num "$x" "$CONKY"
+            num=$((num+1))
+        fi
+    done < <(find "$CONKYPATH" -type f -print0)
+
 }
 
 ######## END FUNCTIONS #################################################
@@ -113,7 +123,7 @@ else
     IFS=":"     # separator is ":" in returned choices
     for name in $RET; do
         retConky[$i]="$name"
-        i=$(($i+1))
+        i=$((i+1))
     done
     IFS=$OIFS   # reset IFS back to default
 
@@ -122,7 +132,7 @@ else
         for ((j=0; j<${#CONKYS_PATH[*]}; j++));do  # traverse through elements
             for f in ${CONKYS_PATH[j]};do    # compare with choice from dialog
                 display=$( echo "$f" | awk -F"/" '{print $(NF-1)"/"$NF}')
-                if [[ $display = $name ]];then
+                if [[ $display = "$name" ]];then
                     bl-text-editor "$f"
                 fi
             done
