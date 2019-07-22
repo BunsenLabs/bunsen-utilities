@@ -139,7 +139,7 @@ fillArrays(){
     conkysPath[$num]="$cPATH"
     conkysArr[$num]="$cARR"
 #    if grep -qx "$cPATH" "$TEMPFILE";then # if conky is running (read from tempfile)
-    if pgrep -fc "^conky .*$cPATH( |$)";then # if conky is running (use pgrep)
+    if pgrep -fc "^conky .*$cPATH( |$)" >/dev/null;then # if conky is running (use pgrep)
         checkArr[$num]="TRUE"       # make checkmark in dialog
     else
         checkArr[$num]="FALSE"
@@ -164,7 +164,7 @@ findConky(){
 #    done
     while IFS= read -r -d '' x;do
         f=$(basename "$x")    # filename from filepath
-        if [[ $f = *conky.conf ]] || [[ $f = *conky ]] || [[ $f = *conkyrc ]];then    # filename ends with *conkyrc, *conky or *conky.conf
+        if [[ $f = *conky*.conf ]] || [[ $f = *conky ]] || [[ $f = *conkyrc ]];then    # filename ends with *conkyrc, *conky or is *conky*.conf
             # get directory/conkyname to display in list
             CONKY=$( echo "$x" | awk -F"/" '{print $(NF-1)"/"$NF}')
             fillArrays $num "$x" "$CONKY"
@@ -256,7 +256,7 @@ if ! [[ -e $CONKYDEFAULT ]];then
 fi
 
 # get conky directories in .conky, add to array
-conkyRunning
+#conkyRunning
 findConky
 
 # loop through arrays, and build list text for yad dialog
