@@ -148,6 +148,7 @@ CONFIGPATH="$HOME/.config/blob"
 SYSCONFIGPATH="/usr/share/bunsen/utilities/blob"
 CURSESSION="$CONFIGPATH/current"
 OBPATH="$HOME/.config/openbox"
+RCFILE="$OBPATH/bl-rc.xml" # NB now using the new BunsenLabs file name
 
 # globals set by setName() for storing current settings as theme
 CONFIGDIR=""
@@ -574,16 +575,7 @@ function getTint(){
     fi
 }
 
-function killTints(){
-    pgrep -a tint2 | while read -r pid cmd; do
-        if [[ ${cmd%% *} = tint2 ]]; then
-            kill "$pid"
-        fi
-    done
-}
-
 function getOBtheme(){   # copy <theme> section from rc.xml to obtheme.txt
-    RCFILE="$OBPATH/rc.xml"
     tag="theme"
     sed -n "/<$tag>/,/<\/$tag>/p" "$RCFILE" > "$CONFIGDIR/obtheme.txt"
     getOBname
@@ -701,7 +693,7 @@ function checkTint2(){   # kill or restart tint2s for screenshot, if necessary
                     fi
                 done
             fi
-            killTints
+            killall tint2
         fi
     fi
     if [[ $1 = start ]];then
@@ -930,7 +922,6 @@ function checkOBTHEME(){
 }
 
 function restoreOBrc(){
-    RCFILE="$OBPATH/rc.xml"
     THEMEFILE="$1/obtheme.txt"
     FTEMP=$(mktemp --tmpdir blob.XXXX)
     if grep -q '[OBTHEME]' "$1/settings.cfg" ;then
@@ -987,7 +978,7 @@ function restoreTint2(){    # arg = $VAL from $SETCFG in restoreSettings()
             :> "$TINTSESSION"    # create/overwrite tint2 session file
             # write to tint2 session file...
             echo "$TINTCMD" >> "$TINTSESSION"
-            killTints
+            killall tint2
             while read -r tintline;do
                 if [[ "$tintline" == "tint2" ]];then
                     tint2 >/dev/null 2>&1 &
@@ -1001,7 +992,7 @@ function restoreTint2(){    # arg = $VAL from $SETCFG in restoreSettings()
             done < "$TINTSESSION"
         fi
     else                    # no bl-tint2zen, so just run tint2 commands
-        killTints
+        killall tint2
         for tintpath in $TINTCMD;do
             if [[ "$tintpath" == "tint2" ]] >/dev/null;then
                 tint2 >/dev/null 2>&1 &     # default tint2 command
