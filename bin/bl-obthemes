@@ -463,22 +463,23 @@ function getNitrogen(){  # get Nitrogen saved backgrounds
     fi
 }
 
-# get command from window id (passed as $1)
-function getConkyCmd() {
-    local id wmc cmd
-    id=$1
-    wmc=$(xprop -id "$id"  WM_COMMAND)
+# generates command array idCmd from window id (hex or decimal)
+# NB WM_COMMAND is deprecated: https://www.x.org/releases/X11R7.6/doc/xorg-docs/specs/ICCCM/icccm.html#obsolete_session_manager_conventions
+# Usage: getIdCmd <id>
+getIdCmd() {
+    local wmc del s
+    wmc=$(xprop -id "$1"  WM_COMMAND)
     wmc=${wmc#*\"} # strip first & last quotes & everything outside
     wmc=${wmc%\"*}
-    cmd=${wmc%% *} # separate first word
-    cmd=${cmd%\"*}
-    [[ $cmd = conky ]] || { echo "$0: Window id $id command $cmd is not conky" >&2; return 1;}
-    awk -F '", "' '{
-        for (i=1;i<=NF;i++){
-            gsub(/\\\"/,"\"",$i)
-            printf "%s ", $i
-        }
-    }' <<< "$wmc"
+    wmc=${wmc//\\\"/\"} # unescape any inner quotes
+    del='", "'
+    s=${wmc}${del}
+    idCmd=()
+    while [[ -n $s ]]
+    do
+        idCmd+=("${s%%${del}*}")
+        s=${s#*${del}}
+    done
 }
 
 function getConky(){
@@ -498,7 +499,8 @@ function getConky(){
             while read -r id;do
                 unset arrSTICKY["$id"] # remove from sticky list
                 if ! [[ -z "$id" ]];then
-                    CONKYCMD=$(getConkyCmd "$id")
+                    getIdCmd "$id" # generates array idCmd
+                    CONKYCMD=${idCmd[*]} # NB now in string, filepaths with spaces will be broken.
                     if [[ "$CONKYCMD" == "conky" ]] || [[ "$CONKYCMD" == "conky -q" ]];then
                         CONKYTXT="$CONKYTXT\n\tDesktop $i:  Default Conky"
                     else
