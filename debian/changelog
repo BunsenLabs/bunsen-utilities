@@ -1,3 +1,9 @@
+bunsen-utilities (10.0.2-1) lithium; urgency=medium
+
+  * bl-obthemes: apply shellcheck suggestions, tweak code.
+
+ -- John Crawley <john@bunsenlabs.org>  Thu, 01 Aug 2019 17:45:00 +0900
+
 bunsen-utilities (10.0.1-1) lithium; urgency=medium
 
   * Conky utilities: Rationalize code, fix default config file path,
