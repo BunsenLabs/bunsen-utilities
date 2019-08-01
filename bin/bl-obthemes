@@ -158,6 +158,14 @@ LISTMSG=""
 # set by getSet() - number of stored themes
 NUMDIRS=0
 
+# packages needed for particular GTK themes
+declare -A theme_pkgs=(
+[Beam]=bunsen-themes
+[Bunsen-He]=bunsen-themes
+[Bunsen-Dark-He]=bunsen-themes
+[Bunsen-He-flatish]=bunsen-themes
+)
+
 # packages needed for particular icon themes
 declare -A icon_pkgs=(
 [Faenza-Dark-Bunsen]='bunsen-faenza-icon-theme'
@@ -167,13 +175,6 @@ declare -A icon_pkgs=(
 [Papirus-Bunsen-bluegrey]='bunsen-papirus-icon-theme'
 [Papirus-Bunsen-Dark-grey]='bunsen-papirus-icon-theme'
 [Papirus-Bunsen-Dark-bluegrey]='bunsen-papirus-icon-theme'
-)
-# theme packages
-declare -A theme_pkgs=(
-[Beam]=bunsen-themes
-[Bunsen-He]=bunsen-themes
-[Bunsen-Dark-He]=bunsen-themes
-[Bunsen-He-flatish]=bunsen-themes
 )
 
 THEMEPATH_1="$HOME/.themes"
@@ -255,6 +256,12 @@ PICKX="X configs"
 #### END VARIABLES #####################################################
 
 ### FUNCTIONS ##########################################################
+
+# Kill only with exact match, and only if process belongs to executor.
+# Usage: safeKill <processname>
+function safeKill() {
+    pkill -x -u "$USER" "$1"
+}
 
 function Intro(){
     local RET
@@ -545,7 +552,7 @@ function getTint(){
                 TPATH=$(echo "$cmd" | awk '{print $NF";"}')
                 arrTINT+=("$TPATH")
             fi
-        done < <(pgrep -a tint2)
+        done < <(pgrep -a -u "$USER" tint2)
 
         TXT="Tint2s:\n\n"
         MSG="Running Tint2s:"
@@ -684,16 +691,16 @@ function getBLexitrc(){
 
 function checkTint2(){   # kill or restart tint2s for screenshot, if necessary
     if [[ $1 = stop ]];then
-        if ! grep "TINT2" "$SETTINGS" &>/dev/null;then
+        if ! grep -q "TINT2" "$SETTINGS" ;then
             tmpTINT=$(mktemp --tmpdir blob.XXXX) # make blank tempfile, to save running tint2 paths
             if [[ $(pidof tint2) ]];then
-                pgrep -a tint2 | while read -r pid cmd;do
+                pgrep -a -u "$USER" tint2 | while read -r pid cmd;do
                     if [[ ${cmd%% *} = tint2 ]];then
                         echo "$cmd" >> "$tmpTINT"
                     fi
                 done
+            safeKill tint2
             fi
-            killall tint2
         fi
     fi
     if [[ $1 = start ]];then
@@ -741,7 +748,7 @@ function getWINDOWS(){  # Minimize/Activate windows for scrot. Args= 'min', 'rai
 }
 
 function getScrot(){
-    local conkyFLAG currDESKTOP #pid
+    local conkyFLAG currDESKTOP
     conkyFLAG=1
     currDESKTOP=$(xprop -root _NET_CURRENT_DESKTOP | tail -c -2)
     SCROT="$CONFIGPATH/$ANS"
@@ -925,7 +932,7 @@ function restoreOBrc(){
     THEMEFILE="$1/obtheme.txt"
     FTEMP=$(mktemp --tmpdir blob.XXXX)
     if grep -q '[OBTHEME]' "$1/settings.cfg" ;then
-        # backup rc.xml first
+        # backup bl-rc.xml first
         NOW=$(date +"%Y%m%d-%H%M%S")
         RCBKP="$RCFILE.blob.$NOW"
         cp "$RCFILE" "$RCBKP"
@@ -958,12 +965,12 @@ function restoreConky(){    # arg = $VAL from $SETCFG in restoreSettings()
             :> "$CONKYSESSION" # create/overwrite conky session file
             # write to conky session file...
             echo "${CONKYCMD//;/$'\n'}" >> "$CONKYSESSION"
-            killall conky
+            safeKill conky
             source "$CONKYSESSION"  # run conky commands
             wait
         fi
     else
-        killall conky
+        safeKill conky
         eval "$CONKYCMD"    # no bl-conkyzen, so just run conky commands
         wait
     fi
@@ -978,7 +985,7 @@ function restoreTint2(){    # arg = $VAL from $SETCFG in restoreSettings()
             :> "$TINTSESSION"    # create/overwrite tint2 session file
             # write to tint2 session file...
             echo "$TINTCMD" >> "$TINTSESSION"
-            killall tint2
+            safeKill tint2
             while read -r tintline;do
                 if [[ "$tintline" == "tint2" ]];then
                     tint2 >/dev/null 2>&1 &
@@ -992,7 +999,7 @@ function restoreTint2(){    # arg = $VAL from $SETCFG in restoreSettings()
             done < "$TINTSESSION"
         fi
     else                    # no bl-tint2zen, so just run tint2 commands
-        killall tint2
+        safeKill tint2
         for tintpath in $TINTCMD;do
             if [[ "$tintpath" == "tint2" ]] >/dev/null;then
                 tint2 >/dev/null 2>&1 &     # default tint2 command
@@ -1403,10 +1410,10 @@ function restoreSettings(){
     # get chosen saved configs and restore them
     # kill conkys and tint2s, in case saved config doesn't include them
     if [[ $(pidof conky) ]];then
-        killall conky
+        safeKill conky
     fi
     if [[ $(pidof tint2) ]];then
-        killall tint2
+        safeKill tint2
     fi
     while read -r TAG VAL; do #line;do
         home_marker='%USERHOME%'
@@ -1464,6 +1471,12 @@ function restoreSettings(){
 }
 
 ### END FUNCTIONS ######################################################
+
+# Do not run as root (Bad Things may happen).
+if [[ $( id -u ) -eq 0 ]]; then
+    echo $"Error: This script should not be run by root." >&2
+    exit 1
+fi
 
 # test for blobthemes config directory, create if it doesn't exist
 mkdir -p "$CONFIGPATH"
