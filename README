@@ -4,12 +4,6 @@ bunsen-utilities
 A collection of small scripts to provide various functions
 which might be useful to BunsenLinux users and system administrators.
 
-bl-lock:				Script to lock the display.
-bl-hotcorners:			Script to add hot corners to Openbox.
-
-The above were originally imported from cb-exit, cb-lock and cb-wmhacks,
-made for CrunchBang Linux and subsequently modified for BunsenLabs.
-
 bl-conky-session:		Script to handle multiple conky sessions.
 bl-conkyedit:			Script to find and edit conky config files.
 bl-conkyzen:			Yad-based conky manager.
@@ -20,8 +14,9 @@ bl-tint2edit:			Script to find and edit tint2 config files.
 bl-tint2-restart:		Script to restart all running tint2 processes.
 bl-tint2zen:			Yad-based tint2 manager.
 
-bl-kb:					Script to read openbox keyboard shortcuts and write them to a text file.
+bl-kb:				Script to read openbox keyboard shortcuts and write them to a text file.
 bl-obthemes:			Script to save or restore openbox gui configurations.
+bl-lock:			Script to lock the display.
 
 bl-pkg-versions:		Utility to display the versions of BunsenLabs packages in the apt repository and on GitHub.
-bl-notify-broadcast:	Script to send user notification popups from root processes.
+bl-notify-broadcast:		Script to send user notification popups from root processes.
