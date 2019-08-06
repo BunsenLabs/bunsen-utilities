@@ -37,7 +37,7 @@ Description: Small scripts to use with BunsenLabs.
  .
   - bl-conky-session: Script to handle multiple conky sessions.
   - bl-conkyedit: Script to find and edit conky config files.
-  - bl-conkypin: Script to assist the relocation of conky windows.
+  - bl-conkymove: Script to assist the relocation of conky windows.
   - bl-conkyzen: Yad-based conky manager.
   - bl-kb: Script to manage keyboard shortcuts.
   - bl-lock: Script to lock the display.
