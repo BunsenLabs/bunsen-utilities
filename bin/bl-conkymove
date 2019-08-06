@@ -1,6 +1,6 @@
 #!/bin/bash
 ##
-#    bl-conkypin: a script to set the position of a moveable Conky
+#    bl-conkymove: a script to set the position of a moveable Conky
 #    Copyright (C) 2015-2017 damo    <damo@bunsenlabs.org>
 #    Copyright (C) 2015-2017 John Crawley <john@bunsenlabs.org>
 #    Copyright (C) 2016 xaos52  <xaos52@gmail.com>
@@ -18,7 +18,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-HELP="    bl-conkypin: a script to set the position of a moveable Conky
+HELP="    bl-conkymove: a script to set the position of a moveable Conky
 
 Options:
     -h --help   show this message
@@ -155,8 +155,8 @@ edit_conkyfile(){
         [[ $value =~ ^([0-9-]+|true|false)$ ]] || value=\'"$value"\' # add quotes
         (( ${#sed_args[@]} == 0 )) && sed_args=("-ri")
         sed_pattern="[[:blank:]]*${name}[[:blank:]]*=[[:blank:]]*([[:alnum:]]+|'[^']+'|\"[^\"]+\")"
-        grep -q -- "-- bl-conkypin, original value for $name:" "$file" ||
-            sed_replace="-- bl-conkypin, original value for $name: ${config[$name]}\n"
+        grep -Eq -- "-- bl-conky(pin|move), original value for $name:" "$file" ||
+            sed_replace="-- bl-conkymove, original value for $name: ${config[$name]}\n"
         sed_replace+="\t$name = $value"
         sed_args+=("-e")
         sed_args+=("s/$sed_pattern/$sed_replace/")
