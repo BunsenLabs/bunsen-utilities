@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 #    bl-tint2zen: a BunsenLabs tint2 selection and switcher script
-#    Copyright (C) 2015 damo    <damo@bunsenlabs.org>
+#    Copyright (C) 2015/2019 damo    <damo@bunsenlabs.org>
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -22,10 +22,10 @@
 #
 #   When the dialog opens, any running tint2s will be checkmarked.
 #
-#   Click "OK" and all running tint2s are stopped, and all checkmarked
-#   tint2s are started
+#   Click "Apply" and all running tint2s are stopped,
+#   and all checkmarked tint2s are started.
 #
-#   To stop a tint2 just uncheck it, and "OK"
+#   To stop a tint2 just uncheck it, and "Apply".
 #
 #   Running tint2s are saved to a session file, and can be run with
 #   the "tint2-session" script. To start them at login, add the
@@ -38,35 +38,37 @@
 TINT2PATH="$HOME/.config/tint2"
 SESSIONFILE="$TINT2PATH/tint2-sessionfile"
 USAGE='
-	USAGE:
-	With no command argument, the script uses the chosen
-	Tint2 session file "$TINT2PATH/tint2-sessionfile",
-	if it exists, otherwise the default tint2rc is used.
+        USAGE:
+        With no command argument, the script uses the chosen
+        Tint2 session file "$TINT2PATH/tint2-sessionfile",
+        if it exists, otherwise the default tint2rc is used.
 
-	To start them at login, add the following line to autostart:
+        To start them at login, add the following line to autostart:
 
-		(sleep 2s && bl-tint2-session) &
+                (sleep 2s && bl-tint2-session) &
 '
 
 ### DIALOG VARIABLES
 DLGDEC="yad --center --borders=20 "
 TITLE="BunsenLabs Tint2 Manager"
 WINICON="--window-icon=distributor-logo-bunsenlabs"
-OK="--button=OK:0"
-CANCEL="--button=gtk-cancel:1"
+#OK="--button=OK:0"
+APPLY="--button=Apply:0"
+#CANCEL="--button=gtk-cancel:1"
+CLOSE="--button=Close:1"
 ########################################################################
 
 tintRunning(){
     # make blank tempfile, to save running tint2 paths
     TEMPFILE=$(mktemp --tmpdir tint2.XXXX)
-    pgrep -a tint2 | while read pid cmd; do
+    pgrep -a tint2 | while read -r pid cmd; do
         if [[ ${cmd%% *} = tint2 ]]; then
-            TPATH=$(echo $cmd | awk '{print $NF}')
-            if echo "$TPATH" | grep -v "$HOME";then	# in case started without full path
-				TPATH="$HOME/$TPATH"
-			fi
+            TPATH="$(echo "$cmd" | awk '{print $NF}')"
+            if echo "$TPATH" | grep -v "$HOME";then     # in case started without full path
+                TPATH="$HOME/$TPATH"
+            fi
          echo "$TPATH"
-            echo "$TPATH" >> $TEMPFILE
+            echo "$TPATH" >> "$TEMPFILE"
         fi
     done
 }
@@ -85,16 +87,76 @@ fillArrays(){
 
 findTint(){
 # search dirs for tint2 config files
+    unset x
     num=0
-    for x in $(find $TINT2PATH -type f );do
+#    for x in $(find $TINT2PATH -type f );do
         # check if likely tint2 config file
-        pm=$(grep  "panel_monitor" "$x")
-        if [[ $pm ]];then
-            TINT2=$( echo $x | awk -F"/" '{print $(NF-1)"/"$NF}')
-            fillArrays $num $x $TINT2
-            num=$(($num+1))
+##        pm=$(grep  "panel_monitor" "$x")
+##        if [[ $pm ]];then
+#       if grep -q "panel_monitor" "$x";then
+#            TINT2=$( echo $x | awk -F"/" '{print $(NF-1)"/"$NF}')
+#            fillArrays $num $x $TINT2
+#            num=$(($num+1))
+#        fi
+#    done
+    while IFS= read -r -d '' x;do
+        if grep -q "panel_monitor" "$x";then
+            TINT2=$( echo "$x" | awk -F"/" '{print $(NF-1)"/"$NF}')
+            fillArrays $num "$x" "$TINT2"
+            num=$((num+1))
         fi
-    done
+    done < <(find "$TINT2PATH" -type f -print0)
+
+}
+
+loadDialog() {
+        LISTTINT="$1"
+        declare -a retTint
+## Populate dialog from array, get return value(s)
+        RET=$($DLGDEC $WINICON --list --title="$TITLE" \
+            --text="Select Tint2s from the list:" \
+            --checklist --width=400 --height=500 \
+            --column="Select" --column="tint2 Name" $LISTTINT --separator=":" \
+            $APPLY $CLOSE \
+            )
+        if (( $? == 1 )); then # close button pressed
+                rm -r "$TEMPFILE"
+            exit 0
+        else
+            > "$SESSIONFILE"    # Create new session file
+
+            # loop through returned choices, add to array
+            i=0
+            OIFS=$IFS   # copy original IFS
+            IFS=":"     # separator is ":" in returned choices
+            for name in $RET; do
+                retTint[$i]=$name
+                i=$((i+1))
+            done
+            IFS=$OIFS    # reset IFS
+
+            # kill all tint2s
+            pgrep -a tint2 | while read -r pid cmd; do
+                if [[ ${cmd%% *} = tint2 ]]; then
+                    kill "$pid"
+                fi
+            done
+
+            for name in ${retTint[*]};do       # loop through checkmarked tint2 names
+                for ((j=0; j<${#tintsPath[*]}; j++));do  # traverse through elements
+                    for f in ${tintsPath[j]};do
+                        display=$( echo "$f" | awk -F"/" '{print $(NF-1)"/"$NF}')
+                        # see if it matches the returned name
+                        if [[ $display = "$name" ]];then
+                            echo -e "$f" >> "$SESSIONFILE"
+                            tint2 -c "$f" &  #start the tint2
+                            sleep 1s
+                        fi
+                    done
+                done
+            done
+        #    bl-compositor --restart &   # restart compositor
+        fi
 }
 
 # get any commandline arguments
@@ -104,66 +166,28 @@ if ! (( $# == 0 ));then
             echo -e "$USAGE"
             exit 0
         else
-            echo -e "\tERROR: sorry I don't understand the input"
+            echo -e "\tERROR: sorry I don't understand \"${arg}\""
             echo -e "$USAGE"
-            exit 0
+            exit 1
         fi
     done
 fi
-# get tint2 directories in .tint2, add to array
-tintRunning
-findTint
 
-# loop through arrays, and build msg text for yad dialog
-unset LISTTINT
-for ((j=0; j<${#tintsArr[*]}; j++));do
-    LISTTINT="$LISTTINT ${checkArr[j]} ${tintsArr[j]}"
-done
+while true;do
+        unset LISTTINT
+        declare -a tintsArr
+        declare -a checkArr
+        # get tint2 directories in .tint2, add to array
+        tintRunning
+        findTint
 
-## Populate dialog from array, get return value(s)
-RET=$($DLGDEC $WINICON --list --title="$TITLE" \
-    --text="Select Tint2s from the list:" \
-    --checklist --width=350 --height=300 \
-    --column="Select" --column="tint2 Name" $LISTTINT --separator=":" \
-    $OK $CANCEL \
-    )
-if (( $? == 1 )); then # cancel button pressed
-    exit 0
-else
-    > $SESSIONFILE    # Create new session file
-    # loop through returned choices, add to array
-    i=0
-    OIFS=$IFS   # copy original IFS
-    IFS=":"     # separator is ":" in returned choices
-    for name in $RET; do
-        retTint[$i]=$name
-        i=$(($i+1))
-    done
-    IFS=$OIFS    # reset IFS
-
-    # kill all tint2s
-    pgrep -a tint2 | while read pid cmd; do
-        if [[ ${cmd%% *} = tint2 ]]; then
-            kill "$pid"
-        fi
-    done
-
-    for name in ${retTint[*]};do       # loop through checkmarked tint2 names
-        for ((j=0; j<${#tintsPath[*]}; j++));do  # traverse through elements
-            for f in ${tintsPath[j]};do
-                display=$( echo $f | awk -F"/" '{print $(NF-1)"/"$NF}')
-                # see if it matches the returned name
-                if [[ $display = $name ]];then
-                    echo -e "$f" >> $SESSIONFILE
-                    tint2 -c "$f" &  #start the tint2
-                    sleep 1s
-                fi
-            done
+        # loop through arrays, and build msg text for yad dialog
+        for ((j=0; j<${#tintsArr[*]}; j++));do
+            LISTTINT="$LISTTINT ${checkArr[j]} ${tintsArr[j]}"
         done
-    done
-#    bl-compositor --restart &   # restart compositor
-fi
+        loadDialog "$LISTTINT"
+        rm -r "$TEMPFILE"
 
-rm -r $TEMPFILE
+done
 
 exit 0
