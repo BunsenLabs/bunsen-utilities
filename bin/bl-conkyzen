@@ -198,9 +198,10 @@ writeSessions(){    # save a new sessionfile name for use by a menu
                         ;;
             esac
         fi
+    else
+        cp "$SESSIONS" "$SESSIONS.bkp"
+        echo "$SESSIONFILE" >> "$SESSIONS"
     fi
-    cp "$SESSIONS" "$SESSIONS.bkp"
-    echo "$SESSIONFILE" >> "$SESSIONS"
 }
 
 loadDialog() {
@@ -233,7 +234,7 @@ loadDialog() {
             exit 0
         fi
     else
-        > "$SESSIONFILE"    # Create new session file
+        > "$SESSIONFILE"    # Create new empty session file
         # loop through returned choices, add to array
         i=0
         OIFS=$IFS   # save Internal Field Separator
@@ -336,7 +337,7 @@ while true;do
 
     loadDialog "$LISTCONKY"
 
-    rm "$TEMPFILE"
+#    rm "$TEMPFILE"
 done
 
 exit 0
