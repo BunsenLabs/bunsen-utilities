@@ -301,13 +301,15 @@ for arg in "$@";do
                           writeSessions "$SPATH" "-z"   # saved session file from input dialog
                       fi
                       ;;
-        *           ) if ! [[ $arg ]];then
-                        SESSIONFILE="$SESSIONFILE" # sessionfile is default
-                        break
-                      else
-                        echo -e "$USAGE1"
-                        exit 1
-                      fi
+#        *           ) if ! [[ $arg ]];then # (If there are no args, for loop is not executed.)
+#                        SESSIONFILE="$SESSIONFILE" # sessionfile is default ( variable is already set)
+#                        break
+#                      else
+#                        echo -e "$USAGE1"
+#                        exit 1
+#                      fi
+        *           ) echo -e "$USAGE1"
+                      exit 1
                       ;;
     esac
 done
