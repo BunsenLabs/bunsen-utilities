@@ -205,7 +205,7 @@ writeSessions(){    # save a new sessionfile name for use by a menu
 }
 
 loadDialog() {
-    declare -a retConky
+    local -a retConky
     ## Populate dialog from array, get return value(s)
     RET=$($DLGDEC $WINICON --list --title="$TITLE" \
         --text="Session will be saved to:\n <b>$SESSIONFILE</b>" \
@@ -216,54 +216,60 @@ loadDialog() {
         )
 
     if [[ $? == 1 ]]; then # close button pressed
-        # restore previous saved-sessions file
-        [[ -f $SESSIONS.bkp ]] && mv "$SESSIONS.bkp" "$SESSIONS"
+        # if session file is empty remove it, and restore previous saved-sessions file
+        if [[ ! -s "$SESSIONFILE" ]];then
+            rm "$SESSIONFILE"
+            if  [[ -f $SESSIONS.bkp ]]; then
+                mv "$SESSIONS.bkp" "$SESSIONS"
+            fi
+        fi
 #        rm "$TEMPFILE"
         exit 0
     fi
     if ! [[ $RET ]];then  # No conkys chosen
-        MSG="Nothing chosen.\n\nKill any running Conkys\nand exit?"
+        MSG="Nothing chosen.\n\nKill any running Conkys?"
         $DLG $WINICON --title="Conky Chooser" --text="$MSG" $OK $CANCEL
         if [[ $? = 1 ]];then
             # restore previous saved-sessions file
-            [[ -f $SESSIONS.bkp ]] && mv "$SESSIONS.bkp" "$SESSIONS"
+#            [[ -f $SESSIONS.bkp ]] && mv "$SESSIONS.bkp" "$SESSIONS"
 #            rm "$TEMPFILE"
             return
-        else
-            killall conky
-            exit 0
+#        else
+#            killall conky
+#            exit 0
         fi
-    else
-        > "$SESSIONFILE"    # Create new empty session file
-        # loop through returned choices, add to array
-        i=0
-        OIFS=$IFS   # save Internal Field Separator
-        IFS=":"     # separator is ":" in returned choices
-        for name in $RET; do
-            retConky[$i]="$name"
-            i=$((i+1))
-        done
-        IFS=$OIFS   # reset IFS back to default
+    fi
+#    else
+    > "$SESSIONFILE"    # Create empty session file
+    # loop through returned choices, add to array
+    i=0
+    OIFS=$IFS   # save Internal Field Separator
+    IFS=":"     # separator is ":" in returned choices
+    for name in $RET; do
+        retConky[$i]="$name"
+        i=$((i+1))
+    done
+    IFS=$OIFS   # reset IFS back to default
 
-        # kill all conkys
-        if [[ $(pidof conky) ]];then
-            killall conky
-        fi
+    # kill all conkys
+    if [[ $(pidof conky) ]];then
+        killall conky
+    fi
 
-        # Find the chosen conkys and start them
-        for name in ${retConky[*]};do       # loop through checkmarked conky names
-            for ((j=0; j<${#conkysPath[*]}; j++));do  # traverse through elements
-                for f in ${conkysPath[j]};do    # compare with choice from dialog
-                    display=$( echo "$f" | awk -F"/" '{print $(NF-1)"/"$NF}')
-                    if [[ $display = "$name" ]];then
-                        echo -e "conky -c $f & sleep 1s" >> "$SESSIONFILE"
-                        #start the conky (adjust the sleep time if required)
-                        conky -c "$f" & sleep 1s
-                    fi
-                done
+    # Find the chosen conkys and start them
+    for name in ${retConky[*]};do       # loop through checkmarked conky names
+        for ((j=0; j<${#conkysPath[*]}; j++));do  # traverse through elements
+            for f in ${conkysPath[j]};do    # compare with choice from dialog
+                display=$( echo "$f" | awk -F"/" '{print $(NF-1)"/"$NF}')
+                if [[ $display = "$name" ]];then
+                    echo -e "conky -c $f & sleep 1s" >> "$SESSIONFILE"
+                    #start the conky (adjust the sleep time if required)
+                    conky -c "$f" & sleep 1s
+                fi
             done
         done
-    fi
+    done
+#    fi
 }
 
 ######## END FUNCTIONS #################################################
@@ -324,8 +330,10 @@ if ! [[ -e $CONKYDEFAULT ]];then
 fi
 
 while true;do
-    declare -a conkysArr
-    declare -a checkArr
+#   These declarations are not needed for global indexed arrays.
+#    declare -a conkysArr
+#    declare -a checkArr
+#    declare -a conkysPath
 
     # get conky directories in .conky, add to array
 #    conkyRunning
