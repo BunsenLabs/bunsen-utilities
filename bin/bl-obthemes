@@ -338,9 +338,8 @@ function setName(){  # set name of collection, make dir and session settings fil
     MSG="  Configurations will be saved to a new directory in  \
     \n  $USRCONFIGPATH\n\n  Enter name of new collection...  "
     MSG2="  No file specified for new saved session.\n\n  Try again?"
-    LOOP=1
     DEL=0
-    while [[ $LOOP ]];do  # loop dialog if nothing is selected
+    while true;do  # loop dialog if nothing is selected
         ANS=$($DIALOG --entry \
             $CANCEL --button="OK:0" \
             "$T$MSG" \
@@ -372,13 +371,8 @@ function setName(){  # set name of collection, make dir and session settings fil
                 2>/dev/null
 
                 if (( $? == 0 ));then
-                    mv "$CONFIGDIR" "$CONFIGDIR_BKP" && mkdir -p "$CONFIGDIR"
+                    mv "$CONFIGDIR" "$CONFIGDIR_BKP" # && mkdir -p "$CONFIGDIR"
                     DEL=1
-                    SETTINGS="$CONFIGDIR/settings.cfg"
-                    :> "$SETTINGS"
-                    LISTMSG="$CONFIGDIR/LISTMSG.txt"
-                    :> "$LISTMSG"
-                    break
                 else
                     continue
                 fi
@@ -391,10 +385,7 @@ function setName(){  # set name of collection, make dir and session settings fil
             break
         fi
     done
-    setText
-}
 
-function setText(){
     TIME=$(date)
     if (( DEL == 1 ));then
         TXT="  (Existing session overwritten)"
@@ -402,6 +393,8 @@ function setText(){
         TXT=""
     fi
     echo -e "\n  Configuration will be saved as: $ANS$TXT"
+
+#     store list in listfile
     echo -e "<b>Configuration name: $ANS</b>\t$TXT\nSaved at $TIME\n" >> "$LISTMSG"
 }
 
@@ -412,9 +405,9 @@ function getBg(){    # find if feh or nitrogen was used. Save config file(s)
         else
             BGSET="FEH"
         fi
-    elif [[ -e $FEHFILE ]] && [[ ! -e $NITROFILE ]];then  # use feh for background
+    elif [[ -e $FEHFILE ]];then  # use feh for background
         BGSET="FEH"
-    elif [[ -e $NITROFILE ]] &&  [[ ! -e $FEHFILE ]];then    # use nitrogen for background
+    elif [[ -e $NITROFILE ]];then    # use nitrogen for background
         BGSET="NITROGEN"
     else
         echo -e "\n  No background-setting application found" >&2
@@ -915,10 +908,8 @@ function restoreGTK(){   # arg is chosen saved config dir
 function checkOBTHEME(){
     local FOUNDOB=0
     local OBTXT="Openbox theme <b>$1</b> not found\n\n  The default Openbox theme will be used..."
-    local arrOB=("$THEMEPATH_1" "$THEMEPATH_2" "$THEMEPATH_3" "$THEMEPATH_4" )
-
-    for i in "${arrOB[@]}";do
-        if [[ -d "$i/$1" ]];then
+    for i in "${gtkPaths[@]}";do
+        if [[ -d "$i/$1/openbox-3" ]];then
             echo -e "\n  Found $1 Openbox theme"
             FOUNDOB=1
             break
@@ -1061,8 +1052,7 @@ function restoreBLexitrc(){
 function restoreLightdm(){   # need sudo to restore lightdm-gtk-greeter.conf
     CMD="cp $1 $LDMDIR/$LDM"
     TXT="Authenticate restore of lightdm-gtk-greeter.conf"
-    LOOP=1
-    while [[ $LOOP ]];do
+    while true;do
         gksudo -m "$TXT" "$CMD"
         DLG=$?
         case "$DLG" in
@@ -1261,7 +1251,7 @@ function ViewRestoreDialog(){   # list saved theme collections for yad as DLGLIS
     if (( NUMDIRS == 0 ));then  # no saved configs; go back to Intro dialog
         Intro
     fi
-    local themename
+    local themename IMGTHUMB
     declare -a setARR=()
     declare -a namesARR=()
     declare -a thumbsARR=()
@@ -1284,12 +1274,12 @@ function ViewRestoreDialog(){   # list saved theme collections for yad as DLGLIS
                 else
                     setARR[$i]="gtk-home"
                 fi
-                IMGTHUMB="None"     # placeholder if no thumbnail found
-                f="$dir/$themename-thumb.jpg"
-                if [[ $f ]];then
-                    IMGTHUMB="$f"
+                IMGTHUMB="$dir/$themename-thumb.jpg"
+                if [[ -r $IMGTHUMB ]];then
+                    thumbsARR[$i]="$IMGTHUMB"
+                else
+                    thumbsARR[$i]='None'     # placeholder if no thumbnail found
                 fi
-                thumbsARR[$i]="$IMGTHUMB"
             fi
             i=$((i+1))
         fi
@@ -1365,10 +1355,8 @@ function restoreSettings(){
                     rm -rf "$FPATH"
                     rm "$FPATH.jpg"
                     echo -e "\n$DIR DELETED"
-                    currentsession=$(cat "$CURSESSION")
-                    fpath=$(basename "$FPATH")
-                    if [[ $currentsession = "$fpath" ]];then
-                        echo "" > "$CURSESSION"
+                    if [[ $(< "$CURSESSION") = "$DIR" ]];then
+                        :> "$CURSESSION"
                     fi
                     restoreSettings
                 else
@@ -1386,10 +1374,8 @@ function restoreSettings(){
                 restoreSettings
                 ;;
             4)  # show screenshot in image viewer
-                SEL=$(echo "$CONFIG" | awk -F'[>|<]' '{print $3}' )
-                if [[ $SEL ]];then
-                    #img="$CONFIGPATH/$SEL.jpg"
-                    img="${FPATH%/*}/$SEL.jpg"
+                if [[ -n $DIR ]];then
+                    img="${FPATH%/*}/$DIR.jpg"
                     $IMGCMD "$img"
                 else
                     $DIALOG --text="Make a selection" 2>/dev/null
