@@ -300,7 +300,7 @@ function Intro(){
         2)  getSet
             restoreSettings
             ;;
-        *)  echo "RETURN ERROR" 2>&1
+        *)  echo "RETURN ERROR" >&2
             ;;
     esac
 }
@@ -353,7 +353,7 @@ function setName(){  # set name of collection, make dir and session settings fil
             "$T$MSG2" \
             2>/dev/null
             RET=$?
-            echo -e "\n  No name entered for new collection!" 2>&1
+            echo -e "\n  No name entered for new collection!" >&2
             if (( RET == 0 ));then
                 continue
             else
@@ -417,7 +417,7 @@ function getBg(){    # find if feh or nitrogen was used. Save config file(s)
     elif [[ -e $NITROFILE ]] &&  [[ ! -e $FEHFILE ]];then    # use nitrogen for background
         BGSET="NITROGEN"
     else
-        echo -e "\n  No background-setting application found" 2>&1
+        echo -e "\n  No background-setting application found" >&2
         BGSET="None"
     fi
     echo -e "\n  Background to be set with $BGSET"
@@ -432,10 +432,10 @@ function getBg(){    # find if feh or nitrogen was used. Save config file(s)
                     echo -e "\n  Saved Nitrogen file: $NITROFILE"
                     getNitrogen
                     ;;
-        None    )   echo -e "\n  No background-setting application found" 2>&1
+        None    )   echo -e "\n  No background-setting application found" >&2
                     echo "[BACKGROUND] $BGSET" >> "$SETTINGS"
                     ;;
-        *       )   echo -e "\n  ERROR: No background config found" 2>&1
+        *       )   echo -e "\n  ERROR: No background config found" >&2
                     exit 1
                     ;;
     esac
@@ -453,7 +453,7 @@ function getFeh(){    # get Feh saved backgrounds
         echo -e "\t$BG"
         echo -e "Background set with feh:\n\t$BG" >> "$LISTMSG"
     else
-        echo -e "\n  $FFILE not found" 2>&1
+        echo -e "\n  $FFILE not found" >&2
     fi
 }
 
@@ -469,7 +469,7 @@ function getNitrogen(){  # get Nitrogen saved backgrounds
         echo -e "\t$BG"
         echo -e "Background set with nitrogen:\n\t$BG" >> "$LISTMSG"
     else
-        echo -e "\n  $NFILE not found" 2>&1
+        echo -e "\n  $NFILE not found" >&2
     fi
 }
 
@@ -903,10 +903,10 @@ function restoreGTK(){   # arg is chosen saved config dir
                     echo -e "\n  Restored: ${GTKSAVED[i]}"
                 fi
             else
-                echo -e "\n  Restore path ${GTKPATHS[i]} not found" 2>&1
+                echo -e "\n  Restore path ${GTKPATHS[i]} not found" >&2
             fi
         else
-            echo -e "\n  ${GTKSAVED[i]} not found" 2>&1
+            echo -e "\n  ${GTKSAVED[i]} not found" >&2
         fi
         i=$((i+1))
     done
@@ -1071,11 +1071,11 @@ function restoreLightdm(){   # need sudo to restore lightdm-gtk-greeter.conf
                     break
                     ;;
             255 )   MSG="  Authentication cancelled\n\nlightdm-gtk-greeter.conf was not restored"
-                    echo -e "\n  $MSG" 2>&1
+                    echo -e "\n  $MSG" >&2
                     break
                     ;;
             *   )   MSG="  Password input failed\n\nlightdm-gtk-greeter.conf was not restored"
-                    echo -e "\n  $MSG" 2>&1
+                    echo -e "\n  $MSG" >&2
                     $DIALOG --image="dialog-warning" "$T$MSG" "$OK" 2>/dev/null
                     ;;
         esac
@@ -1231,7 +1231,7 @@ function saveSettings(){
                                         ;;
                         "$PICKX"    )   getXconfig
                                         ;;
-                        *           )   echo -e "\n  Unknown value!" 2>&1
+                        *           )   echo -e "\n  Unknown value!" >&2
                                         exit 1
                                         ;;
                     esac
@@ -1401,7 +1401,7 @@ function restoreSettings(){
             *)  if (( RET == 252 ));then
                     echo -e "\n  Exited with \"ESC\" key"
                 else
-                    echo -e "\n  Error= $RET" 2>&1
+                    echo -e "\n  Error= $RET" >&2
                 fi
                 exit 1
                 ;;
@@ -1463,7 +1463,7 @@ function restoreSettings(){
                                 ;;
             "[TERMINATOR]"  )   restoreTerminator "$FPATH/config"
                                 ;;
-            *               )   echo -e "  Unknown value!" 2>&1
+            *               )   echo -e "  Unknown value!" >&2
                                 restoreSettings
                                 ;;
         esac
