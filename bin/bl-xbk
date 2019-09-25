@@ -1,0 +1,85 @@
+#!/bin/bash
+# bl-xbk a script to parse xbindkeys keybindings
+#    Copyright 2019  John Crawley    <john@bunsenlabs.org>
+#              2019  Johan Malm    <jgm323@gmail.com>
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+XBKPATH="$HOME/.xbindkeysrc"
+USR_CACHE_DIR="$HOME/.cache/bunsen"
+KBTEXT="$USR_CACHE_DIR/kbinds.txt"
+mkdir -p "$USR_CACHE_DIR"
+
+HELP='bl-xbk a script to parse xbindkeys keybindings
+
+Usage:
+bl-xbk [--xbindkeys-rc <file>] [--kbinds-text <file>]
+
+Parse xbindkeys config file and output the formatted result to a text file.
+
+Optional arguments:
+    -h|--help   show this help message and exit
+    --xbindkeys-rc <config file> Path to file holding keybindings
+        ( Default: HOME/.xbindkeysrc )
+    --kbinds-text <output file> Path to file to output result
+        ( Default: HOME/.cache/bunsen/kbinds.txt )
+'
+
+while [[ -n ${1:-} ]]
+do
+    case $1 in
+    -h|--help)
+        echo "$HELP"
+        exit 0
+        ;;
+    --xbindkeys-rc)
+        XBKPATH="$2"
+        shift 2
+        ;;
+    --kbinds-text)
+        KBTEXT="$2"
+        shift 2
+        ;;
+    esac
+done
+
+echo $'\n#### xbindkeys keybinds ####\n' >> "$KBTEXT"
+
+format_keys(){
+    [[ $key =~ ^[[:blank:]]*(.*) ]]
+    key=${BASH_REMATCH[1]}
+    key=${key//Alt/A}
+    key=${key//Control/C}
+    key=${key//Shift/S}
+    key=${key//Mod4/W}
+    key=${key// + /-}
+    key=${key//+/-}
+}
+
+mapfile -t lines < "$XBKPATH"
+
+for i in "${!lines[@]}"; do
+
+    # Ignore anything that doesn't begin with a double quote
+    [[ ${lines[i]} = \"* ]] || continue
+    [[ ${lines[i]} =~ ^\"(.*)\"$ ]] || continue
+    cmd=${BASH_REMATCH[1]} # remove outside quotes
+    cmd="${cmd//\\\"/\"}" # unescape quotes if necessary
+    key=${lines[i+1]}
+    format_keys
+    label=${lines[i-1]}
+    [[ $label = \#* ]] && printf '%s\n' "$label" >> "$KBTEXT"
+    printf '%-2s\t%-16s\t%s\n' 'x' "$key" "$cmd" >> "$KBTEXT"
+
+done
