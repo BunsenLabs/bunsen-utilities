@@ -141,7 +141,7 @@ done
 IMGCMD="bl-image-viewer"    # application command to view screenshot
 MENUMODIFIER="super+space"  # keybind for show root-menu
 MOUSECMD="click 3"          # mouse r-click
-KEYDOWN=13           # adjust this for where "Preferences" is in the menu
+KEYDOWN=11           # adjust this for where "Preferences" is in the menu
 
 ### GLOBALS
 USRCONFIGPATH="$HOME/.config/blob"
@@ -161,8 +161,10 @@ NUMDIRS=0
 # packages needed for particular GTK themes
 declare -A theme_pkgs=(
 [Beam]=bunsen-themes
-[Bunsen-He]=bunsen-themes
-[Bunsen-Dark-He]=bunsen-themes
+[Beam-HiDPI]=bunsen-themes
+[BL-Fever_Room]=bunsen-themes
+[BL-Lithium]=bunsen-themes
+[BL-Lithium-light]=bunsen-themes
 [Bunsen-He-flatish]=bunsen-themes
 )
 
