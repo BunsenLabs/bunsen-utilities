@@ -144,9 +144,9 @@ MOUSECMD="click 3"          # mouse r-click
 KEYDOWN=13           # adjust this for where "Preferences" is in the menu
 
 ### GLOBALS
-CONFIGPATH="$HOME/.config/blob"
+USRCONFIGPATH="$HOME/.config/blob"
 SYSCONFIGPATH="/usr/share/bunsen/utilities/blob"
-CURSESSION="$CONFIGPATH/current"
+CURSESSION="$USRCONFIGPATH/current"
 OBPATH="$HOME/.config/openbox"
 RCFILE="$OBPATH/bl-rc.xml" # NB now using the new BunsenLabs file name
 
@@ -308,7 +308,7 @@ function getSet(){      # get name of currently set BLOB config
     local dirs
     NUMDIRS=0
     shopt -s nullglob
-    dirs=( "$CONFIGPATH"/*/ "$SYSCONFIGPATH"/*/ )
+    dirs=( "$USRCONFIGPATH"/*/ "$SYSCONFIGPATH"/*/ )
     NUMDIRS=${#dirs[@]}
     shopt -u nullglob
     if (( NUMDIRS == 0 ));then
@@ -334,7 +334,7 @@ function getActiveMonitorDimensions(){   # set width and height for View dialog
 # sets globals CONFIGDIR SETTINGS LISTMSG for storing new theme
 function setName(){  # set name of collection, make dir and session settings file
     MSG="  Configurations will be saved to a new directory in  \
-    \n  $CONFIGPATH\n\n  Enter name of new collection...  "
+    \n  $USRCONFIGPATH\n\n  Enter name of new collection...  "
     MSG2="  No file specified for new saved session.\n\n  Try again?"
     LOOP=1
     DEL=0
@@ -359,7 +359,7 @@ function setName(){  # set name of collection, make dir and session settings fil
             fi
         else
             ANS=${ANS// /_}    # replace any spaces in dir name
-            CONFIGDIR="$CONFIGPATH/$ANS"
+            CONFIGDIR="$USRCONFIGPATH/$ANS"
             if [[ -d $CONFIGDIR ]];then
                 echo -e "\n  $CONFIGDIR already exists"
 
@@ -751,7 +751,7 @@ function getScrot(){
     local conkyFLAG currDESKTOP
     conkyFLAG=1
     currDESKTOP=$(xprop -root _NET_CURRENT_DESKTOP | tail -c -2)
-    SCROT="$CONFIGPATH/$ANS"
+    SCROT="$USRCONFIGPATH/$ANS"
     MONS=$(xrandr -q | grep -c " connected")    # number of monitors
     # set mouse position, for appearance of root-menu
     screenW=$(xrandr -q | awk '/Screen/ {print $8}')
@@ -793,7 +793,7 @@ function getScrot(){
 
     # take scrot
     scrot -t 9 "$SCROT.jpg"    # scrot thumbnail @9% fullsize
-    THUMB=$(find "$CONFIGPATH" -maxdepth 1 -type f -name "*-thumb.jpg" 2>/dev/null)
+    THUMB=$(find "$USRCONFIGPATH" -maxdepth 1 -type f -name "*-thumb.jpg" 2>/dev/null)
     mv "$THUMB" "$CONFIGDIR"
 
     # close root menu
@@ -1266,7 +1266,7 @@ function ViewRestoreDialog(){   # list saved theme collections for yad as DLGLIS
     declare -A uniqnames # hide duplicate directories
     DLGLIST=""
     i=0
-    for dir in "$CONFIGPATH"/* "$SYSCONFIGPATH"/* ;do
+    for dir in "$USRCONFIGPATH"/* "$SYSCONFIGPATH"/* ;do
         if [[ -d $dir ]];then
             if [[ -e $dir/settings.cfg ]];then
                 themename="${dir##*/}" # strip path
@@ -1320,9 +1320,9 @@ function restoreSettings(){
         if [[ $CONFIG =~ '<big>'(.+)'</big>' ]];then
             DIR=${BASH_REMATCH[1]}
              # If same name found, user directory will take precedence.
-            if [[ -d "$CONFIGPATH/$DIR" ]]
+            if [[ -d "$USRCONFIGPATH/$DIR" ]]
             then
-                FPATH="$CONFIGPATH/$DIR"
+                FPATH="$USRCONFIGPATH/$DIR"
             elif [[ -d "$SYSCONFIGPATH/$DIR" ]]
             then
                 FPATH="$SYSCONFIGPATH/$DIR"
@@ -1479,7 +1479,7 @@ if [[ $( id -u ) -eq 0 ]]; then
 fi
 
 # test for blobthemes config directory, create if it doesn't exist
-mkdir -p "$CONFIGPATH"
+mkdir -p "$USRCONFIGPATH"
 
 # create file to hold most recent saved configuration name
 if [[ ! -f $CURSESSION ]] &>/dev/null;then
