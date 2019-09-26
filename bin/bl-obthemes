@@ -149,11 +149,7 @@ SYSCONFIGPATH="/usr/share/bunsen/utilities/blob"
 CURSESSFILE="$USRCONFIGPATH/current"
 OBPATH="$HOME/.config/openbox"
 RCFILE="$OBPATH/bl-rc.xml" # NB now using the new BunsenLabs file name
-
-# globals set by setName() for storing current settings as theme
-CONFIGDIR=""
-SETTINGS=""
-LISTMSG=""
+OLDRCFILE="$OBPATH/rc.xml"
 
 # packages needed for particular GTK themes
 declare -A theme_pkgs=(
@@ -330,20 +326,20 @@ function getActiveMonitorDimensions(){   # set width and height for View dialog
     }
 }
 
-# sets globals CONFIGDIR SETTINGS LISTMSG for storing new theme
+# sets globals CONFIGDIR SETTINGS LISTMSG NEWNAME for storing new theme
 function setName(){  # set name of collection, make dir and session settings file
     MSG="  Configurations will be saved to a new directory in  \
     \n  $USRCONFIGPATH\n\n  Enter name of new collection...  "
     MSG2="  No file specified for new saved session.\n\n  Try again?"
     DEL=0
     while true;do  # loop dialog if nothing is selected
-        ANS=$($DIALOG --entry \
+        NEWNAME=$($DIALOG --entry \
             $CANCEL --button="OK:0" \
             "$T$MSG" \
             2>/dev/null )
         if (( $? == 1 )) ;then # Cancel was selected
             Intro
-        elif [[ ! $ANS ]] ;then     # entry was empty
+        elif [[ ! $NEWNAME ]] ;then     # entry was empty
             $DIALOG --image="dialog-question" \
             "$CANCEL" "$OK" \
             "$T$MSG2" \
@@ -356,8 +352,8 @@ function setName(){  # set name of collection, make dir and session settings fil
                 Intro
             fi
         else
-            ANS=${ANS// /_}    # replace any spaces in dir name
-            CONFIGDIR="$USRCONFIGPATH/$ANS"
+            NEWNAME=${NEWNAME// /_}    # replace any spaces in dir name
+            CONFIGDIR="$USRCONFIGPATH/$NEWNAME"
             if [[ -d $CONFIGDIR ]];then
                 echo -e "\n  $CONFIGDIR already exists"
 
@@ -389,10 +385,10 @@ function setName(){  # set name of collection, make dir and session settings fil
     else
         TXT=""
     fi
-    echo -e "\n  Configuration will be saved as: $ANS$TXT"
+    echo -e "\n  Configuration will be saved as: $NEWNAME$TXT"
 
 #     store list in listfile
-    echo -e "<b>Configuration name: $ANS</b>\t$TXT\nSaved at $TIME\n" >> "$LISTMSG"
+    echo -e "<b>Configuration name: $NEWNAME</b>\t$TXT\nSaved at $TIME\n" >> "$LISTMSG"
 }
 
 function getBg(){    # find if feh or nitrogen was used. Save config file(s)
@@ -515,7 +511,8 @@ function getConky(){
 
         for id in "${!arrSTICKY[@]}";do  # get commands - we don't need wmctrl for these
             if ! [[ -z "$id" ]];then
-                CONKYCMD=$(getConkyCmd "$id")
+                getIdCmd "$id" # generates array idCmd
+                CONKYCMD=${idCmd[*]} # NB now in string, filepaths with spaces will be broken.
                 if [[ "$CONKYCMD" == "conky" ]] || [[ "$CONKYCMD" == "conky -q" ]];then
                     CONKYTXT="$CONKYTXT\n\tDefault Conky"
                 else
@@ -575,6 +572,7 @@ function getTint(){
 }
 
 function getOBtheme(){   # copy <theme> section from rc.xml to obtheme.txt
+    [[ -r $RCFILE ]] || RCFILE="$OLDRCFILE"
     tag="theme"
     sed -n "/<$tag>/,/<\/$tag>/p" "$RCFILE" > "$CONFIGDIR/obtheme.txt"
     getOBname
@@ -740,10 +738,10 @@ function getWINDOWS(){  # Minimize/Activate windows for scrot. Args= 'min', 'rai
 }
 
 function getScrot(){
-    local conkyFLAG currDESKTOP
+    local conkyFLAG currDESKTOP SCROT
     conkyFLAG=1
     currDESKTOP=$(xprop -root _NET_CURRENT_DESKTOP | tail -c -2)
-    SCROT="$USRCONFIGPATH/$ANS"
+    SCROT="$USRCONFIGPATH/$NEWNAME/${NEWNAME}.jpg"
     MONS=$(xrandr -q | grep -c " connected")    # number of monitors
     # set mouse position, for appearance of root-menu
     screenW=$(xrandr -q | awk '/Screen/ {print $8}')
@@ -784,9 +782,7 @@ function getScrot(){
     xdotool key --delay 20 Right && sleep 0.3
 
     # take scrot
-    scrot -t 9 "$SCROT.jpg"    # scrot thumbnail @9% fullsize
-    THUMB=$(find "$USRCONFIGPATH" -maxdepth 1 -type f -name "*-thumb.jpg" 2>/dev/null)
-    mv "$THUMB" "$CONFIGDIR"
+    scrot -t 9 "$SCROT"    # scrot thumbnail @9% fullsize
 
     # close root menu
     xdotool mousemove_relative --sync --polar 0 10 $MOUSECMD
@@ -921,6 +917,7 @@ function checkOBTHEME(){
 function restoreOBrc(){
     THEMEFILE="$1/obtheme.txt"
     FTEMP=$(mktemp --tmpdir blob.XXXX)
+    [[ -r $RCFILE ]] || RCFILE="$OLDRCFILE"
     if grep -q '[OBTHEME]' "$1/settings.cfg" ;then
         # backup bl-rc.xml first
         NOW=$(date +"%Y%m%d-%H%M%S")
@@ -1339,7 +1336,6 @@ function restoreSettings(){
 
                 if (( $? == 0 ));then
                     rm -rf "$themepath"
-                    rm "$themepath.jpg"
                     echo -e "\n$themename DELETED"
                     if [[ $(< "$CURSESSFILE") = "$themename" ]];then
                         :> "$CURSESSFILE"
@@ -1352,7 +1348,7 @@ function restoreSettings(){
             3)  setName
                 saveSettings
                 getScrot
-                $DIALOG --text="Settings were saved as <b>$ANS</b>" --image="gtk-save" "$OK" 2>/dev/null
+                $DIALOG --text="Settings were saved as <b>$NEWNAME</b>" --image="gtk-save" "$OK" 2>/dev/null
                 if [[ -d $CONFIGDIR_BKP ]];then
                     rm -rf "$CONFIGDIR_BKP"
                     echo -e "\n  Temporary $CONFIGDIR deleted\n"
@@ -1361,7 +1357,14 @@ function restoreSettings(){
                 ;;
             4)  # show screenshot in image viewer
                 if [[ -n $themename ]];then
-                    img="${themepath%/*}/$themename.jpg"
+                    if [[ -r "$themepath/${themename}.jpg" ]]; then
+                        img="$themepath/${themename}.jpg"
+                    elif [[ -r "${themepath%/*}/${themename}.jpg" ]]; then
+                        img="${themepath%/*}/${themename}.jpg"
+                    else
+                        echo "$0: No screenshot ${themename}.jpg found" >&2
+                        continue
+                    fi
                     $IMGCMD "$img"
                 else
                     $DIALOG --text="Make a selection" 2>/dev/null
