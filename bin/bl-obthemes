@@ -378,7 +378,6 @@ function setName(){  # set name of collection, make dir and session settings fil
             break
         fi
     done
-
     TIME=$(date)
     if (( DEL == 1 ));then
         TXT="  (Existing session overwritten)"
@@ -1130,45 +1129,46 @@ function cleanup(){
 }
 
 function saveSettings(){
-    SHOW=0
-    if (( COLS == 0 ));then
-        SELECT="FALSE"
-    else
-        SELECT="TRUE"
-    fi
-    COLUMNS=(
-        "$SELECT" "$PICKOB"
-        "$SELECT" "$PICKGTK"
-        "$SELECT" "$PICKBG"
-        "$SELECT" "$PICKCONKY"
-        "$SELECT" "$PICKTINT"
-        "$SELECT" "$PICKDMENU"
-        #"$SELECT" "$PICKLDM"
-        "$SELECT" "$PICKEXIT"
-        "$SELECT" "$PICKX"
-        )
-    # add terminator to array if set as default
-    if  readlink -f /usr/bin/x-terminal-emulator | grep terminator &>/dev/null;then
-        COLUMNS+=("$SELECT" "$PICKTERM")
-    fi
-    SLOOP=1
-    while (( SLOOP == 1 ));do
+    local cols columns show
+    show=0
+#    SLOOP=1
+#    while (( SLOOP == 1 ));do
+    while true;do
+        if (( cols == 0 ));then
+            SELECT="FALSE"
+        else
+            SELECT="TRUE"
+        fi
+        columns=(
+            "$SELECT" "$PICKOB"
+            "$SELECT" "$PICKGTK"
+            "$SELECT" "$PICKBG"
+            "$SELECT" "$PICKCONKY"
+            "$SELECT" "$PICKTINT"
+            "$SELECT" "$PICKDMENU"
+            #"$SELECT" "$PICKLDM"
+            "$SELECT" "$PICKEXIT"
+            "$SELECT" "$PICKX"
+            )
+        # add terminator to array if set as default
+        if  readlink -f /usr/bin/x-terminal-emulator | grep terminator &>/dev/null;then
+            columns+=("$SELECT" "$PICKTERM")
+        fi
         CHOICE=$($DIALOGDEC --list --checklist \
             --title="Choose the configs to save..." \
             --button="Select All:2" \
             $CANCEL $OK \
             --height=340 \
-            --column="Select" --column="Config" "${COLUMNS[@]}" \
+            --column="Select" --column="Config" "${columns[@]}" \
             2>/dev/null )
             ret=$?
         if (( ret == 1 )); then # cancel button pressed
-            COLS=0
+            cols=0
             cleanup all
             restoreSettings
         elif (( ret == 2 ));then
-            COLS=1
-            saveSettings
-            SHOW=1
+            cols=1
+            continue
         else
             if [[ ! $CHOICE ]] ; then # entry field is empty, so try again
                 RET=$($DIALOG  --image="dialog-question" \
@@ -1178,6 +1178,7 @@ function saveSettings(){
                 2>/dev/null )
                 if (( $? == 1 ));then
                     cleanup all
+                    exit 0
                 fi
             else
                 i=0
@@ -1220,12 +1221,10 @@ function saveSettings(){
                                         ;;
                     esac
                 done
-                SLOOP=0
+                break
             fi
         fi
     done
-    if (( SHOW == 0 ));then
-        COLS=0      # reset columns unselected
         TXT="<big><b><u>Openbox Configurations to be saved:</u></b></big>\n\n"
         TXT2=$(cat "$LISTMSG")
         $DIALOG --text="$TXT$TXT2"
@@ -1234,9 +1233,8 @@ function saveSettings(){
             cleanup all
             restoreSettings
         else
-            echo "$ANS" > "$CURSESSFILE"     # replace entry in saved config flag file
+            echo "$NEWNAME" > "$CURSESSFILE"     # replace entry in saved config flag file
         fi
-    fi
 }
 
 # $CURRENTSESSION from getCurrent()
