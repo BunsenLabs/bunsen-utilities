@@ -146,7 +146,7 @@ KEYDOWN=11           # adjust this for where "Preferences" is in the menu
 ### GLOBALS
 USRCONFIGPATH="$HOME/.config/blob"
 SYSCONFIGPATH="/usr/share/bunsen/utilities/blob"
-CURSESSION="$USRCONFIGPATH/current"
+CURSESSFILE="$USRCONFIGPATH/current"
 OBPATH="$HOME/.config/openbox"
 RCFILE="$OBPATH/bl-rc.xml" # NB now using the new BunsenLabs file name
 
@@ -154,9 +154,6 @@ RCFILE="$OBPATH/bl-rc.xml" # NB now using the new BunsenLabs file name
 CONFIGDIR=""
 SETTINGS=""
 LISTMSG=""
-
-# set by getSet() - number of stored themes
-NUMDIRS=0
 
 # packages needed for particular GTK themes
 declare -A theme_pkgs=(
@@ -265,9 +262,26 @@ function safeKill() {
     pkill -x -u "$USER" "$1"
 }
 
+# sets globals NUMDIRS and CURRENTSESSION
+function getCurrent(){      # get name of currently set BLOB config
+    local dirs
+    NUMDIRS=0
+    shopt -s nullglob
+    dirs=( "$USRCONFIGPATH"/*/ "$SYSCONFIGPATH"/*/ )
+    NUMDIRS=${#dirs[@]}
+    shopt -u nullglob
+    if (( NUMDIRS == 0 ));then
+        if [[ -f $CURSESSFILE ]];then
+            rm "$CURSESSFILE"
+        fi
+    elif (( NUMDIRS > 0 )) && [[ -f $CURSESSFILE ]];then
+        CURRENTSESSION=$(< "$CURSESSFILE")
+    fi
+}
+
 function Intro(){
     local RET
-    getSet
+    getCurrent
     #  if blob/ is empty, then don't display "View Saved" option in Intro dialog
     if (( NUMDIRS > 0 ));then
         $DIALOGDEC "$T$TXTINTRO" \
@@ -297,29 +311,12 @@ function Intro(){
         1)  echo "CANCELLED..."
             exit 0
             ;;
-        2)  getSet
+        2)  getCurrent
             restoreSettings
             ;;
         *)  echo "RETURN ERROR" >&2
             ;;
     esac
-}
-
-# sets globals NUMDIRS and SET
-function getSet(){      # get name of currently set BLOB config
-    local dirs
-    NUMDIRS=0
-    shopt -s nullglob
-    dirs=( "$USRCONFIGPATH"/*/ "$SYSCONFIGPATH"/*/ )
-    NUMDIRS=${#dirs[@]}
-    shopt -u nullglob
-    if (( NUMDIRS == 0 ));then
-        if [[ -f $CURSESSION ]];then
-            rm "$CURSESSION"
-        fi
-    elif (( NUMDIRS > 0 )) && [[ -f $CURSESSION ]];then
-        SET=$(< "$CURSESSION")
-    fi
 }
 
 function getActiveMonitorDimensions(){   # set width and height for View dialog
@@ -949,7 +946,7 @@ function restoreOBrc(){
     fi
 }
 
-function restoreConky(){    # arg = $VAL from $SETCFG in restoreSettings()
+function restoreConky(){    # arg = $VAL from $themesettings in restoreSettings()
     local currDESKTOP CONKYCMD
     currDESKTOP=$(xprop -root _NET_CURRENT_DESKTOP | tail -c -2)   # Conkys may have been started on different desktops
     CONKYCMD="$1"
@@ -971,7 +968,7 @@ function restoreConky(){    # arg = $VAL from $SETCFG in restoreSettings()
     wmctrl -s "$currDESKTOP" && sleep 1 # return to desktop that BLOB was started on, if conkys used 'wmctrl -s'
 }
 
-function restoreTint2(){    # arg = $VAL from $SETCFG in restoreSettings()
+function restoreTint2(){    # arg = $VAL from $themesettings in restoreSettings()
     TINTCMD="${VAL//;/$'\n'}"
     if type bl-tint2zen >/dev/null;then    # see if bl-tint2zen is installed
         if [[ -f $TINTSESSION ]] 2>/dev/null; then
@@ -1020,7 +1017,7 @@ function restoreDmenu(){
     fi
 }
 
-# $1 is path to theme config dir, from $FPATH by restoreSettings()
+# $1 is path to theme config dir, from $themepath by restoreSettings()
 # $NOW is global, set by restoreSettings()
 function restoreBLexitrc(){
     local CONFPATH=$1
@@ -1240,23 +1237,20 @@ function saveSettings(){
             cleanup all
             restoreSettings
         else
-            echo "$ANS" > "$CURSESSION"     # replace entry in saved config flag file
+            echo "$ANS" > "$CURSESSFILE"     # replace entry in saved config flag file
         fi
     fi
 }
 
-# $SET from getSet()
+# $CURRENTSESSION from getCurrent()
 function ViewRestoreDialog(){   # list saved theme collections for yad as DLGLIST
-    getSet                      # get name of latest set BLOB config
+    getCurrent                      # get name of latest set BLOB config
     if (( NUMDIRS == 0 ));then  # no saved configs; go back to Intro dialog
         Intro
     fi
-    local themename IMGTHUMB
-    declare -a setARR=()
-    declare -a namesARR=()
-    declare -a thumbsARR=()
+    local seticon themename thumbnail
     declare -A uniqnames # hide duplicate directories
-    DLGLIST=""
+    DLGARR=()
     i=0
     for dir in "$USRCONFIGPATH"/* "$SYSCONFIGPATH"/* ;do
         if [[ -d $dir ]];then
@@ -1265,34 +1259,26 @@ function ViewRestoreDialog(){   # list saved theme collections for yad as DLGLIS
                 themename=${themename// /_}   # replace any spaces in dir name
                 [[ "${uniqnames["$themename"]}" = 'found' ]] && continue
                 uniqnames["$themename"]='found'
-                namesARR[$i]="<big>$themename</big>" # add theme collection name to array
                 # get name of current session, set icon for TRUE/FALSE
-                if [[ $SET = "$themename" ]];then
-                    setARR[$i]="gtk-yes"
+                if [[ $CURRENTSESSION = "$themename" ]];then
+                    seticon="gtk-yes"
                 elif [[ "$dir" = "$SYSCONFIGPATH"/* ]]; then
-                    setARR[$i]="system"
+                    seticon="system"
                 else
-                    setARR[$i]="gtk-home"
+                    seticon="gtk-home"
                 fi
-                IMGTHUMB="$dir/$themename-thumb.jpg"
-                if [[ -r $IMGTHUMB ]];then
-                    thumbsARR[$i]="$IMGTHUMB"
-                else
-                    thumbsARR[$i]='None'     # placeholder if no thumbnail found
-                fi
+                thumbnail="$dir/$themename-thumb.jpg"
+                [[ -r $thumbnail ]] || thumbnail='None'     # placeholder if no thumbnail found
+                DLGARR+=( "$seticon" "<big>$themename</big>" "$thumbnail" )
             fi
             i=$((i+1))
         fi
     done
-    for ((j=0; j<${#namesARR[*]}; j++));do
-        DLGLIST="$DLGLIST ${setARR[j]} ${namesARR[j]} ${thumbsARR[j]}"
-    done
 }
 
 function restoreSettings(){
+    local DLGARR themepath themesettings themename
     ViewRestoreDialog # generates DLGLIST
-    local FPATH=''
-    local SETCFG=''
     while true ;do
         CONFIG=$($DIALOGDEC --list --title="$TITLE" \
             --text="Double-click selection, or \"Enter\", or use the \"Restore\" button to restore settings\n" \
@@ -1306,27 +1292,27 @@ function restoreSettings(){
             --column="Last Set:IMG" \
             --column="Config Name":TEXT \
             --column="Screenshot":IMG \
-            $DLGLIST \
+            "${DLGARR[@]}" \
             2>/dev/null )
         RET=$?
         if [[ $CONFIG =~ '<big>'(.+)'</big>' ]];then
-            DIR=${BASH_REMATCH[1]}
+            themename=${BASH_REMATCH[1]}
              # If same name found, user directory will take precedence.
-            if [[ -d "$USRCONFIGPATH/$DIR" ]]
+            if [[ -d "$USRCONFIGPATH/$themename" ]]
             then
-                FPATH="$USRCONFIGPATH/$DIR"
-            elif [[ -d "$SYSCONFIGPATH/$DIR" ]]
+                themepath="$USRCONFIGPATH/$themename"
+            elif [[ -d "$SYSCONFIGPATH/$themename" ]]
             then
-                FPATH="$SYSCONFIGPATH/$DIR"
+                themepath="$SYSCONFIGPATH/$themename"
             fi
         fi
         case $RET in
-            0)  SAVED="$FPATH/LISTMSG.txt"
+            0)  SAVED="$themepath/LISTMSG.txt"
                 TEXT="Restoring Configs saved as $CONFIG\n\n"
                 TEXT="$TEXT$(< "$SAVED")"
                 $DIALOG "$T$TEXT" "$CANCEL" "$OK" 2>/dev/null
                 if (( $? == 0 ));then
-                    echo "$DIR" > "$CURSESSION"
+                    echo "$themename" > "$CURSESSFILE"
                     break
                 fi
                 ;;
@@ -1341,22 +1327,22 @@ function restoreSettings(){
                     fi
                 fi
 
-                SYSDIRTXT="Sorry, system preset theme <b>${DIR}</b> cannot be deleted"
-                if [[ "${FPATH%/*}" = "$SYSCONFIGPATH" ]]
+                SYSDIRTXT="Sorry, system preset theme <b>${themename}</b> cannot be deleted"
+                if [[ "${themepath%/*}" = "$SYSCONFIGPATH" ]]
                 then
                     $DIALOG --image="dialog-warning" "$T$SYSDIRTXT" "$CLOSE" 2>/dev/null
                     continue
                 fi
 
-                TEXT="Delete saved configurations <b>$FPATH</b>\nand screenshot?"
+                TEXT="Delete saved configurations <b>$themepath</b>\nand screenshot?"
                 $DIALOG "$T$TEXT" "$CANCEL" "$OK" 2>/dev/null
 
                 if (( $? == 0 ));then
-                    rm -rf "$FPATH"
-                    rm "$FPATH.jpg"
-                    echo -e "\n$DIR DELETED"
-                    if [[ $(< "$CURSESSION") = "$DIR" ]];then
-                        :> "$CURSESSION"
+                    rm -rf "$themepath"
+                    rm "$themepath.jpg"
+                    echo -e "\n$themename DELETED"
+                    if [[ $(< "$CURSESSFILE") = "$themename" ]];then
+                        :> "$CURSESSFILE"
                     fi
                     restoreSettings
                 else
@@ -1374,8 +1360,8 @@ function restoreSettings(){
                 restoreSettings
                 ;;
             4)  # show screenshot in image viewer
-                if [[ -n $DIR ]];then
-                    img="${FPATH%/*}/$DIR.jpg"
+                if [[ -n $themename ]];then
+                    img="${themepath%/*}/$themename.jpg"
                     $IMGCMD "$img"
                 else
                     $DIALOG --text="Make a selection" 2>/dev/null
@@ -1393,7 +1379,7 @@ function restoreSettings(){
                 ;;
         esac
     done
-    SETCFG="$FPATH/settings.cfg"
+    themesettings="$themepath/settings.cfg"
     NOW=$(date +"%Y%m%d-%H%M%S") # global: restore functions will inherit
     # get chosen saved configs and restore them
     # kill conkys and tint2s, in case saved config doesn't include them
@@ -1423,37 +1409,37 @@ function restoreSettings(){
             "[GTK]"         )   if [[ $VAL ]];then
                                     checkGTK "$VAL"
                                 fi
-                                restoreGTK "$FPATH"
+                                restoreGTK "$themepath"
                                 reloadGTK
                                 ;;
             "[OBTHEME]"     )   if [[ $VAL ]];then
                                     checkOBTHEME "$VAL"
                                 fi
-                                restoreOBrc "$FPATH"
+                                restoreOBrc "$themepath"
                                 ;;
             "[BACKGROUND]"  )   if [[ $VAL = FEH ]];then
-                                    cp "$FPATH/.fehbg" "$HOME"
+                                    cp "$themepath/.fehbg" "$HOME"
                                     source "$HOME/.fehbg"
                                 else
-                                    cp "$FPATH/bg-saved.cfg" "$NITRODIR"
+                                    cp "$themepath/bg-saved.cfg" "$NITRODIR"
                                     nitrogen --restore
                                 fi
                                 ;;
-            "[DMENU]"       )   restoreDmenu "$FPATH/$DMENU"
+            "[DMENU]"       )   restoreDmenu "$themepath/$DMENU"
                                 ;;
-            "[LIGHTDM]"     )   echo "Lightdm settings not supported at this time" #restoreLightdm "$FPATH/$LDM"
+            "[LIGHTDM]"     )   echo "Lightdm settings not supported at this time" #restoreLightdm "$themepath/$LDM"
                                 ;;
-            "[EXITRC]"      )   restoreBLexitrc "$FPATH"
+            "[EXITRC]"      )   restoreBLexitrc "$themepath"
                                 ;;
-            "[XFILES]"      )   echo ".bashrc will not be overwritten: a copy is in $FPATH/.bashrc"; restoreXsettings "$FPATH/.Xresources" #"$FPATH/.bashrc" # do not restore .bashrc for now
+            "[XFILES]"      )   echo ".bashrc will not be overwritten: a copy is in $themepath/.bashrc"; restoreXsettings "$themepath/.Xresources" #"$themepath/.bashrc" # do not restore .bashrc for now
                                 ;;
-            "[TERMINATOR]"  )   restoreTerminator "$FPATH/config"
+            "[TERMINATOR]"  )   restoreTerminator "$themepath/config"
                                 ;;
             *               )   echo -e "  Unknown value!" >&2
                                 restoreSettings
                                 ;;
         esac
-    done < "$SETCFG"
+    done < "$themesettings"
     openbox --reconfigure
     restoreSettings
 }
@@ -1470,8 +1456,8 @@ fi
 mkdir -p "$USRCONFIGPATH"
 
 # create file to hold most recent saved configuration name
-if [[ ! -f $CURSESSION ]] &>/dev/null;then
-    touch "$CURSESSION"
+if [[ ! -f $CURSESSFILE ]];then
+    touch "$CURSESSFILE"
 fi
 
 getActiveMonitorDimensions
