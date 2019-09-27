@@ -569,7 +569,9 @@ function getOBtheme(){   # copy <theme> section from rc.xml to obtheme.txt
 
 function getOBname(){    # get Openbox theme name
     OBFILE="$CONFIGDIR/obtheme.txt"
-    OBTHEME=$(awk 'NR==2 {print;exit}' "$OBFILE" | awk -F'[>|<]' '{print $3}')
+#    OBTHEME=$(awk 'NR==2 {print;exit}' "$OBFILE" | awk -F'[>|<]' '{print $3}')
+    # sed command is long, but it's more precise, and a little bit faster than two awk calls
+    OBTHEME=$(sed -nr '/<theme>/ {N;s/^[[:blank:]]*<theme>[[:space:]]*<name>([^<]*)<\/name>.*$/\1/p;q}' "$OBFILE")
     TXT="Openbox theme:  $OBTHEME\n"
     echo -e "\n  Saved $TXT"
     echo "$TXT" >> "$LISTMSG"
@@ -1064,7 +1066,7 @@ function restoreConky(){    # arg = $VAL from $themesettings in restoreSettings(
 }
 
 function restoreTint2(){    # arg = $VAL from $themesettings in restoreSettings()
-    TINTCMD="${VAL//;/$'\n'}"
+    TINTCMD="${1//;/$'\n'}"
     if type bl-tint2zen >/dev/null;then    # see if bl-tint2zen is installed
         if [[ -f $TINTSESSION ]] 2>/dev/null; then
             :> "$TINTSESSION"    # create/overwrite tint2 session file
@@ -1350,6 +1352,7 @@ function restoreSettings(){ # generates global NOW
                     fi
                     ViewRestoreDialog # regenerate list
                 fi
+                continue
                 ;;
             3)  setName
                 saveSettings
