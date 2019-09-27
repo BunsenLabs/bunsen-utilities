@@ -313,16 +313,7 @@ function Intro(){
     esac
 }
 
-function getActiveMonitorDimensions(){   # set width and height for View dialog
-    declare -a dim=()
-    dim=($(bl-xinerama-prop))
-    W=$(( dim[0] / 3 ))
-    H=$(( dim[1] * 2 / 3 ))
-    [[ $W =~ ^[0-9]+$ ]] && [[ $H =~ ^[0-9]+$ ]] || {
-        print 'Error in getActiveMonitorDimensions'
-        exit 1
-    }
-}
+####################### save functions #################################
 
 # sets globals CONFIGDIR SETTINGS LISTMSG NEWNAME for storing new theme
 function setName(){  # set name of collection, make dir and session settings file
@@ -796,6 +787,116 @@ function getScrot(){
     checkTint2 start                # restore any stopped Tint2s
 }
 
+function saveSettings(){
+    local cols columns
+    while true;do
+        if (( cols == 0 ));then
+            SELECT="FALSE"
+        else
+            SELECT="TRUE"
+        fi
+        columns=(
+            "$SELECT" "$PICKOB"
+            "$SELECT" "$PICKGTK"
+            "$SELECT" "$PICKBG"
+            "$SELECT" "$PICKCONKY"
+            "$SELECT" "$PICKTINT"
+            "$SELECT" "$PICKDMENU"
+            #"$SELECT" "$PICKLDM"
+            #"$SELECT" "$PICKEXIT"
+            "$SELECT" "$PICKX"
+            )
+        # add terminator to array if set as default
+        if  readlink -f /usr/bin/x-terminal-emulator | grep terminator &>/dev/null;then
+            columns+=("$SELECT" "$PICKTERM")
+        fi
+        CHOICE=$($DIALOGDEC --list --checklist \
+            --title="Choose the configs to save..." \
+            --button="Select All:2" \
+            $CANCEL $OK \
+            --height=340 \
+            --column="Select" --column="Config" "${columns[@]}" \
+            2>/dev/null )
+            ret=$?
+        if (( ret == 1 )); then # cancel button pressed
+            cols=0
+            cleanup all
+            restoreSettings
+        elif (( ret == 2 ));then
+            cols=1
+            continue
+        else
+            if [[ ! $CHOICE ]] ; then # entry field is empty, so try again
+                RET=$($DIALOG  --image="dialog-question" \
+                --text="\n  Make a selection...." \
+                $EXIT $OK \
+                --width=300 \
+                2>/dev/null )
+                if (( $? == 1 ));then
+                    cleanup all
+                    exit 0
+                fi
+            else
+                i=0
+                retChoice=()
+                OIFS=$IFS # save Internal Field Separator
+                IFS=$"|" # separator is "|" in returned choices
+                # dialog return is in format 'TRUE|value|\nTRUE|value'
+                for ret in $CHOICE; do
+                    if [[ $ret = *TRUE* ]] &>/dev/null;then
+                        continue
+                    fi
+                    retChoice[$i]="$ret"
+                    i=$((i+1))
+                done
+                IFS=$OIFS # reset IFS back to default
+                for item in "${retChoice[@]}";do
+                    case "$item" in
+                        "$PICKOB"   )   getOBtheme
+                                        ;;
+                        "$PICKGTK"  )   getGTKtheme
+                                        ;;
+                        "$PICKBG"   )   getBg
+                                        ;;
+                        "$PICKCONKY")   getConky
+                                        ;;
+                        "$PICKTINT" )   getTint
+                                        ;;
+                        "$PICKDMENU")   getDmenu
+                                        ;;
+                        "$PICKLDM"  )   getLightdm
+                                        ;;
+                        "$PICKEXIT" )   getBLexitrc
+                                        ;;
+                        "$PICKTERM" )   getTerminator
+                                        ;;
+                        "$PICKX"    )   getXconfig
+                                        ;;
+                        *           )   echo -e "\n  Unknown value!" >&2
+                                        exit 1
+                                        ;;
+                    esac
+                done
+                break
+            fi
+        fi
+    done
+        TXT="<big><b><u>Openbox Configurations to be saved:</u></b></big>\n\n"
+        TXT2=$(cat "$LISTMSG")
+        $DIALOG --text="$TXT$TXT2"
+        ret=$?
+        if (( ret == 1 ));then
+            cleanup all
+            restoreSettings
+        else
+            echo "$NEWNAME" > "$CURSESSFILE"     # replace entry in saved config flag file
+        fi
+}
+
+###################### end save functions ##############################
+
+###################### restore functions ###############################
+
 function checkICONS(){ # check if icon theme is still present
     local FOUNDICONS=0
     local ICOTXT="Icon theme <b>$1</b> not found\n\n  The default icon theme will be used..."
@@ -1110,6 +1211,8 @@ events.send_clientmessage_toall()
 END
 }
 
+######################### end restore functions ########################
+
 function cleanup(){
     if [[ $1 = all ]];then
         if [[ -d $CONFIGDIR ]];then
@@ -1126,117 +1229,10 @@ function cleanup(){
     fi
 }
 
-function saveSettings(){
-    local cols columns show
-    show=0
-#    SLOOP=1
-#    while (( SLOOP == 1 ));do
-    while true;do
-        if (( cols == 0 ));then
-            SELECT="FALSE"
-        else
-            SELECT="TRUE"
-        fi
-        columns=(
-            "$SELECT" "$PICKOB"
-            "$SELECT" "$PICKGTK"
-            "$SELECT" "$PICKBG"
-            "$SELECT" "$PICKCONKY"
-            "$SELECT" "$PICKTINT"
-            "$SELECT" "$PICKDMENU"
-            #"$SELECT" "$PICKLDM"
-            "$SELECT" "$PICKEXIT"
-            "$SELECT" "$PICKX"
-            )
-        # add terminator to array if set as default
-        if  readlink -f /usr/bin/x-terminal-emulator | grep terminator &>/dev/null;then
-            columns+=("$SELECT" "$PICKTERM")
-        fi
-        CHOICE=$($DIALOGDEC --list --checklist \
-            --title="Choose the configs to save..." \
-            --button="Select All:2" \
-            $CANCEL $OK \
-            --height=340 \
-            --column="Select" --column="Config" "${columns[@]}" \
-            2>/dev/null )
-            ret=$?
-        if (( ret == 1 )); then # cancel button pressed
-            cols=0
-            cleanup all
-            restoreSettings
-        elif (( ret == 2 ));then
-            cols=1
-            continue
-        else
-            if [[ ! $CHOICE ]] ; then # entry field is empty, so try again
-                RET=$($DIALOG  --image="dialog-question" \
-                --text="\n  Make a selection...." \
-                $EXIT $OK \
-                --width=300 \
-                2>/dev/null )
-                if (( $? == 1 ));then
-                    cleanup all
-                    exit 0
-                fi
-            else
-                i=0
-                retChoice=()
-                OIFS=$IFS # save Internal Field Separator
-                IFS=$"|" # separator is "|" in returned choices
-                # dialog return is in format 'TRUE|value|\nTRUE|value'
-                for ret in $CHOICE; do
-                    if [[ $ret = *TRUE* ]] &>/dev/null;then
-                        continue
-                    fi
-                    retChoice[$i]="$ret"
-                    i=$((i+1))
-                done
-                IFS=$OIFS # reset IFS back to default
-                for item in "${retChoice[@]}";do
-                    case "$item" in
-                        "$PICKOB"   )   getOBtheme
-                                        ;;
-                        "$PICKGTK"  )   getGTKtheme
-                                        ;;
-                        "$PICKBG"   )   getBg
-                                        ;;
-                        "$PICKCONKY")   getConky
-                                        ;;
-                        "$PICKTINT" )   getTint
-                                        ;;
-                        "$PICKDMENU")   getDmenu
-                                        ;;
-                        "$PICKLDM"  )   getLightdm
-                                        ;;
-                        "$PICKEXIT" )   getBLexitrc
-                                        ;;
-                        "$PICKTERM" )   getTerminator
-                                        ;;
-                        "$PICKX"    )   getXconfig
-                                        ;;
-                        *           )   echo -e "\n  Unknown value!" >&2
-                                        exit 1
-                                        ;;
-                    esac
-                done
-                break
-            fi
-        fi
-    done
-        TXT="<big><b><u>Openbox Configurations to be saved:</u></b></big>\n\n"
-        TXT2=$(cat "$LISTMSG")
-        $DIALOG --text="$TXT$TXT2"
-        ret=$?
-        if (( ret == 1 ));then
-            cleanup all
-            restoreSettings
-        else
-            echo "$NEWNAME" > "$CURSESSFILE"     # replace entry in saved config flag file
-        fi
-}
-
+# This function is run in restoreSettings() below
 # $CURRENTSESSION from getCurrent()
-function ViewRestoreDialog(){   # list saved theme collections for yad as DLGLIST
+# DLGARR is global, but local to restoreSettings()
+function ViewRestoreDialog(){   # list saved theme collections for yad as DLGARR
     getCurrent                      # get name of latest set BLOB config
     if (( NUMDIRS == 0 ));then  # no saved configs; go back to Intro dialog
         Intro
@@ -1269,9 +1265,22 @@ function ViewRestoreDialog(){   # list saved theme collections for yad as DLGLIS
     done
 }
 
-function restoreSettings(){
-    local DLGARR themepath themesettings themename
-    ViewRestoreDialog # generates DLGLIST
+function getActiveMonitorDimensions(){   # set width and height for View dialog
+    declare -a dim=()
+    dim=($(bl-xinerama-prop))
+    DLGWIDTH=$(( dim[0] / 3 ))
+    DLGHEIGHT=$(( dim[1] * 2 / 3 ))
+    [[ $DLGWIDTH =~ ^[0-9]+$ ]] && [[ $DLGHEIGHT =~ ^[0-9]+$ ]] || {
+        print 'Error in getActiveMonitorDimensions'
+        exit 1
+    }
+}
+
+# Main BLOB list display function
+function restoreSettings(){ # generates global NOW
+    local DLGWIDTH DLGHEIGHT DLGARR RET CONFIG themename themepath themesettings
+    getActiveMonitorDimensions
+    ViewRestoreDialog # generates DLGARR
     while true ;do
         CONFIG=$($DIALOGDEC --list --title="$TITLE" \
             --text="Double-click selection, or \"Enter\", or use the \"Restore\" button to restore settings\n" \
@@ -1280,7 +1289,7 @@ function restoreSettings(){
             --button="View image:4" --button="Add New:3" \
             --button="Delete:2" --button="Restore:0" --button="gtk-quit:1" \
             --always-print-result \
-            --width=$W --height=$H --center --image-preview \
+            --width=$DLGWIDTH --height=$DLGHEIGHT --center --image-preview \
             --expand-column=3 \
             --column="Last Set:IMG" \
             --column="Config Name":TEXT \
@@ -1298,6 +1307,9 @@ function restoreSettings(){
             then
                 themepath="$SYSCONFIGPATH/$themename"
             fi
+        else
+            echo "$0: function restoreSettings returned strange value $CONFIG" >&2
+            exit 1
         fi
         case $RET in
             0)  SAVED="$themepath/LISTMSG.txt"
@@ -1336,9 +1348,7 @@ function restoreSettings(){
                     if [[ $(< "$CURSESSFILE") = "$themename" ]];then
                         :> "$CURSESSFILE"
                     fi
-                    restoreSettings
-                else
-                    continue
+                    ViewRestoreDialog # regenerate list
                 fi
                 ;;
             3)  setName
@@ -1349,7 +1359,8 @@ function restoreSettings(){
                     rm -rf "$CONFIGDIR_BKP"
                     echo -e "\n  Temporary $CONFIGDIR deleted\n"
                 fi
-                restoreSettings
+                ViewRestoreDialog
+                continue
                 ;;
             4)  # show screenshot in image viewer
                 if [[ -n $themename ]];then
@@ -1365,7 +1376,7 @@ function restoreSettings(){
                 else
                     $DIALOG --text="Make a selection" 2>/dev/null
                 fi
-                restoreSettings
+                continue
                 ;;
             5)  Intro
                 ;;
@@ -1381,13 +1392,8 @@ function restoreSettings(){
     themesettings="$themepath/settings.cfg"
     NOW=$(date +"%Y%m%d-%H%M%S") # global: restore functions will inherit
     # get chosen saved configs and restore them
-    # kill conkys and tint2s, in case saved config doesn't include them
-    if [[ $(pidof conky) ]];then
-        safeKill conky
-    fi
-    if [[ $(pidof tint2) ]];then
-        safeKill tint2
-    fi
+    # Conky and Tint2 will be killed by their restore functions, if called.
+    local TAG VAL
     while read -r TAG VAL; do #line;do
         home_marker='%USERHOME%'
         case "$TAG" in
@@ -1430,7 +1436,8 @@ function restoreSettings(){
                                 ;;
             "[EXITRC]"      )   restoreBLexitrc "$themepath"
                                 ;;
-            "[XFILES]"      )   echo ".bashrc will not be overwritten: a copy is in $themepath/.bashrc"; restoreXsettings "$themepath/.Xresources" #"$themepath/.bashrc" # do not restore .bashrc for now
+            "[XFILES]"      )   echo ".bashrc will not be overwritten: a copy is in $themepath/.bashrc"
+                                restoreXsettings "$themepath/.Xresources" #"$themepath/.bashrc" # do not restore .bashrc for now
                                 ;;
             "[TERMINATOR]"  )   restoreTerminator "$themepath/config"
                                 ;;
@@ -1458,8 +1465,6 @@ mkdir -p "$USRCONFIGPATH"
 if [[ ! -f $CURSESSFILE ]];then
     touch "$CURSESSFILE"
 fi
-
-getActiveMonitorDimensions
 
 Intro
 
