@@ -85,8 +85,6 @@ Save options:
 
             Lightdm login gtk greeter (currently disabled)
 
-            Exit dialog theme
-
             X configs (.bashrc, .Xresources)
 
             Terminator config
@@ -185,8 +183,9 @@ ICONPATH_4="/usr/local/share/icons"
 iconPaths=("$ICONPATH_1" "$ICONPATH_2" "$ICONPATH_3" "$ICONPATH_4")
 
 ### CONFIGS VARIABLES
-EXITDIR="$HOME/.config/bl-exit"
-SYSEXITDIR="/etc/bl-exit"
+#EXITDIR="$HOME/.config/bl-exit"
+#SYSEXITDIR="/etc/bl-exit"
+#EXITFILE="$EXITDIR/bl-exitrc"
 TERMDIR="$HOME/.config/terminator"
 TERMFILE="$TERMDIR/config"
 FEHFILE="$HOME/.fehbg"
@@ -230,7 +229,6 @@ Openbox Configuration Manager</b></big>
     Desktop Background
     Alt Menu (dmenu)
     LightDM theme (currently disabled)
-    Exit dialog theme
     X configs (.bashrc, .Xresources)
     Terminator (if default term)
     + Screenshot'
@@ -242,7 +240,7 @@ PICKTINT="Tint2"
 PICKBG="Background Wallpaper"
 PICKDMENU="dmenu (Alt menu)"
 PICKLDM="Lightdm Login theme"
-PICKEXIT="Exit dialog theme"
+#PICKEXIT="Exit dialog theme"
 PICKTERM="Terminator"
 PICKX="X configs"
 
