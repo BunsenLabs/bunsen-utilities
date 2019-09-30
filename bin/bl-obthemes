@@ -87,7 +87,7 @@ Save options:
 
             X configs (.bashrc, .Xresources)
 
-            Terminator config
+            Terminal emulator config (if available)
 
 Paths are assumed to be BunsenLabs defaults.
 
@@ -186,8 +186,8 @@ iconPaths=("$ICONPATH_1" "$ICONPATH_2" "$ICONPATH_3" "$ICONPATH_4")
 #EXITDIR="$HOME/.config/bl-exit"
 #SYSEXITDIR="/etc/bl-exit"
 #EXITFILE="$EXITDIR/bl-exitrc"
-TERMDIR="$HOME/.config/terminator"
-TERMFILE="$TERMDIR/config"
+#TERMDIR="$HOME/.config/terminator"
+#TERMFILE='' # now termfile is local in saveSettings()
 FEHFILE="$HOME/.fehbg"
 NITRODIR="$HOME/.config/nitrogen"
 NITROFILE="$NITRODIR/bg-saved.cfg"
@@ -230,7 +230,7 @@ Openbox Configuration Manager</b></big>
     Alt Menu (dmenu)
     LightDM theme (currently disabled)
     X configs (.bashrc, .Xresources)
-    Terminator (if default term)
+    Terminal (if config file exists)
     + Screenshot'
 
 PICKOB="OB theme"
@@ -241,7 +241,7 @@ PICKBG="Background Wallpaper"
 PICKDMENU="dmenu (Alt menu)"
 PICKLDM="Lightdm Login theme"
 #PICKEXIT="Exit dialog theme"
-PICKTERM="Terminator"
+#PICKTERM='' # now not global, pickterm local in saveSettings()
 PICKX="X configs"
 
 ### END DIALOG VARIABLES
@@ -343,6 +343,7 @@ function setName(){  # set name of collection, make dir and session settings fil
         else
             NEWNAME=${NEWNAME// /_}    # replace any spaces in dir name
             CONFIGDIR="$USRCONFIGPATH/$NEWNAME"
+            CONFIGDIR_BKP="${CONFIGDIR}.bkp"
             if [[ -d $CONFIGDIR ]];then
                 echo -e "\n  $CONFIGDIR already exists"
 
@@ -448,7 +449,7 @@ function getNitrogen(){  # get Nitrogen saved backgrounds
 }
 
 # generates command array idCmd from window id (hex or decimal)
-# NB WM_COMMAND is deprecated: https://www.x.org/releases/X11R7.6/doc/xorg-docs/specs/ICCCM/icccm.html#obsolete_session_manager_conventions
+# WARNING WM_COMMAND is deprecated: https://www.x.org/releases/X11R7.6/doc/xorg-docs/specs/ICCCM/icccm.html#obsolete_session_manager_conventions
 # Usage: getIdCmd <id>
 getIdCmd() {
     local wmc del s
@@ -569,7 +570,7 @@ function getOBtheme(){   # copy <theme> section from rc.xml to obtheme.txt
 
 function getOBname(){    # get Openbox theme name
     OBFILE="$CONFIGDIR/obtheme.txt"
-#    OBTHEME=$(awk 'NR==2 {print;exit}' "$OBFILE" | awk -F'[>|<]' '{print $3}')
+    # OBTHEME=$(awk 'NR==2 {print;exit}' "$OBFILE" | awk -F'[>|<]' '{print $3}')
     # sed command is long, but it's more precise, and a little bit faster than two awk calls
     OBTHEME=$(sed -nr '/<theme>/ {N;s/^[[:blank:]]*<theme>[[:space:]]*<name>([^<]*)<\/name>.*$/\1/p;q}' "$OBFILE")
     TXT="Openbox theme:  $OBTHEME\n"
@@ -631,12 +632,18 @@ function getLightdm(){
     fi
 }
 
-function getTerminator(){
-    if [[ -e $TERMFILE ]];then
-        cp "$TERMFILE" "$CONFIGDIR"
-        TXT="Terminator config:  $TERMFILE\n"
+# passed termfile as $1 and pickterm as $2 by saveSettings()
+function getTerminal(){
+    local termfile target_dir
+    termfile="$1"
+    termname="$2"
+    if [[ -e $HOME/$termfile ]];then
+        target_dir="$CONFIGDIR/user/${termfile%/*}"
+        mkdir -p "$target_dir"
+        cp "$HOME/$termfile" "$target_dir"
+        TXT="$termname config:  ~/$termfile\n"
         echo -e "\n  Saved $TXT"
-        echo "[TERMINATOR]" >> "$SETTINGS"
+        echo "[$termname] $termfile" >> "$SETTINGS"
         echo "$TXT" >> "$LISTMSG"
     fi
 }
@@ -650,22 +657,9 @@ function getXconfig(){
     if [[ -f $BASHFILE ]];then
         cp "$BASHFILE" "$CONFIGDIR"
     fi
-    TXT="X terminal config:  $BASHFILE; $XFILE ($BASHFILE will not be auto-restored)\n"
+    TXT="X config:  ~/.Xresources; ~/.bashrc; (~/.bashrc will not be auto-restored)\n"
     echo -e "\n  Saved $TXT"
     echo "[XFILES]" >> "$SETTINGS"
-    echo "$TXT" >> "$LISTMSG"
-}
-
-function getBLexitrc(){
-    if [[ -d $EXITDIR ]];then # whole directory is needed
-        cp -r "$EXITDIR" "$CONFIGDIR"
-    else
-        echo "$EXITDIR not found, using default settings"
-        cp -r "$SYSEXITDIR" "$CONFIGDIR"
-    fi
-    echo "[EXITRC]" >> "$SETTINGS"
-    TXT="bl-exitrc config:  $EXITDIR\n"
-    echo -e "\n  Saved $TXT"
     echo "$TXT" >> "$LISTMSG"
 }
 
@@ -789,28 +783,50 @@ function getScrot(){
     checkTint2 start                # restore any stopped Tint2s
 }
 
+# sets termfile and pickterm inside saveSettings()
+function checkTerm(){
+    case $( readlink /etc/alternatives/x-terminal-emulator ) in
+    /usr/bin/lxterminal)
+        termfile='.config/lxterminal/lxterminal.conf'
+        pickterm='Lxterminal'
+        ;;
+    /usr/bin/terminator)
+        termfile='.config/terminator/config'
+        pickterm='Terminator'
+        ;;
+    /usr/bin/xfce4-terminal.wrapper)
+        termfile='.config/xfce4/terminal/terminalrc'
+        pickterm='Xfce4-terminal'
+        ;;
+    /usr/bin/sakura)
+        termfile='.config/sakura/sakura.conf'
+        pickterm='Sakura'
+        ;;
+    *)
+        termfile=''
+        ;;
+    esac
+}
+
 function saveSettings(){
-    local cols columns
+    local columns select termfile pickterm
+    select="FALSE"
     while true;do
-        if (( cols == 0 ));then
-            SELECT="FALSE"
-        else
-            SELECT="TRUE"
-        fi
         columns=(
-            "$SELECT" "$PICKOB"
-            "$SELECT" "$PICKGTK"
-            "$SELECT" "$PICKBG"
-            "$SELECT" "$PICKCONKY"
-            "$SELECT" "$PICKTINT"
-            "$SELECT" "$PICKDMENU"
-            #"$SELECT" "$PICKLDM"
-            #"$SELECT" "$PICKEXIT"
-            "$SELECT" "$PICKX"
-            )
-        # add terminator to array if set as default
-        if  readlink -f /usr/bin/x-terminal-emulator | grep terminator &>/dev/null;then
-            columns+=("$SELECT" "$PICKTERM")
+            "$select" "$PICKOB"
+            "$select" "$PICKGTK"
+            "$select" "$PICKBG"
+            "$select" "$PICKCONKY"
+            "$select" "$PICKTINT"
+            "$select" "$PICKDMENU"
+            #"$select" "$PICKLDM"
+            #"$select" "$PICKEXIT"
+            "$select" "$PICKX"
+        )
+        checkTerm # sets termfile and pickterm
+        # add terminal to array if one with a config file is in use
+        if  [[ -n $termfile ]];then
+            columns+=("$select" "$pickterm")
         fi
         CHOICE=$($DIALOGDEC --list --checklist \
             --title="Choose the configs to save..." \
@@ -821,11 +837,10 @@ function saveSettings(){
             2>/dev/null )
             ret=$?
         if (( ret == 1 )); then # cancel button pressed
-            cols=0
             cleanup all
             restoreSettings
         elif (( ret == 2 ));then
-            cols=1
+            select="TRUE"
             continue
         else
             if [[ ! $CHOICE ]] ; then # entry field is empty, so try again
@@ -837,15 +852,18 @@ function saveSettings(){
                 if (( $? == 1 ));then
                     cleanup all
                     exit 0
+                else
+                    select='FALSE'
+                    continue
                 fi
             else
                 i=0
                 retChoice=()
                 OIFS=$IFS # save Internal Field Separator
-                IFS=$"|" # separator is "|" in returned choices
+                IFS='|' # separator is "|" in returned choices
                 # dialog return is in format 'TRUE|value|\nTRUE|value'
                 for ret in $CHOICE; do
-                    if [[ $ret = *TRUE* ]] &>/dev/null;then
+                    if [[ $ret = *TRUE* ]];then
                         continue
                     fi
                     retChoice[$i]="$ret"
@@ -870,7 +888,7 @@ function saveSettings(){
                                         ;;
                         "$PICKEXIT" )   getBLexitrc
                                         ;;
-                        "$PICKTERM" )   getTerminator
+                        "$pickterm" )   getTerminal "$termfile" "$pickterm"
                                         ;;
                         "$PICKX"    )   getXconfig
                                         ;;
@@ -1020,7 +1038,6 @@ function restoreOBrc(){
     [[ -r $RCFILE ]] || RCFILE="$OLDRCFILE"
     if grep -q '[OBTHEME]' "$1/settings.cfg" ;then
         # backup bl-rc.xml first
-        NOW=$(date +"%Y%m%d-%H%M%S")
         RCBKP="$RCFILE.blob.$NOW"
         cp "$RCFILE" "$RCBKP"
         # remove older backups
@@ -1043,7 +1060,7 @@ function restoreOBrc(){
     fi
 }
 
-function restoreConky(){    # arg = $VAL from $themesettings in restoreSettings()
+function restoreConky(){    # arg = $VAL from restoreSettings()
     local currDESKTOP CONKYCMD
     currDESKTOP=$(xprop -root _NET_CURRENT_DESKTOP | tail -c -2)   # Conkys may have been started on different desktops
     CONKYCMD="$1"
@@ -1065,7 +1082,7 @@ function restoreConky(){    # arg = $VAL from $themesettings in restoreSettings(
     wmctrl -s "$currDESKTOP" && sleep 1 # return to desktop that BLOB was started on, if conkys used 'wmctrl -s'
 }
 
-function restoreTint2(){    # arg = $VAL from $themesettings in restoreSettings()
+function restoreTint2(){    # arg = $VAL from restoreSettings()
     TINTCMD="${1//;/$'\n'}"
     if type bl-tint2zen >/dev/null;then    # see if bl-tint2zen is installed
         if [[ -f $TINTSESSION ]] 2>/dev/null; then
@@ -1114,33 +1131,6 @@ function restoreDmenu(){
     fi
 }
 
-# $1 is path to theme config dir, from $themepath by restoreSettings()
-# $NOW is global, set by restoreSettings()
-function restoreBLexitrc(){
-    local CONFPATH=$1
-    local CONFEXITDIR="$1/bl-exit"
-    local themename=${CONFPATH##*/}
-    local bkp_sfx="-${themename}-${NOW}.bkp"
-    if [[ "$CONFEXITDIR" = "$SYSCONFIGPATH"/* ]] # cannot make backup in system dir
-    then
-        EXITDIRBKP="${EXITDIR}.bkp"
-    else
-        EXITDIRBKP="${CONFEXITDIR}.bkp"
-    fi
-    if [[ -d ${CONFEXITDIR} ]]
-    then
-        rsync --recursive --checksum --backup --suffix="$bkp_sfx" --backup-dir="${EXITDIRBKP}" "${CONFEXITDIR}"/ "$EXITDIR"
-    elif [[ -f $CONFPATH/bl-exitrc ]] # old-style user blobtheme dir
-    then
-        cp -r --no-clobber "$SYSEXITDIR" "$EXITDIR"
-        mkdir -p "$EXITDIRBKP"
-        [[ -f "$EXITDIR/bl-exitrc" ]] && cp "$EXITDIR/bl-exitrc" "$EXITDIRBKP/bl-exitrc${bkp_sfx}"
-        cp "$CONFPATH/bl-exitrc" "$EXITDIR"
-    else
-        echo "No bl-exit theme files found." >&2
-    fi
-    echo -e "\n  $EXITDIR backed up and restored"
-}
 
 ## TODO: use pkexec instead of gksudo
 function restoreLightdm(){   # need sudo to restore lightdm-gtk-greeter.conf
@@ -1186,16 +1176,21 @@ function restoreXsettings(){
     xrdb ~/.Xresources
 }
 
-function restoreTerminator(){
-    TFILE="$1"
-    if [[ -e $TERMFILE ]];then        # backup terminator/config first
-        TERMBKP="$TERMDIR/config.bkp"
-        mv "$TERMFILE" "$TERMBKP"
-        cp "$TFILE" "$TERMFILE"
-        echo -e "\n  $TERMFILE backed up and restored"
+# $1 is $VAL from restoreSettings()
+function restoreFile(){
+    local src_file target_file target_dir bkp_file
+    src_file="$THEMEPATH/user/$1"
+    target_file="$HOME/$1"
+    target_dir="${target_file%/*}"
+    mkdir -p "$target_dir"
+    if [[ -e $target_file ]];then        # backup config first
+        bkp_file="${target_file}.${NOW}.bkp"
+        mv "$target_file" "$bkp_file"
+        cp "$src_file" "$target_file"
+        echo -e "\n  $target_file backed up and restored"
     else
-        cp "$TFILE" "$TERMFILE"
-        echo -e "\n  $TERMFILE restored"
+        cp "$src_file" "$target_file"
+        echo -e "\n  $target_file did not exist, now added"
     fi
 }
 
@@ -1211,24 +1206,6 @@ events.message_type=data
 events.send_clientmessage_toall()
 
 END
-}
-
-######################### end restore functions ########################
-
-function cleanup(){
-    if [[ $1 = all ]];then
-        if [[ -d $CONFIGDIR ]];then
-            rm -rf "$CONFIGDIR"
-            echo -e "\n  Deleted $CONFIGDIR"
-        fi
-        if [[ -d $CONFIGDIR_BKP ]];then
-            mv "$CONFIGDIR_BKP" "$CONFIGDIR"
-            echo -e "\n  Cancelled\n..Temporary $CONFIGDIR restored\n"
-        fi
-        rm -f /tmp/blob.*
-    elif [[ $1 = save ]];then
-        saveSettings
-    fi
 }
 
 # This function is run in restoreSettings() below
@@ -1278,9 +1255,11 @@ function getActiveMonitorDimensions(){   # set width and height for View dialog
     }
 }
 
-# Main BLOB list display function
+########################################################################
+######## Main BLOB list display function ###############################
+# sets global THEMEPATH for restore functions
 function restoreSettings(){ # generates global NOW
-    local DLGWIDTH DLGHEIGHT DLGARR RET CONFIG themename themepath themesettings
+    local DLGWIDTH DLGHEIGHT DLGARR RET CONFIG themename
     getActiveMonitorDimensions
     ViewRestoreDialog # generates DLGARR
     while true ;do
@@ -1304,17 +1283,17 @@ function restoreSettings(){ # generates global NOW
              # If same name found, user directory will take precedence.
             if [[ -d "$USRCONFIGPATH/$themename" ]]
             then
-                themepath="$USRCONFIGPATH/$themename"
+                THEMEPATH="$USRCONFIGPATH/$themename"
             elif [[ -d "$SYSCONFIGPATH/$themename" ]]
             then
-                themepath="$SYSCONFIGPATH/$themename"
+                THEMEPATH="$SYSCONFIGPATH/$themename"
             fi
         else
             echo "$0: function restoreSettings returned strange value $CONFIG" >&2
             exit 1
         fi
         case $RET in
-            0)  SAVED="$themepath/LISTMSG.txt"
+            0)  SAVED="$THEMEPATH/LISTMSG.txt"
                 TEXT="Restoring Configs saved as $CONFIG\n\n"
                 TEXT="$TEXT$(< "$SAVED")"
                 $DIALOG "$T$TEXT" "$CANCEL" "$OK" 2>/dev/null
@@ -1335,17 +1314,17 @@ function restoreSettings(){ # generates global NOW
                 fi
 
                 SYSDIRTXT="Sorry, system preset theme <b>${themename}</b> cannot be deleted"
-                if [[ "${themepath%/*}" = "$SYSCONFIGPATH" ]]
+                if [[ "${THEMEPATH%/*}" = "$SYSCONFIGPATH" ]]
                 then
                     $DIALOG --image="dialog-warning" "$T$SYSDIRTXT" "$CLOSE" 2>/dev/null
                     continue
                 fi
 
-                TEXT="Delete saved configurations <b>$themepath</b>\nand screenshot?"
+                TEXT="Delete saved configurations <b>$THEMEPATH</b>\nand screenshot?"
                 $DIALOG "$T$TEXT" "$CANCEL" "$OK" 2>/dev/null
 
                 if (( $? == 0 ));then
-                    rm -rf "$themepath"
+                    rm -rf "$THEMEPATH"
                     echo -e "\n$themename DELETED"
                     if [[ $(< "$CURSESSFILE") = "$themename" ]];then
                         :> "$CURSESSFILE"
@@ -1367,10 +1346,10 @@ function restoreSettings(){ # generates global NOW
                 ;;
             4)  # show screenshot in image viewer
                 if [[ -n $themename ]];then
-                    if [[ -r "$themepath/${themename}.jpg" ]]; then
-                        img="$themepath/${themename}.jpg"
-                    elif [[ -r "${themepath%/*}/${themename}.jpg" ]]; then
-                        img="${themepath%/*}/${themename}.jpg"
+                    if [[ -r "$THEMEPATH/${themename}.jpg" ]]; then
+                        img="$THEMEPATH/${themename}.jpg"
+                    elif [[ -r "${THEMEPATH%/*}/${themename}.jpg" ]]; then
+                        img="${THEMEPATH%/*}/${themename}.jpg"
                     else
                         echo "$0: No screenshot ${themename}.jpg found" >&2
                         continue
@@ -1392,7 +1371,6 @@ function restoreSettings(){ # generates global NOW
                 ;;
         esac
     done
-    themesettings="$themepath/settings.cfg"
     NOW=$(date +"%Y%m%d-%H%M%S") # global: restore functions will inherit
     # get chosen saved configs and restore them
     # Conky and Tint2 will be killed by their restore functions, if called.
@@ -1417,41 +1395,60 @@ function restoreSettings(){ # generates global NOW
             "[GTK]"         )   if [[ $VAL ]];then
                                     checkGTK "$VAL"
                                 fi
-                                restoreGTK "$themepath"
+                                restoreGTK "$THEMEPATH"
                                 reloadGTK
                                 ;;
             "[OBTHEME]"     )   if [[ $VAL ]];then
                                     checkOBTHEME "$VAL"
                                 fi
-                                restoreOBrc "$themepath"
+                                restoreOBrc "$THEMEPATH"
                                 ;;
             "[BACKGROUND]"  )   if [[ $VAL = FEH ]];then
-                                    cp "$themepath/.fehbg" "$HOME"
+                                    cp "$THEMEPATH/.fehbg" "$HOME"
                                     source "$HOME/.fehbg"
                                 else
-                                    cp "$themepath/bg-saved.cfg" "$NITRODIR"
+                                    cp "$THEMEPATH/bg-saved.cfg" "$NITRODIR"
                                     nitrogen --restore
                                 fi
                                 ;;
-            "[DMENU]"       )   restoreDmenu "$themepath/$DMENU"
+            "[DMENU]"       )   restoreDmenu "$THEMEPATH/$DMENU"
                                 ;;
-            "[LIGHTDM]"     )   echo "Lightdm settings not supported at this time" #restoreLightdm "$themepath/$LDM"
+            "[LIGHTDM]"     )   echo "Lightdm settings not supported at this time" #restoreLightdm "$THEMEPATH/$LDM"
                                 ;;
-            "[EXITRC]"      )   restoreBLexitrc "$themepath"
+            "[EXITRC]"      )   : #restoreBLexitrc "$THEMEPATH"
                                 ;;
-            "[XFILES]"      )   echo ".bashrc will not be overwritten: a copy is in $themepath/.bashrc"
-                                restoreXsettings "$themepath/.Xresources" #"$themepath/.bashrc" # do not restore .bashrc for now
+            "[XFILES]"      )   echo ".bashrc will not be overwritten: a copy is in $THEMEPATH/.bashrc"
+                                restoreXsettings "$THEMEPATH/.Xresources" #"$THEMEPATH/.bashrc" # do not restore .bashrc for now
                                 ;;
-            "[TERMINATOR]"  )   restoreTerminator "$themepath/config"
+            '['*']'         )   restoreFile "$VAL"
                                 ;;
             *               )   echo -e "  Unknown value!" >&2
                                 restoreSettings
                                 ;;
         esac
-    done < "$themesettings"
+    done < "$THEMEPATH/settings.cfg"
     openbox --reconfigure
     restoreSettings
 }
+
+######################### end restore functions ########################
+
+function cleanup(){
+    if [[ $1 = all ]];then
+        if [[ -d $CONFIGDIR ]];then
+            rm -rf "$CONFIGDIR"
+            echo -e "\n  Deleted $CONFIGDIR"
+        fi
+        if [[ -d $CONFIGDIR_BKP ]];then
+            mv "$CONFIGDIR_BKP" "$CONFIGDIR"
+            echo -e "\n  Cancelled\n..Temporary $CONFIGDIR restored\n"
+        fi
+        rm -f /tmp/blob.*
+    elif [[ $1 = save ]];then
+        saveSettings
+    fi
+}
+
 
 ### END FUNCTIONS ######################################################
 
