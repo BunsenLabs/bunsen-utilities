@@ -145,9 +145,34 @@ KEYDOWN=11           # adjust this for where "Preferences" is in the menu
 USRCONFIGPATH="$HOME/.config/blob"
 SYSCONFIGPATH="/usr/share/bunsen/utilities/blob"
 CURSESSFILE="$USRCONFIGPATH/current"
+
+### CONFIGS VARIABLES
 OBPATH="$HOME/.config/openbox"
 RCFILE="$OBPATH/bl-rc.xml" # NB now using the new BunsenLabs file name
 OLDRCFILE="$OBPATH/rc.xml"
+GTK2=".gtkrc-2.0"
+GTK2MINE=".gtkrc-2.0.mine"
+GTK3="$HOME/.config/gtk-3.0"
+GTK3x="$HOME/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-notifyd.xml"
+FEHFILE="$HOME/.fehbg"
+NITRODIR="$HOME/.config/nitrogen"
+NITROFILE="$NITRODIR/bg-saved.cfg"
+CONKYPATH="$HOME/.config/conky"
+CONKYSESSION="$CONKYPATH/conky-sessionfile"
+TINTSESSION="$HOME/.config/tint2/tint2-sessionfile"
+DMENUDIR="$HOME/.config/dmenu"
+DMENU="dmenu-bind.sh"
+LDMDIR="/etc/lightdm"
+LDM="lightdm-gtk-greeter.conf"
+#EXITDIR="$HOME/.config/bl-exit"
+#SYSEXITDIR="/etc/bl-exit"
+#EXITFILE="$EXITDIR/bl-exitrc"
+XFILE=".Xresources"
+BASHFILE=".bashrc"
+#TERMDIR="$HOME/.config/terminator"
+#TERMFILE='' # now termfile is local in saveSettings()
+
+### END CONFIGS VARIABLES
 
 # packages needed for particular GTK themes
 declare -A theme_pkgs=(
@@ -182,30 +207,6 @@ ICONPATH_3="/usr/share/icons"
 ICONPATH_4="/usr/local/share/icons"
 iconPaths=("$ICONPATH_1" "$ICONPATH_2" "$ICONPATH_3" "$ICONPATH_4")
 
-### CONFIGS VARIABLES
-#EXITDIR="$HOME/.config/bl-exit"
-#SYSEXITDIR="/etc/bl-exit"
-#EXITFILE="$EXITDIR/bl-exitrc"
-#TERMDIR="$HOME/.config/terminator"
-#TERMFILE='' # now termfile is local in saveSettings()
-FEHFILE="$HOME/.fehbg"
-NITRODIR="$HOME/.config/nitrogen"
-NITROFILE="$NITRODIR/bg-saved.cfg"
-CONKYPATH="$HOME/.config/conky"
-CONKYSESSION="$CONKYPATH/conky-sessionfile"
-TINTSESSION="$HOME/.config/tint2/tint2-sessionfile"
-GTK2=".gtkrc-2.0"
-GTK2MINE=".gtkrc-2.0.mine"
-GTK3="$HOME/.config/gtk-3.0"
-GTK3x="$HOME/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-notifyd.xml"
-DMENUDIR="$HOME/.config/dmenu"
-DMENU="dmenu-bind.sh"
-XFILE=".Xresources"
-BASHFILE=".bashrc"
-LDMDIR="/etc/lightdm"
-LDM="lightdm-gtk-greeter.conf"
-
-### END CONFIGS VARIABLES
 
 ### DIALOG VARIABLES
 DIALOG="yad --center --undecorated --borders=20 --window-icon=distributor-logo-bunsenlabs --fixed"
@@ -235,9 +236,9 @@ Openbox Configuration Manager</b></big>
 
 PICKOB="OB theme"
 PICKGTK="GTK theme"
+PICKBG="Background Wallpaper"
 PICKCONKY="Conky"
 PICKTINT="Tint2"
-PICKBG="Background Wallpaper"
 PICKDMENU="dmenu (Alt menu)"
 PICKLDM="Lightdm Login theme"
 #PICKEXIT="Exit dialog theme"
@@ -247,6 +248,7 @@ PICKX="X configs"
 ### END DIALOG VARIABLES
 
 #### END VARIABLES #####################################################
+
 
 ### FUNCTIONS ##########################################################
 
@@ -1156,31 +1158,49 @@ function restoreLightdm(){   # need sudo to restore lightdm-gtk-greeter.conf
     done
 }
 
-function restoreXsettings(){
-    XBKP=""
-    for var in "$@";do
-        if [[ -e $var ]];then        # backup .bashrc & .Xresources first
-            XBKP="$var.bkp"
-            if [[ "$var" = "$SYSCONFIGPATH"/* ]] # cannot make backup in system dir
-            then
-                XBKP="${HOME}/${var##*/}.${DIR}.bkp"
-            fi
-            cp "$var" "$XBKP"
-            cp "$var" "$HOME"
-            echo -e "\n  $var backed up and restored"
-        else
-            cp "$var" "$HOME"
-            echo -e "\n  $var restored"
-        fi
+#function restoreXsettings(){
+#    XBKP=""
+#    for var in "$@";do
+#        if [[ -e $var ]];then        # backup .bashrc & .Xresources first
+#            XBKP="$var.bkp"
+#            if [[ "$var" = "$SYSCONFIGPATH"/* ]] # cannot make backup in system dir
+#            then
+#                XBKP="${HOME}/${var##*/}.${DIR}.bkp"
+#            fi
+#            cp "$var" "$XBKP"
+#            cp "$var" "$HOME"
+#            echo -e "\n  $var backed up and restored"
+#        else
+#            cp "$var" "$HOME"
+#            echo -e "\n  $var restored"
+#        fi
+#    done
+#    xrdb ~/.Xresources
+#}
+
+# $1 [$2...] are relative paths passed from restoreSettings()
+# THEMEPATH is global set by restoreSettings()
+function restoreFiles(){
+    for i in "$@"
+    do
+        local src_file target_file
+        src_file="$THEMEPATH/user/$i"
+        target_file="$HOME/$i"
+        restoreFile "$src_file" "$target_file" || continue
     done
-    xrdb ~/.Xresources
 }
 
-# $1 is $VAL from restoreSettings()
+
+# $1 and $2 are explicit source and target filepaths
+# THEMEPATH is global set by restoreSettings()
 function restoreFile(){
     local src_file target_file target_dir bkp_file
-    src_file="$THEMEPATH/user/$1"
-    target_file="$HOME/$1"
+    src_file="$1"
+    [[ -r $src_file ]] || {
+        echo "$0: File to restore, $src_file is not readable." >&2
+        return 1
+    }
+    target_file="$2"
     target_dir="${target_file%/*}"
     mkdir -p "$target_dir"
     if [[ -e $target_file ]];then        # backup config first
@@ -1378,19 +1398,10 @@ function restoreSettings(){ # generates global NOW
     while read -r TAG VAL; do #line;do
         home_marker='%USERHOME%'
         case "$TAG" in
-            "[TINT2]"       )   if [[ $VAL ]];then
-                                    VAL="${VAL//"$home_marker"/"$HOME"}"
-                                    restoreTint2 "$VAL"
+            "[OBTHEME]"     )   if [[ $VAL ]];then
+                                    checkOBTHEME "$VAL"
                                 fi
-                                ;;
-            "[CONKY]"       )   if [[ $VAL ]];then
-                                    VAL="${VAL//"$home_marker"/"$HOME"}"
-                                    restoreConky "$VAL"
-                                fi
-                                ;;
-            "[ICONS]"       )   if [[ $VAL ]];then
-                                    checkICONS "$VAL"
-                                fi
+                                restoreOBrc "$THEMEPATH"
                                 ;;
             "[GTK]"         )   if [[ $VAL ]];then
                                     checkGTK "$VAL"
@@ -1398,10 +1409,9 @@ function restoreSettings(){ # generates global NOW
                                 restoreGTK "$THEMEPATH"
                                 reloadGTK
                                 ;;
-            "[OBTHEME]"     )   if [[ $VAL ]];then
-                                    checkOBTHEME "$VAL"
+            "[ICONS]"       )   if [[ $VAL ]];then
+                                    checkICONS "$VAL"
                                 fi
-                                restoreOBrc "$THEMEPATH"
                                 ;;
             "[BACKGROUND]"  )   if [[ $VAL = FEH ]];then
                                     cp "$THEMEPATH/.fehbg" "$HOME"
@@ -1411,6 +1421,16 @@ function restoreSettings(){ # generates global NOW
                                     nitrogen --restore
                                 fi
                                 ;;
+            "[CONKY]"       )   if [[ $VAL ]];then
+                                    VAL="${VAL//"$home_marker"/"$HOME"}"
+                                    restoreConky "$VAL"
+                                fi
+                                ;;
+            "[TINT2]"       )   if [[ $VAL ]];then
+                                    VAL="${VAL//"$home_marker"/"$HOME"}"
+                                    restoreTint2 "$VAL"
+                                fi
+                                ;;
             "[DMENU]"       )   restoreDmenu "$THEMEPATH/$DMENU"
                                 ;;
             "[LIGHTDM]"     )   echo "Lightdm settings not supported at this time" #restoreLightdm "$THEMEPATH/$LDM"
@@ -1418,9 +1438,12 @@ function restoreSettings(){ # generates global NOW
             "[EXITRC]"      )   : #restoreBLexitrc "$THEMEPATH"
                                 ;;
             "[XFILES]"      )   echo ".bashrc will not be overwritten: a copy is in $THEMEPATH/.bashrc"
-                                restoreXsettings "$THEMEPATH/.Xresources" #"$THEMEPATH/.bashrc" # do not restore .bashrc for now
+                                restoreFiles ".Xresources" #"$THEMEPATH/.bashrc" # do not restore .bashrc for now
+                                xrdb ~/.Xresources
                                 ;;
-            '['*']'         )   restoreFile "$VAL"
+#            "[TERMINATOR]"  )   restoreFile "$THEMEPATH/config" "$HOME/.config/terminator/config"
+#                                ;;
+            '['*']'         )   restoreFiles "$VAL"
                                 ;;
             *               )   echo -e "  Unknown value!" >&2
                                 restoreSettings
