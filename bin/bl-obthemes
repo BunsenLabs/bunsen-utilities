@@ -152,7 +152,7 @@ CONKYPATH="$HOME/.config/conky"
 CONKYSESSION="$CONKYPATH/conky-sessionfile"
 TINTSESSION="$HOME/.config/tint2/tint2-sessionfile"
 
-### CONFIGS VARIABLES TO BE SAVED AND RESTORED
+### USER CONFIG VARIABLES TO BE SAVED AND RESTORED
 GTK2=".gtkrc-2.0"
 GTK2MINE=".gtkrc-2.0.mine"
 GTK3=".config/gtk-3.0"
@@ -160,11 +160,13 @@ GTK3x=".config/xfce4/xfconf/xfce-perchannel-xml/xfce4-notifyd.xml"
 FEHFILE=".fehbg"
 NITROFILE=".config/nitrogen/bg-saved.cfg"
 DMENU=".config/dmenu/dmenu-bind.sh"
-LDMDIR="/etc/lightdm"
-LDM="lightdm-gtk-greeter.conf"
 XFILE=".Xresources"
 BASHFILE=".bashrc"
 #TERMFILE='' # now termfile is set dynamically in saveSettings()
+
+### SYSTEM CONFIG VARIABLES TO BE SAVED AND RESTORED
+LDMDIR="/etc/lightdm"
+LDM="lightdm-gtk-greeter.conf"
 
 ### END CONFIGS VARIABLES
 
@@ -268,6 +270,8 @@ function upgradeBlobs(){
             mkdir -p "$2"
             mv "$1" "$2" || exit
         }
+        local themename=${i##*/}
+        moveFile "$USRCONFIGPATH/${themename}.jpg" "$i"
         :> "$i/newsettings"
         while read -r TAG VAL; do
             home_marker='%USERHOME%'
@@ -452,7 +456,7 @@ function setName(){  # set name of collection, make dir and session settings fil
 }
 
 # $1 [$2...] are relative paths passed from save functions
-# directories will be saved will all their contents
+# Save user config file to corresponding directory in $CONFIGDIR/user.
 # CONFIGDIR is global set by setName()
 function saveFiles(){
     for i in "$@"
@@ -460,12 +464,7 @@ function saveFiles(){
         local src_file target_file
         src_file="$HOME/$i"
         target_file="$CONFIGDIR/user/$i"
-        if [[ -r $src_file ]]; then
-            saveFileAbs "$src_file" "$target_file" || return 1
-        else
-            echo "$0: Cannot read ${src_file}." >&2
-            return 1
-        fi
+        saveFileAbs "$src_file" "$target_file" || return 1
     done
 }
 
@@ -478,6 +477,14 @@ function saveFileAbs(){
     src_file="$1"
     target_file="$2"
     target_dir="${target_file%/*}"
+    [[ $target_file = $CONFIGDIR/* ]] || {
+        echo "$0: Target is not inside $CONFIGDIR" >&2
+        return 1
+    }
+    [[ -r $src_file ]] || {
+        echo "$0: Cannot read source file $src_file" >&2
+        return 1
+    }
     mkdir -p "$target_dir"
     if [[ -d $src_file ]];then
         cp -r "$src_file" "$target_file" || return 1
@@ -710,20 +717,18 @@ function getGTKname(){   # get GTK theme name and Icons name
 
 function getDmenu(){
     saveFiles "$DMENU"
-    echo "[DMENU]" >> "$SETTINGS"
     TXT="dmenu config:  $HOME/$DMENU\n"
     echo -e "\n  Saved $TXT"
+    echo "[DMENU]" >> "$SETTINGS"
     echo "$TXT" >> "$LISTMSG"
 }
 
 function getLightdm(){
-    if [[ -f $LDMDIR/$LDM ]];then
-        cp "$LDMDIR/$LDM" "$CONFIGDIR"
-        TXT="Lightdm config:  $LDMDIR/$LDM\n"
-        echo -e "\n  Saved $TXT"
-        echo "[LIGHTDM]" >> "$SETTINGS"
-        echo "$TXT" >> "$LISTMSG"
-    fi
+    saveFileAbs "$LDMDIR/$LDM" "$CONFIGDIR/$LDM"
+    TXT="Lightdm config:  $LDMDIR/$LDM\n(password will be needed to restore)\n"
+    echo -e "\n  Saved $TXT"
+    echo "[LIGHTDM]" >> "$SETTINGS"
+    echo "$TXT" >> "$LISTMSG"
 }
 
 # passed termfile as $1 and pickterm as $2 by saveSettings()
@@ -902,7 +907,7 @@ function saveSettings(){
             "$select" "$PICKCONKY"
             "$select" "$PICKTINT"
             "$select" "$PICKDMENU"
-            #"$select" "$PICKLDM"
+            "$select" "$PICKLDM"
             #"$select" "$PICKEXIT"
             "$select" "$PICKX"
         )
@@ -1093,13 +1098,13 @@ function checkOBTHEME(){
     fi
 }
 
-# THEMEPATH and NOW are globals set by restoreSettings()
+# THEMEPATH and BKP_SFX are globals set by restoreSettings()
 function restoreOBrc(){
     THEMEFILE="$THEMEPATH/obtheme.txt"
     FTEMP=$(mktemp --tmpdir blob.XXXX)
     [[ -r $RCFILE ]] || RCFILE="$OLDRCFILE"
     # backup bl-rc.xml first
-    RCBKP="$RCFILE.blob.$NOW"
+    RCBKP="${RCFILE}${BKP_SFX}"
     cp "$RCFILE" "$RCBKP"
     # remove older backups
 #    for f in $(find "$OBPATH" -type f|grep .blob. );do
@@ -1180,25 +1185,29 @@ function restoreTint2(){    # arg = $VAL from restoreSettings()
 }
 
 
-## TODO: use pkexec instead of gksudo
-function restoreLightdm(){   # need sudo to restore lightdm-gtk-greeter.conf
-    CMD="cp $1 $LDMDIR/$LDM"
-    TXT="Authenticate restore of lightdm-gtk-greeter.conf"
+
+# THEMEPATH and BKP_SFX are globals set by restoreSettings()
+function restoreLightdm(){   # need pkexec to restore lightdm-gtk-greeter.conf
+    local ret msg
+    [[ -r "$THEMEPATH/$LDM" ]] || {
+        echo "$0: Cannot read file $THEMEPATH/$LDM" >&2
+        return 1
+    }
     while true;do
-        gksudo -m "$TXT" "$CMD"
-        DLG=$?
-        case "$DLG" in
-            0   )   MSG="Restored: lightdm-gtk-greeter.conf"
-                    echo -e "\n  $MSG"
+        pkexec cp --backup --suffix="$BKP_SFX" "$THEMEPATH/$LDM" "$LDMDIR/$LDM"
+        ret=$?
+        case "$ret" in
+            0   )   msg="Restored: lightdm-gtk-greeter.conf"
+                    echo -e "\n  $msg"
                     break
                     ;;
-            255 )   MSG="  Authentication cancelled\n\nlightdm-gtk-greeter.conf was not restored"
-                    echo -e "\n  $MSG" >&2
+            126 )   msg="  Authentication cancelled\n\nlightdm-gtk-greeter.conf was not restored"
+                    echo -e "\n  $msg" >&2
                     break
                     ;;
-            *   )   MSG="  Password input failed\n\nlightdm-gtk-greeter.conf was not restored"
-                    echo -e "\n  $MSG" >&2
-                    $DIALOG --title="$TITLE" --image="dialog-warning" "$T$MSG" "$OK" 2>/dev/null
+            *   )   msg="  Password input failed\n\nlightdm-gtk-greeter.conf was not restored"
+                    echo -e "\n  $msg" >&2
+                    $DIALOG --title="$TITLE" --image="dialog-warning" "$T$msg" "$OK" 2>/dev/null
                     ;;
         esac
     done
@@ -1229,8 +1238,8 @@ function restoreFiles(){
     done
 }
 
-
 # $1 and $2 are absolute source and target filepaths
+# BKP_SFX is global set by restoreSettings()
 function restoreFileAbs(){
     local src_file target_file target_dir bkp_file
     src_file="$1"
@@ -1238,7 +1247,7 @@ function restoreFileAbs(){
     target_dir="${target_file%/*}"
     mkdir -p "$target_dir"
     if [[ -e $target_file ]];then        # backup config first
-        bkp_file="${target_file}.${NOW}.bkp"
+        bkp_file="${target_file}${BKP_SFX}"
         mv "$target_file" "$bkp_file"
         cp "$src_file" "$target_file"
         echo -e "\n  $target_file backed up and restored"
@@ -1311,7 +1320,7 @@ function getActiveMonitorDimensions(){   # set width and height for View dialog
 
 ########################################################################
 ######## Main BLOB list display function ###############################
-# sets globals THEMEPATH and NOW for restore functions
+# sets globals THEMEPATH and BKP_SFX for restore functions
 function restoreSettings(){
     local DLGWIDTH DLGHEIGHT DLGARR RET CONFIG themename
     getActiveMonitorDimensions
@@ -1425,7 +1434,8 @@ function restoreSettings(){
                 ;;
         esac
     done
-    NOW=$(date +"%Y%m%d-%H%M%S") # global: restore functions will inherit
+    BKP_SFX=".blob.$(date +"%Y%m%d-%H%M%S")" # global: unified backup suffix that restore functions will inherit
+    
     # get chosen saved configs and restore them
     # Conky and Tint2 will be killed by their restore functions, if called.
     local TAG VAL
@@ -1467,7 +1477,7 @@ function restoreSettings(){
                                 ;;
             "[DMENU]"       )   restoreFiles "$DMENU"
                                 ;;
-            "[LIGHTDM]"     )   echo "Lightdm settings not supported at this time" #restoreLightdm "$THEMEPATH/$LDM"
+            "[LIGHTDM]"     )   restoreLightdm
                                 ;;
             "[EXITRC]"      )   : #restoreBLexitrc "$THEMEPATH"
                                 ;;
