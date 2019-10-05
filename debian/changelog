@@ -1,3 +1,17 @@
+bunsen-utilities (10.1-1) lithium; urgency=medium
+
+  * bl-obthemes: 
+     - Store saved config files in subdirectory user/,
+        which mirrors $HOME, adjust preset themes to match.
+     - Store screenshot images inside theme directory.
+     - Restore support for saving and restoring lightdm login window.
+     - Allow saving/restoring terminal settings, if supported.
+     - Remove bl-exit config saving, now unnecessary.
+  * Remove obsolete link from bl-kb.py to bl-kb,
+     add new script bl-xbk, to parse xbindkeys config.
+
+ -- John Crawley <john@bunsenlabs.org>  Sat, 05 Oct 2019 13:22:23 +0900
+
 bunsen-utilities (10.0.3-1) lithium; urgency=medium
 
   * bl-conkyzen, bl-tint2zen: make window persistent till closed,
