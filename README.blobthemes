@@ -20,7 +20,7 @@ Paths are assumed to be BunsenLabs defaults.
 WARNING: It is assumed that the conkys are not being run via a script, so 
 they will appear on all desktops. If you usually use a script, then you 
 may have to make your own arrangements! Conkys in non-default directories
-can be saved, but will not be seen when running bl-conkyzen.
+can be saved, but will not be seen when running bl-conky-manager.
 
 A Screenshot is saved (Windows are hidden briefly so the image
                        is the bare desktop, with any Tint2s 

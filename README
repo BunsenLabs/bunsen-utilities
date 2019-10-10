@@ -6,13 +6,13 @@ which might be useful to BunsenLinux users and system administrators.
 
 bl-conky-session:		Script to handle multiple conky sessions.
 bl-conkyedit:			Script to find and edit conky config files.
-bl-conkyzen:			Yad-based conky manager.
+bl-conky-manager:		Yad-based conky manager.
 bl-conkymove:			Script to assist the movement of conky windows.
 
 bl-tint-session:		Script to handle multiple tint2 sessions.
 bl-tint2edit:			Script to find and edit tint2 config files.
 bl-tint2-restart:		Script to restart all running tint2 processes.
-bl-tint2zen:			Yad-based tint2 manager.
+bl-tint2-manager:		Yad-based tint2 manager.
 
 bl-kb:				Script to read openbox keyboard shortcuts and write them to a text file.
 bl-xbk:				Script to parse xbindkeys configs and write them to the same text file as bl-kb.

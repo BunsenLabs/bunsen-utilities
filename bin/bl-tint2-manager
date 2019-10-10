@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-#    bl-tint2zen: a BunsenLabs tint2 selection and switcher script
+#    bl-tint2-manager: a BunsenLabs tint2 selection and switcher script
 #    Copyright (C) 2015/2019 damo    <damo@bunsenlabs.org>
 #
 #    This program is free software: you can redistribute it and/or modify

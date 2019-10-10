@@ -27,27 +27,27 @@ CONKYPATH="$HOME/.config/conky"
 CONKYDEFAULT="$CONKYPATH/conky.conf"
 SESSIONFILE="$CONKYPATH/conky-sessionfile"
 USAGE='
-	USAGE:	bl-conky-session [OPTION(S)]...FILES
+        USAGE:  bl-conky-session [OPTION(S)]...FILES
 
-	With no command argument, the script uses the default "$CONKYPATH/conky-sessionfile" sessionfile.
+        With no command argument, the script uses the default "$CONKYPATH/conky-sessionfile" sessionfile.
 
-	OPTIONS:
-		--default	: specify default sessionfile
-		--autostart	: no "kill conky" option asked for
-		path/to/sessionfile1  /path/to/sessionfile2 etc
+        OPTIONS:
+                --default       : specify default sessionfile
+                --autostart     : no "kill conky" option asked for
+                path/to/sessionfile1  /path/to/sessionfile2 etc
 
-	EXAMPLES:
-	Run specified sessionfile at login:
+        EXAMPLES:
+        Run specified sessionfile at login:
 
-		"bl-conky-session --autostart /path/to/sessionfile"
+                "bl-conky-session --autostart /path/to/sessionfile"
 
-	Run default sessionfile, without killing running conkys:
+        Run default sessionfile, without killing running conkys:
 
-		"bl-conky-session --autostart"
+                "bl-conky-session --autostart"
 
-	Run several conky sessionfiles (option to kill conkys first):
+        Run several conky sessionfiles (option to kill conkys first):
 
-		"bl-conky-session --default sessionfile1 sessionfile2 etc"
+                "bl-conky-session --default sessionfile1 sessionfile2 etc"
 '
 
 ### DIALOG VARIABLES
@@ -83,7 +83,7 @@ findArgs(){     # get command args (switches & sessionfile paths)
         for SESSION in "${sessArr[@]}";do # run the conkys in the sessionfiles
             source "$SESSION"
         done
-    else    # --autostart used, but no sessionfiles passed to bl-conkyzen
+    else    # --autostart used, but no sessionfiles passed to bl-conky-manager
         if [[ -f $SESSIONFILE ]] && (( NOKILL == 1 )); then
             source "$SESSIONFILE"   # use conky-sessionfile
         else

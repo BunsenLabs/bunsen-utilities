@@ -1133,7 +1133,7 @@ function restoreConky(){    # arg = $VAL from restoreSettings()
     local currDESKTOP CONKYCMD
     currDESKTOP=$(xprop -root _NET_CURRENT_DESKTOP | tail -c -2)   # Conkys may have been started on different desktops
     CONKYCMD="$1"
-    if type bl-conkyzen &>/dev/null;then    # see if bl-conkyzen is installed
+    if type bl-conky-manager &>/dev/null;then    # see if bl-conky-manager is installed
         if [[ -f $CONKYSESSION ]]; then
             :> "$CONKYSESSION" # create/overwrite conky session file
             # write to conky session file...
@@ -1144,7 +1144,7 @@ function restoreConky(){    # arg = $VAL from restoreSettings()
         fi
     else
         safeKill conky
-        eval "$CONKYCMD"    # no bl-conkyzen, so just run conky commands
+        eval "$CONKYCMD"    # no bl-conky-manager, so just run conky commands
         wait
     fi
     echo -e "\n  Restored Conky\n"
@@ -1153,7 +1153,7 @@ function restoreConky(){    # arg = $VAL from restoreSettings()
 
 function restoreTint2(){    # arg = $VAL from restoreSettings()
     local TINTCMD="${1//;/$'\n'}"
-    if type bl-tint2zen >/dev/null;then    # see if bl-tint2zen is installed
+    if type bl-tint2-manager >/dev/null;then    # see if bl-tint2-manager is installed
         if [[ -f $TINTSESSION ]] 2>/dev/null; then
             :> "$TINTSESSION"    # create/overwrite tint2 session file
             # write to tint2 session file...
@@ -1171,7 +1171,7 @@ function restoreTint2(){    # arg = $VAL from restoreSettings()
                 fi
             done < "$TINTSESSION"
         fi
-    else                    # no bl-tint2zen, so just run tint2 commands
+    else                    # no bl-tint2-manager, so just run tint2 commands
         safeKill tint2
         for tintpath in $TINTCMD;do
             if [[ "$tintpath" == "tint2" ]] >/dev/null;then

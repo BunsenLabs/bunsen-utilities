@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-#    bl-conkyzen: BunsenLabs Conky selection and switcher script
+#    bl-conky-manager: BunsenLabs Conky selection and switcher script
 #    Copyright (C) 2015/2019 damo    <damo@bunsenlabs.org>
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -41,8 +41,8 @@
 #
 #   Different saved-session files can be used by running the script with:
 #
-#           bl-conkyzen -f /path/to/sessionfile &
-#           bl-conkyzen -z (opens gui entry dialog for filepath)
+#           bl-conky-manager -f /path/to/sessionfile &
+#           bl-conky-manager -z (opens gui entry dialog for filepath)
 #
 ########################################################################
 
@@ -53,7 +53,7 @@ CONKYDEFAULT="$CONKYPATH/conky.conf"
 BLDEFAULT="$CONKYPATH/BL-Default-conky.conf"
 
 USAGE1='
-    USAGE:  bl-conkyzen [OPTION]...FILES
+    USAGE:  bl-conky-manager [OPTION]...FILES
 
     With no command option the script runs the gui
 
@@ -62,7 +62,7 @@ USAGE1='
     -z          : Run gui filename entry dialog for new saved session
 '
 USAGE2='
-    USAGE:  bl-conkyzen [OPTION]...FILES
+    USAGE:  bl-conky-manager [OPTION]...FILES
 
     With no command option the script runs the gui
 
@@ -79,7 +79,7 @@ USAGE2='
     EXAMPLES:
     Save session to a new saved-session file with:
 
-        bl-conkyzen -f sessionfile-name
+        bl-conky-manager -f sessionfile-name
 
     To start the default conky session at login, add the
     following line to autostart:
