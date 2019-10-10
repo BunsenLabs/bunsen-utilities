@@ -1,0 +1,97 @@
+#!/bin/bash
+# A script to allow users to set their locale from those which have been enabled,
+# writing to ~/.dmrc, also to accountsservice if available.
+
+# TODO
+# Sometimes LANGUAGE is not updated to match LANG.
+# BunsenLabs ships a fix for this when LightDM is being used,
+# but something more generic would be nice.
+
+dm_file="$HOME/.dmrc"
+[[ -e "$dm_file" ]] || touch "$dm_file"
+
+yad_info(){
+    yad --window-icon=distributor-logo-bunsenlabs --center --borders=20 --undecorated --fixed --on-top --button=OK:0 --text "$*"
+}
+
+error_exit() {
+    yad_info "$0 error:"$'\n'"$*"
+    exit 1
+}
+
+parse_dmrc() {
+    current_lang=$(sed -nr 's/^Language=([^[:blank:]]+).*$/\1/p' "$dm_file")
+}
+
+# pass locale (LANG) to be written
+write_dmrc() {
+    sed -i '/[Ll]anguage=/d' "$dm_file"
+    echo "Language=$1" >> "$dm_file"
+}
+
+# pass same locale as for write_dmrc
+write_accountsservice() {
+    pgrep -x 'accounts-daemon' >/dev/null || {
+        echo "${0}: accounts-daemon is not running, accountsservice language will not be updated." >&2
+        return 1
+    }
+    local lang=${1/utf8/UTF-8}
+    # put returned path in array to strip leading & trailing spaces
+    local user_path=($(dbus-send --print-reply=literal --system --dest=org.freedesktop.Accounts /org/freedesktop/Accounts org.freedesktop.Accounts.FindUserByName string:"$USER")) || error_exit "error finding ${USER}'s accountsservice path"
+    dbus-send --system --dest=org.freedesktop.Accounts "${user_path[0]}" org.freedesktop.Accounts.User.SetLanguage string:"$lang" || error_exit "error setting ${USER}'s language in accountsservice"
+}
+
+parse_dmrc
+
+locale_prompt="Your current locale is <b>${current_lang:-not set}</b>
+These are the locales you have enabled;
+to add more: <i>sudo dpkg-reconfigure locales</i>
+
+Please choose:"
+
+#### parse locale ####
+list=()
+locale_regex="^[[:blank:]]*locale:[[:blank:]]*([^[:blank:]]+)"
+name_regex="^[[:blank:]]*language \| (.*)$"
+parsing=true
+while read -r line
+do
+    [[ $line =~ $locale_regex ]] && {
+        parsing=true
+        loc=${BASH_REMATCH[1]}
+        [[ $loc = C.* ]] && {
+            parsing=false
+            continue
+        }
+        list+=("${loc}")
+    }
+    [[ $parsing = true ]] || continue
+    [[ $line =~ $name_regex ]] && {
+        name=${BASH_REMATCH[1]}
+        list+=("${name}")
+        parsing=false
+    }
+done < <(locale -av)
+########
+
+choice=$( yad --title 'Choose language' --window-icon=distributor-logo-bunsenlabs --center --borders=20 --geometry 350x350 --button=OK:0 --button=Cancel:1 --text "$locale_prompt" --no-headers --separator='' --list --print-column=1 --column="locale":TEXT --column="name":TEXT "${list[@]}" )
+case $? in
+0)
+    extra_info=
+    write_dmrc "$choice"
+    write_accountsservice "$choice" && extra_info=' and accountsservice'
+    parse_dmrc
+    [[ "$current_lang" = "$choice" ]] || {
+        yad_info "Error setting language. Please check ~/dmrc"
+        exit 1
+    }
+    yad_info "Your locale has been set to <b>${choice}</b> in ~/.dmrc${extra_info:-}. \nThe change will be seen after your next login."
+    ;;
+1)
+    notify-send "Choose language" "Change cancelled"
+    ;;
+*)
+    yad_info "$0 returned an error..."
+    exit 1
+    ;;
+esac

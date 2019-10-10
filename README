@@ -15,8 +15,10 @@ bl-tint2-restart:		Script to restart all running tint2 processes.
 bl-tint2zen:			Yad-based tint2 manager.
 
 bl-kb:				Script to read openbox keyboard shortcuts and write them to a text file.
+bl-xbk:				Script to parse xbindkeys configs and write them to the same text file as bl-kb.
 bl-obthemes:			Script to save or restore openbox gui configurations.
 bl-lock:			Script to lock the display.
+bl-setlocale:			Yad-based script to allow users to choose their locale.
 
 bl-pkg-versions:		Utility to display the versions of BunsenLabs packages in the apt repository and on GitHub.
 bl-notify-broadcast:		Script to send user notification popups from root processes.
