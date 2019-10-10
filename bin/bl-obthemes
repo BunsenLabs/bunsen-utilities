@@ -1079,7 +1079,7 @@ function checkGTK(){    # check if gtk theme is still present
 }
 
 function restoreGTK(){
-    restoreFiles "$GTK2" "$GTK2MINE" "$GTK3" "$GTK3x" 
+    restoreFiles "$GTK2" "$GTK2MINE" "$GTK3" "$GTK3x"
 }
 
 function checkOBTHEME(){
@@ -1123,6 +1123,9 @@ function restoreOBrc(){
     sed -i '/^$/d' "$FTEMP"   # remove empty lines
     cp "$FTEMP" "$RCFILE"     # overwrite rc.xml
     echo -e "\n  rc.xml backed up and edited for OB theme"
+    openbox --reconfigure && echo -e "\n Openbox reconfigured"
+    hash jgmenu 2>/dev/null && JGMENU_RCXML="$RCFILE" jgmenu init --apply-obtheme && echo -e "\n jgmenu reconfigured"
+    echo -e "\n Openbox and jgmenu reconfigured"
     rm -f "$FTEMP"
 }
 
@@ -1435,7 +1438,7 @@ function restoreSettings(){
         esac
     done
     BKP_SFX=".blob.$(date +"%Y%m%d-%H%M%S")" # global: unified backup suffix that restore functions will inherit
-    
+
     # get chosen saved configs and restore them
     # Conky and Tint2 will be killed by their restore functions, if called.
     local TAG VAL
@@ -1492,8 +1495,6 @@ function restoreSettings(){
                                 ;;
         esac
     done < "$THEMEPATH/settings.cfg"
-    openbox --reconfigure
-    hash jgmenu 2>/dev/null && jgmenu init --apply-obtheme
     restoreSettings
 }
 
