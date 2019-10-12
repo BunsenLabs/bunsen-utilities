@@ -180,7 +180,7 @@ writeSessions(){    # save a new sessionfile name for use by a menu
     SESSIONFILE="$CONKYPATH/$1"
     echo "sessionfile= $SESSIONFILE"
     if ! [[ -f $SESSIONS ]];then
-        > "$SESSIONS"
+        :> "$SESSIONS"
     fi
     if grep -qx "$SESSIONFILE" "$SESSIONS";then # session was previously saved
         if [[ $2 = "-z" ]];then    # input was from input dialog, so ask OK?
@@ -198,10 +198,9 @@ writeSessions(){    # save a new sessionfile name for use by a menu
                         ;;
             esac
         fi
-    else
-        cp "$SESSIONS" "$SESSIONS.bkp"
-        echo "$SESSIONFILE" >> "$SESSIONS"
     fi
+    cp "$SESSIONS" "$SESSIONS.bkp"
+    echo "$SESSIONFILE" >> "$SESSIONS"
 }
 
 loadDialog() {
@@ -275,13 +274,13 @@ loadDialog() {
 ######## END FUNCTIONS #################################################
 
 # get args passed to script (session can be saved to a different file)
-for arg in "$@";do
+while [[ -n $1 ]];do
     case "$arg" in
         -h|--help   ) echo -e "$USAGE2"
                       echo
                       exit 0
                       ;;
-        -f|--files  ) if [[ $2 ]];then
+        -f|--files  ) if [[ -n $2 ]];then
                         SESSIONFILE="$2"    # sessionfile has been specified
                         writeSessions "$SESSIONFILE"    # if sessionfile is new, write name to saved-sessions
                         break
@@ -305,6 +304,7 @@ for arg in "$@";do
                           exit 1
                       else
                           writeSessions "$SPATH" "-z"   # saved session file from input dialog
+                          break
                       fi
                       ;;
 #        *           ) if ! [[ $arg ]];then # (If there are no args, for loop is not executed.)
@@ -318,6 +318,7 @@ for arg in "$@";do
                       exit 1
                       ;;
     esac
+    shift
 done
 
 # test for ~/.config/conky/conky.conf, create a link to the default conky if necessary
