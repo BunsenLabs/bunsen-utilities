@@ -1,3 +1,14 @@
+bunsen-utilities (10.1.1-1) lithium; urgency=medium
+
+  * Add script bl-setlocale to let users set locale after login.
+     This lets users who don't have a display-manager locale option
+     choose one from installed locales, though a re-login is needed.
+  * Rename bl-conkyzen to bl-conky-manager
+     and bl-tint2zen to bl-tint2-manager.
+  * bl-obthemes and bl-conky-manager: add small code tweaks.
+
+ -- John Crawley <john@bunsenlabs.org>  Wed, 30 Oct 2019 10:16:44 +0900
+
 bunsen-utilities (10.1-1) lithium; urgency=medium
 
   * bl-obthemes: 
