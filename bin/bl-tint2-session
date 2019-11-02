@@ -29,11 +29,17 @@ USAGE='
      USAGE:  with no command argument, the script uses the chosen
 		Tint2 session file "$TINT2PATH/tint2-sessionfile",
 		if it exists, otherwise the default tint2rc is used.
-		
+
 		To start them at login, add the following line to autostart:
-     
+
 			bl-tint2-session
 '
+
+# Kill only with exact match, and only if process belongs to executor.
+# Usage: safeKill <processname>
+function safeKill() {
+    pkill -x -u "$USER" "$1"
+}
 
 findArgs(){     # get command args
     for arg in "$@";do
@@ -49,26 +55,18 @@ findArgs(){     # get command args
 }
 
 testSessionfile(){
-    if test -f  "$1" &>/dev/null;then # sessionfile found
-        killTints
+    if test -f  "$1" ;then # sessionfile found
+        safeKill tint2
         while read line;do
-            tint2 -c "$line" &
+            tint2 -c "$line" >/dev/null 2>&1 &
             sleep 1s
         done < "$1"
     else
         echo -e "Created sessionfile \"$1\"\nRunning default tint2rc" 2>&1
         echo "$TINT2PATH/tint2rc" > "$SESSIONFILE"
-        killTints
-        tint2 -c "$TINT2PATH/tint2rc" &
+        safeKill tint2
+        tint2 -c "$TINT2PATH/tint2rc" >/dev/null 2>&1 &
     fi
-}
-
-killTints(){
-    pgrep -a tint2 | while read pid cmd; do
-        if [[ ${cmd%% *} = tint2 ]]; then
-            kill "$pid"
-        fi
-    done
 }
 
 if [ $# -eq 0 ];then    # if no args, then run default sessionfile
