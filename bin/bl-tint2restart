@@ -62,7 +62,7 @@ done <<< "$(pgrep -a tint2)"
 sleep 1
 for i in "${!commands[@]}" # go through the indexes
 do
-    (setsid $i &)
+    (setsid $i >/dev/null 2>&1 &)
     sleep 0.1
 done
 

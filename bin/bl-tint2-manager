@@ -149,7 +149,7 @@ loadDialog() {
                         # see if it matches the returned name
                         if [[ $display = "$name" ]];then
                             echo -e "$f" >> "$SESSIONFILE"
-                            tint2 -c "$f" &  #start the tint2
+                            tint2 -c "$f" >/dev/null 2>&1 &  #start the tint2
                             sleep 1s
                         fi
                     done
