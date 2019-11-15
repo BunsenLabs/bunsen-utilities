@@ -22,3 +22,4 @@ bl-setlocale:			Yad-based script to allow users to choose their locale.
 
 bl-pkg-versions:		Utility to display the versions of BunsenLabs packages in the apt repository and on GitHub.
 bl-notify-broadcast:		Script to send user notification popups from root processes.
+bl-urxlx:			Script to convert Xresources colours to rgb for lxterminal configuration.

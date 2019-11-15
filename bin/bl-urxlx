@@ -1,0 +1,54 @@
+#!/bin/bash
+
+#    bl-urxlx: is naive Xresources to Lxterminal color config converter  
+#    Copyright (C) 2019 brontosaurusrex
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+
+# help
+help () { 
+cat << EOF
+    bl-urxlx is naive Xresources to Lxterminal color config converter
+    
+Options:
+    -h --help   show this message
+
+Examples:
+    .Xresources > tmp.txt
+    monokai.txt | xclip
+EOF
+}
+
+if [ "$1" == "--help" ] || [ "$1" == "-h" ]; then
+    help && exit
+fi
+
+# ffffff to rgb(255,255,255)
+2rgb() {
+    hex="$1"
+    printf "rgb(%d,%d,%d)\n" 0x"${hex:0:2}" 0x"${hex:2:2}" 0x"${hex:4:2}"
+
+}
+
+# main
+for file in "$@" ; do
+    echo # empty line
+    grep -E --color=never 'color[0-9]|background:|foreground:' "$file" | while read -r color hex; do
+
+        if [[ $color =~ [!0-9] ]]; then 
+            #echo "$color has number"
+            color="palette_color_${color//[!0-9]}"
+        else
+            [[ $color == *"background"* ]] && color="bgcolor"
+            [[ $color == *"foreground"* ]] && color="fgcolor"
+        fi
+
+        hex="${hex//#}" # remove #
+        
+        echo "$color=$(2rgb "$hex")"
+
+    done
+done

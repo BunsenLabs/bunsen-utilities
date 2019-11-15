@@ -51,3 +51,5 @@ Description: Small scripts to use with BunsenLabs.
   - bl-xinerama-prop: Script to get xinerama properties in a shell script.
   - bl-xbk: Script to manage xbindkeys keyboard shortcuts.
   - bl-notify-broadcast: Script to send user notifications from root processes.
+  - bl-urlx: Script to convert Xresources colours to rgb for lxterminal configuration.
+  
