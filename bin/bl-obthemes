@@ -170,6 +170,7 @@ LDM="lightdm-gtk-greeter.conf"
 
 ### END CONFIGS VARIABLES
 
+###
 # packages needed for particular GTK themes
 declare -A theme_pkgs=(
 [Beam]=bunsen-themes
@@ -190,6 +191,8 @@ declare -A icon_pkgs=(
 [Papirus-Bunsen-Dark-grey]='bunsen-papirus-icon-theme'
 [Papirus-Bunsen-Dark-bluegrey]='bunsen-papirus-icon-theme'
 )
+
+###
 
 THEMEPATH_1="$HOME/.themes"
 THEMEPATH_2="$HOME/.local/share/themes"

@@ -27,12 +27,12 @@ TINT2PATH="$HOME/.config/tint2"
 SESSIONFILE="$TINT2PATH/tint2-sessionfile"
 USAGE='
      USAGE:  with no command argument, the script uses the chosen
-		Tint2 session file "$TINT2PATH/tint2-sessionfile",
-		if it exists, otherwise the default tint2rc is used.
+        Tint2 session file "$TINT2PATH/tint2-sessionfile",
+        if it exists, otherwise the default tint2rc is used.
 
-		To start them at login, add the following line to autostart:
+        To start them at login, add the following line to autostart:
 
-			bl-tint2-session
+            bl-tint2-session
 '
 
 # Kill only with exact match, and only if process belongs to executor.
