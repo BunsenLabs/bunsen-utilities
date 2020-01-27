@@ -252,27 +252,27 @@ PICKX="X configs"
 ### FUNCTIONS ##########################################################
 
 function upgradeBlobs(){
+    moveFile(){ # $1 is file, $2 is target dir
+        [[ -f "$2/${1##*/}" ]] && return 0
+        [[ -f "$1" ]] || {
+            echo "$0: Upgrading ${i}: WARNING Cannot move file ${1}, it does not exist" >&2
+            return 1
+        }
+        mkdir -p "$2"
+        mv "$1" "$2" || exit
+    }
+    moveDir(){
+        [[ -d "$2/${1##*/}" ]] && return 0
+        [[ -d "$1" ]] || {
+            echo "$0: Upgrading ${i}: WARNING Cannot move directory ${1}, it does not exist" >&2
+            return 1
+        }
+        mkdir -p "$2"
+        mv "$1" "$2" || exit
+    }
     for i in "$USRCONFIGPATH"/*; do
         [[ -d $i ]] || continue
         mkdir -p "$i/user"
-        moveFile(){ # $1 is file, $2 is target dir
-            [[ -f "$2/${1##*/}" ]] && return 0
-            [[ -f "$1" ]] || {
-                echo "$0: Upgrading ${i}: WARNING Cannot move file ${1}, it does not exist" >&2
-                return 1
-            }
-            mkdir -p "$2"
-            mv "$1" "$2" || exit
-        }
-        moveDir(){
-            [[ -d "$2/${1##*/}" ]] && return 0
-            [[ -d "$1" ]] || {
-                echo "$0: Upgrading ${i}: WARNING Cannot move directory ${1}, it does not exist" >&2
-                return 1
-            }
-            mkdir -p "$2"
-            mv "$1" "$2" || exit
-        }
         local themename=${i##*/}
         moveFile "$USRCONFIGPATH/${themename}.jpg" "$i"
         :> "$i/newsettings"
