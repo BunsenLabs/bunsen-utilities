@@ -170,7 +170,6 @@ LDM="lightdm-gtk-greeter.conf"
 
 ### END CONFIGS VARIABLES
 
-###
 # packages needed for particular GTK themes
 declare -A theme_pkgs=(
 [Beam]=bunsen-themes
@@ -209,8 +208,11 @@ iconPaths=("$ICONPATH_1" "$ICONPATH_2" "$ICONPATH_3" "$ICONPATH_4")
 
 ### DIALOG VARIABLES
 TITLE="BLOB Configuration Manager"
+ICON="distributor-logo-bunsenlabs"
 DIALOG="yad --center --undecorated --borders=20 --window-icon=distributor-logo-bunsenlabs --fixed"
 DIALOGDEC="yad --center  --borders=20 --window-icon=distributor-logo-bunsenlabs"
+yad_args=( --center  --borders=20 --window-icon="$ICON" )
+popup_args=( "${yad_args[@]}" --undecorated --fixed )
 T="--text="
 OK="--button=OK:0"
 CANCEL="--button=gtk-cancel:1"
@@ -250,6 +252,21 @@ PICKX="X configs"
 
 
 ### FUNCTIONS ##########################################################
+
+### DIALOG FUNCTIONS
+
+# yad displays cancel & OK buttons by default
+# arbitary options (eg --entry) can be passed *after* the text
+yad_prompt() {
+    yad "${popup_args[@]}" --title="$TITLE" --text="$1" "${@:2}"
+}
+
+yad_fatal_error() {
+    yad "${popup_args[@]}" --title="$TITLE" --text="$1" \
+    --image="dialog-warning" "$EXIT"
+}
+
+### END DIALOG FUNCTIONS
 
 function upgradeBlobs(){
     moveFile(){ # $1 is file, $2 is target dir
@@ -995,7 +1012,7 @@ function saveSettings(){
     done
         TXT="<big><b><u>Openbox Configurations to be saved:</u></b></big>\n\n"
         TXT2=$(cat "$LISTMSG")
-        $DIALOG --title="$TITLE" --text="$TXT$TXT2"
+	yad_prompt "$TXT$TXT2"
         ret=$?
         if (( ret == 1 ));then
             cleanup all
@@ -1356,6 +1373,11 @@ function restoreSettings(){
             elif [[ -d "$SYSCONFIGPATH/$themename" ]]
             then
                 THEMEPATH="$SYSCONFIGPATH/$themename"
+            else
+                msg="cannot find BLOB theme $themename"
+                echo "$0: $msg" >&2
+                yad_fatal_error "$msg"
+                exit 1
             fi
         else
             echo "$0: function restoreSettings returned strange value $CONFIG" >&2
