@@ -237,6 +237,7 @@ Openbox Configuration Manager</b></big>
 
 PICKOB="OB theme"
 PICKGTK="GTK theme"
+PICKICONS="Icon theme"
 PICKBG="Background Wallpaper"
 PICKCONKY="Conky"
 PICKTINT="Tint2"
@@ -392,13 +393,13 @@ function Intro(){
                 rm -rf "$CONFIGDIR_BKP"
                 echo -e "\n  Temporary backup of $CONFIGDIR deleted\n"
             fi
-            restoreSettings
+            displayBlobs
             ;;
         1)  echo "CANCELLED..."
             exit 0
             ;;
         2)  getCurrent
-            restoreSettings
+            displayBlobs
             ;;
         *)  echo "RETURN ERROR" >&2
             ;;
@@ -414,11 +415,7 @@ function setName(){  # set name of collection, make dir and session settings fil
     MSG2="  No file specified for new saved session.\n\n  Try again?"
     DEL=0
     while true;do  # loop dialog if nothing is selected
-        NEWNAME=$($DIALOG --entry \
-            --title="$TITLE" \
-            $CANCEL --button="OK:0" \
-            "$T$MSG" \
-            2>/dev/null )
+        NEWNAME=$( yad_prompt "$MSG" --entry )
         if (( $? == 1 )) ;then # Cancel was selected
             Intro
         elif [[ ! $NEWNAME ]] ;then     # entry was empty
@@ -647,11 +644,11 @@ function getConky(){
         echo -e "$LISTMSGTXT\t$CONKYTXT\n" >> "$LISTMSG"
         echo -e "\n  Saved running Conky(s)"
     else
-        DLG=$($DIALOG --form --image="dialog-warning" \
+        $DIALOG --form --image="dialog-warning" \
         --title="$TITLE" \
         --text="You selected to save Conkys\nbut none are running" \
         "$OK" \
-        --width=300) 2>/dev/null
+        --width=300 2>/dev/null
     fi
     }
 
@@ -687,11 +684,11 @@ function getTint(){
         echo -e "$MSG\t$LISTMSGTXT\n" >> "$LISTMSG"
         echo -e "\n  Saved running Tint2(s)"
     else
-        DLG=$($DIALOG --form --image="dialog-warning" \
+        $DIALOG --form --image="dialog-warning" \
         --title="$TITLE" \
         --text="You selected to save Tint2\nbut none are running" \
         "$OK" \
-        --width=300) 2>/dev/null
+        --width=300 2>/dev/null
     fi
 }
 
@@ -917,109 +914,57 @@ function checkTerm(){
 }
 
 function saveSettings(){
-    local columns select termfile pickterm
-    select="FALSE"
-    while true;do
-        columns=(
-            "$select" "$PICKOB"
-            "$select" "$PICKGTK"
-            "$select" "$PICKBG"
-            "$select" "$PICKCONKY"
-            "$select" "$PICKTINT"
-            "$select" "$PICKDMENU"
-            "$select" "$PICKLDM"
-            #"$select" "$PICKEXIT"
-            "$select" "$PICKX"
-        )
-        checkTerm # sets termfile and pickterm
-        # add terminal to array if one with a config file is in use
-        if  [[ -n $termfile ]];then
-            columns+=("$select" "$pickterm")
-        fi
-        CHOICE=$($DIALOGDEC --list --checklist \
-            --title="Choose the configs to save..." \
-            --button="Select All:2" \
-            $CANCEL $OK \
-            --height=340 \
-            --column="Select" --column="Config" "${columns[@]}" \
-            2>/dev/null )
-            ret=$?
-        if (( ret == 1 )); then # cancel button pressed
-            cleanup all
-            restoreSettings
-        elif (( ret == 2 ));then
-            select="TRUE"
-            continue
-        else
-            if [[ ! $CHOICE ]] ; then # entry field is empty, so try again
-                RET=$($DIALOG  --image="dialog-question" \
-                --title="$TITLE" \
-                --text="\n  Make a selection...." \
-                $EXIT $OK \
-                --width=300 \
-                2>/dev/null )
-                if (( $? == 1 ));then
-                    cleanup all
-                    exit 0
-                else
-                    select='FALSE'
-                    continue
-                fi
-            else
-                i=0
-                retChoice=()
-                OIFS=$IFS # save Internal Field Separator
-                IFS='|' # separator is "|" in returned choices
-                # dialog return is in format 'TRUE|value|\nTRUE|value'
-                for ret in $CHOICE; do
-                    if [[ $ret = *TRUE* ]];then
-                        continue
-                    fi
-                    retChoice[$i]="$ret"
-                    i=$((i+1))
-                done
-                IFS=$OIFS # reset IFS back to default
-                for item in "${retChoice[@]}";do
-                    case "$item" in
-                        "$PICKOB"   )   getOBtheme
-                                        ;;
-                        "$PICKGTK"  )   getGTKtheme
-                                        ;;
-                        "$PICKBG"   )   getBg
-                                        ;;
-                        "$PICKCONKY")   getConky
-                                        ;;
-                        "$PICKTINT" )   getTint
-                                        ;;
-                        "$PICKDMENU")   getDmenu
-                                        ;;
-                        "$PICKLDM"  )   getLightdm
-                                        ;;
-                        "$PICKEXIT" )   getBLexitrc
-                                        ;;
-                        "$pickterm" )   getTerminal "$termfile" "$pickterm"
-                                        ;;
-                        "$PICKX"    )   getXconfig
-                                        ;;
-                        *           )   echo -e "\n  Unknown value!" >&2
-                                        exit 1
-                                        ;;
-                    esac
-                done
-                break
-            fi
-        fi
+    local configs termfile pickterm
+    configs=(
+        "$PICKOB"
+        "$PICKGTK"
+        "$PICKBG"
+        "$PICKCONKY"
+        "$PICKTINT"
+        "$PICKDMENU"
+        "$PICKLDM"
+        "$PICKX"
+    )
+    checkTerm # sets termfile and pickterm
+    # add terminal to array if one with a config file is in use
+    if  [[ -n $termfile ]];then
+        configs+=("$pickterm")
+    fi
+    for item in "${configs[@]}";do # now saving all configs
+        case "$item" in
+            "$PICKOB"   )   getOBtheme
+                            ;;
+            "$PICKGTK"  )   getGTKtheme
+                            ;;
+            "$PICKBG"   )   getBg
+                            ;;
+            "$PICKCONKY")   getConky
+                            ;;
+            "$PICKTINT" )   getTint
+                            ;;
+            "$PICKDMENU")   getDmenu
+                            ;;
+            "$PICKLDM"  )   getLightdm
+                            ;;
+            "$PICKX"    )   getXconfig
+                            ;;
+            "$pickterm" )   getTerminal "$termfile" "$pickterm"
+                            ;;
+            *           )   echo -e "\n  Unknown value!" >&2
+                            exit 1
+                            ;;
+        esac
     done
-        TXT="<big><b><u>Openbox Configurations to be saved:</u></b></big>\n\n"
-        TXT2=$(cat "$LISTMSG")
-	yad_prompt "$TXT$TXT2"
-        ret=$?
-        if (( ret == 1 ));then
-            cleanup all
-            restoreSettings
-        else
-            echo "$NEWNAME" > "$CURSESSFILE"     # replace entry in saved config flag file
-        fi
+    TXT="<big><b><u>Openbox Configurations to be saved:</u></b></big>\n\n"
+    TXT2=$(cat "$LISTMSG")
+    yad_prompt "$TXT$TXT2"
+    ret=$?
+    if (( ret == 1 ));then
+        cleanup all
+        displayBlobs
+    else
+        echo "$NEWNAME" > "$CURSESSFILE"     # replace entry in saved config flag file
+    fi
 }
 
 ###################### end save functions ##############################
@@ -1105,7 +1050,7 @@ function restoreGTK(){
 function checkOBTHEME(){
     local FOUNDOB=0
     local OBTXT="Openbox theme <b>$1</b> not found\n\n  The default Openbox theme will be used..."
-    for i in "${gtkPaths[@]}";do
+    for i in "${gtkPaths[@]}";do # gtkPaths defined at top
         if [[ -d "$i/$1/openbox-3" ]];then
             echo -e "\n  Found $1 Openbox theme"
             FOUNDOB=1
@@ -1118,7 +1063,7 @@ function checkOBTHEME(){
     fi
 }
 
-# THEMEPATH and BKP_SFX are globals set by restoreSettings()
+# THEMEPATH and BKP_SFX are globals set by displayBlobs()
 function restoreOBrc(){
     THEMEFILE="$THEMEPATH/obtheme.txt"
     FTEMP=$(mktemp --tmpdir blob.XXXX)
@@ -1149,7 +1094,7 @@ function restoreOBrc(){
     rm -f "$FTEMP"
 }
 
-function restoreConky(){    # arg = $VAL from restoreSettings()
+function restoreConky(){    # arg = $VAL from displayBlobs()
     local currDESKTOP CONKYCMD
     currDESKTOP=$(xprop -root _NET_CURRENT_DESKTOP | tail -c -2)   # Conkys may have been started on different desktops
     CONKYCMD="$1"
@@ -1171,7 +1116,7 @@ function restoreConky(){    # arg = $VAL from restoreSettings()
     wmctrl -s "$currDESKTOP" && sleep 1 # return to desktop that BLOB was started on, if conkys used 'wmctrl -s'
 }
 
-function restoreTint2(){    # arg = $VAL from restoreSettings()
+function restoreTint2(){    # arg = $VAL from displayBlobs()
     local TINTCMD="${1//;/$'\n'}"
     if type bl-tint2-manager >/dev/null;then    # see if bl-tint2-manager is installed
         if [[ -f $TINTSESSION ]] 2>/dev/null; then
@@ -1207,9 +1152,7 @@ function restoreTint2(){    # arg = $VAL from restoreSettings()
     fi
 }
 
-
-
-# THEMEPATH and BKP_SFX are globals set by restoreSettings()
+# THEMEPATH and BKP_SFX are globals set by displayBlobs()
 function restoreLightdm(){   # need pkexec to restore lightdm-gtk-greeter.conf
     local ret msg
     [[ -r "$THEMEPATH/$LDM" ]] || {
@@ -1236,8 +1179,9 @@ function restoreLightdm(){   # need pkexec to restore lightdm-gtk-greeter.conf
     done
 }
 
-# $1 [$2...] are relative paths passed from restoreSettings()
-# THEMEPATH is global set by restoreSettings()
+# $1 [$2...] are relative paths passed from displayBlobs()
+# THEMEPATH is global set by displayBlobs()
+# If source is directory, its contents will be copied to the equivalent user directory.
 function restoreFiles(){
     for i in "$@"
     do
@@ -1262,7 +1206,7 @@ function restoreFiles(){
 }
 
 # $1 and $2 are absolute source and target filepaths
-# BKP_SFX is global set by restoreSettings()
+# BKP_SFX is global set by displayBlobs()
 function restoreFileAbs(){
     local src_file target_file target_dir bkp_file
     src_file="$1"
@@ -1294,10 +1238,10 @@ events.send_clientmessage_toall()
 END
 }
 
-# This function is run in restoreSettings() below
+# This function is run in displayBlobs() below
 # $CURRENTSESSION from getCurrent()
-# DLGARR is global, but local to restoreSettings()
-function ViewRestoreDialog(){   # list saved theme collections for yad as DLGARR
+# DLGARR is local to displayBlobs()
+function UpdateDisplayDialog(){   # list saved theme collections for yad as DLGARR
     getCurrent                      # get name of latest set BLOB config
     if (( NUMDIRS == 0 ));then  # no saved configs; go back to Intro dialog
         Intro
@@ -1330,6 +1274,7 @@ function ViewRestoreDialog(){   # list saved theme collections for yad as DLGARR
     done
 }
 
+# This function is run in displayBlobs() below
 function getActiveMonitorDimensions(){   # set width and height for View dialog
     declare -a dim=()
     dim=($(bl-xinerama-prop))
@@ -1341,14 +1286,180 @@ function getActiveMonitorDimensions(){   # set width and height for View dialog
     }
 }
 
+# This function is run in displayBlobs() below
+# global THEMEPATH is set there
+restoreSettings() {
+    # get chosen saved configs and restore them
+    # Conky and Tint2 will be killed by their restore functions, if called.
+    BKP_SFX=".blob.$(date +"%Y%m%d-%H%M%S")" # global: unified backup suffix that restore functions will inherit
+    local TAG VAL configs columns select
+    declare -A configs
+    while read -r TAG VAL; do
+        case "$TAG" in
+            "[OBTHEME]"     )   configs["$PICKOB"]=false
+                                ;;
+            "[GTK]"         )   configs["$PICKGTK"]=false
+                                ;;
+            "[ICONS]"       )   configs["$PICKICONS"]=false
+                                ;;
+            "[BACKGROUND]"  )   configs["$PICKBG"]=false
+                                ;;
+            "[CONKY]"       )   configs["$PICKCONKY"]=false
+                                ;;
+            "[TINT2]"       )   configs["$PICKTINT"]=false
+                                ;;
+            "[DMENU]"       )   configs["$PICKDMENU"]=false
+                                ;;
+            "[LIGHTDM]"     )   configs["$PICKLDM"]=false
+                                ;;
+            "[EXITRC]"      )   : # do nothing
+                                ;;
+            "[XFILES]"      )   configs["$PICKX"]=false
+                                ;;
+            '['*']'         )   TAG="${TAG#[}"
+                                TAG="${TAG%]}"
+                                configs["$TAG"]=false
+                                ;;
+            *               )   echo -e "$TAG: Unknown value!" >&2
+                                return 1
+                                ;;
+        esac
+    done < "$THEMEPATH/settings.cfg"
+
+    select="FALSE"
+    while true
+    do
+        columns=()
+        for i in "${!configs[@]}"
+        do
+            columns+=("$select" "$i")
+        done
+        CHOICE=$($DIALOGDEC --list --checklist \
+            --title="Choose the configs to restore..." \
+            --button="Select All:2" \
+            $CANCEL $OK \
+            --height=340 \
+            --column="Select" --column="Config" "${columns[@]}" )
+        ret=$?
+        if (( ret == 1 )); then # cancel button pressed
+            cleanup all
+            displayBlobs
+        elif (( ret == 2 ));then
+            select="TRUE"
+            continue
+        else
+            if [[ ! $CHOICE ]] ; then # entry field is empty, so try again
+                RET=$($DIALOG  --image="dialog-question" \
+                --title="$TITLE" \
+                --text="\n  Make a selection...." \
+                $EXIT $OK \
+                --width=300 \
+                2>/dev/null )
+                if (( $? == 1 ));then
+                    cleanup all
+                    exit 0
+                else
+                    select='FALSE'
+                    continue
+                fi
+            else
+                i=0
+                retChoice=()
+                OIFS=$IFS # save Internal Field Separator
+                IFS='|' # separator is "|" in returned choices
+                # dialog return is in format 'TRUE|value|\nTRUE|value'
+                for ret in $CHOICE; do
+                    if [[ $ret = *TRUE* ]];then
+                        continue
+                    fi
+                    retChoice[$i]="$ret"
+                    i=$((i+1))
+                done
+                IFS=$OIFS # reset IFS back to default
+                for item in "${retChoice[@]}";do
+                    configs["$item"]=true
+                done
+                break
+            fi
+        fi
+    done
+
+    # rescan settings.cfg to get filepaths, if set
+    while read -r TAG VAL; do
+        home_marker='%USERHOME%'
+        case "$TAG" in
+            "[OBTHEME]"     )   [[ ${configs["$PICKOB"]} = true ]] || continue
+                                if [[ $VAL ]];then
+                                    checkOBTHEME "$VAL"
+                                fi
+                                restoreOBrc
+                                ;;
+            "[GTK]"         )   [[ ${configs["$PICKGTK"]} = true ]] || continue
+                                if [[ $VAL ]];then
+                                    checkGTK "$VAL"
+                                fi
+                                restoreGTK
+                                reloadGTK
+                                ;;
+            "[ICONS]"       )   [[ ${configs["$PICKICONS"]} = true ]] || continue
+                                if [[ $VAL ]];then
+                                    checkICONS "$VAL"
+                                fi
+                                ;;
+            "[BACKGROUND]"  )   [[ ${configs["$PICKBG"]} = true ]] || continue
+                                if [[ $VAL = FEH ]];then
+                                    restoreFiles "$FEHFILE"
+                                    source "$HOME/$FEHFILE"
+                                else
+                                    restoreFiles "$NITROFILE"
+                                    nitrogen --restore
+                                fi
+                                ;;
+            "[CONKY]"       )   [[ ${configs["$PICKCONKY"]} = true ]] || continue
+                                if [[ $VAL ]];then
+                                    VAL="${VAL//"$home_marker"/"$HOME"}"
+                                    restoreConky "$VAL"
+                                fi
+                                ;;
+            "[TINT2]"       )   [[ ${configs["$PICKTINT"]} = true ]] || continue
+                                if [[ $VAL ]];then
+                                    VAL="${VAL//"$home_marker"/"$HOME"}"
+                                    restoreTint2 "$VAL"
+                                fi
+                                ;;
+            "[DMENU]"       )   [[ ${configs["$PICKDMENU"]} = true ]] || continue
+                                restoreFiles "$DMENU"
+                                ;;
+            "[LIGHTDM]"     )   [[ ${configs["$PICKLDM"]} = true ]] || continue
+                                restoreLightdm
+                                ;;
+            "[EXITRC]"      )   : # do nothing
+                                ;;
+            "[XFILES]"      )   [[ ${configs["$PICKX"]} = true ]] || continue
+                                echo ".bashrc will not be overwritten: a copy is in $THEMEPATH/.bashrc"
+                                restoreFiles "$XFILE" #"$BASHFILE" # do not restore .bashrc for now
+                                xrdb ~/.Xresources
+                                ;;
+            '['*']'         )   TAG="${TAG#[}"
+                                TAG="${TAG%]}"
+                                [[ ${configs["$TAG"]} = true ]] || continue
+                                restoreFiles "$VAL"
+                                ;;
+            *               )   echo -e "$TAG: Unknown value!" >&2
+                                return 1
+                                ;;
+        esac
+    done < "$THEMEPATH/settings.cfg"
+}
+
 ########################################################################
 ######## Main BLOB list display function ###############################
 # sets globals THEMEPATH and BKP_SFX for restore functions
-function restoreSettings(){
+function displayBlobs(){
     local DLGWIDTH DLGHEIGHT DLGARR RET CONFIG themename
     getActiveMonitorDimensions
-    ViewRestoreDialog # generates DLGARR
     while true ;do
+        UpdateDisplayDialog # generates DLGARR
         CONFIG=$($DIALOGDEC --list --title="$TITLE" \
             --text="Double-click selection, or \"Enter\", or use the \"Restore\" button to restore settings\n" \
             --separator=" " \
@@ -1380,7 +1491,8 @@ function restoreSettings(){
                 exit 1
             fi
         else
-            echo "$0: function restoreSettings returned strange value $CONFIG" >&2
+            msg="function displayBlobs returned strange value $CONFIG"
+            echo "$0: $msg" >&2
             exit 1
         fi
         case $RET in
@@ -1390,7 +1502,7 @@ function restoreSettings(){
                 $DIALOG --title="$TITLE" "$T$TEXT" "$CANCEL" "$OK" 2>/dev/null
                 if (( $? == 0 ));then
                     echo "$themename" > "$CURSESSFILE"
-                    break
+                    restoreSettings
                 fi
                 ;;
             1)  exit 0
@@ -1413,14 +1525,13 @@ function restoreSettings(){
 
                 TEXT="Delete saved configurations <b>$THEMEPATH</b>\nand screenshot?"
                 $DIALOG --title="$TITLE" "$T$TEXT" "$CANCEL" "$OK" 2>/dev/null
-
+    
                 if (( $? == 0 ));then
                     rm -rf "$THEMEPATH"
                     echo -e "\n$themename DELETED"
                     if [[ $(< "$CURSESSFILE") = "$themename" ]];then
                         :> "$CURSESSFILE"
                     fi
-                    ViewRestoreDialog # regenerate list
                 fi
                 continue
                 ;;
@@ -1432,7 +1543,6 @@ function restoreSettings(){
                     rm -rf "$CONFIGDIR_BKP"
                     echo -e "\n  Temporary backup of $CONFIGDIR deleted\n"
                 fi
-                ViewRestoreDialog
                 continue
                 ;;
             4)  # show screenshot in image viewer
@@ -1454,7 +1564,7 @@ function restoreSettings(){
             5)  Intro
                 ;;
             *)  if (( RET == 252 ));then
-                    echo -e "\n  Exited with \"ESC\" key"
+                    echo -e "\n  Exited with \"ESC\" key" >&2
                 else
                     echo -e "\n  Error= $RET" >&2
                 fi
@@ -1462,65 +1572,6 @@ function restoreSettings(){
                 ;;
         esac
     done
-    BKP_SFX=".blob.$(date +"%Y%m%d-%H%M%S")" # global: unified backup suffix that restore functions will inherit
-
-    # get chosen saved configs and restore them
-    # Conky and Tint2 will be killed by their restore functions, if called.
-    local TAG VAL
-    while read -r TAG VAL; do #line;do
-        home_marker='%USERHOME%'
-        case "$TAG" in
-            "[OBTHEME]"     )   if [[ $VAL ]];then
-                                    checkOBTHEME "$VAL"
-                                fi
-                                restoreOBrc
-                                ;;
-            "[GTK]"         )   if [[ $VAL ]];then
-                                    checkGTK "$VAL"
-                                fi
-                                restoreGTK
-                                reloadGTK
-                                ;;
-            "[ICONS]"       )   if [[ $VAL ]];then
-                                    checkICONS "$VAL"
-                                fi
-                                ;;
-            "[BACKGROUND]"  )   if [[ $VAL = FEH ]];then
-                                    restoreFiles "$FEHFILE"
-                                    source "$HOME/$FEHFILE"
-                                else
-                                    restoreFiles "$NITROFILE"
-                                    nitrogen --restore
-                                fi
-                                ;;
-            "[CONKY]"       )   if [[ $VAL ]];then
-                                    VAL="${VAL//"$home_marker"/"$HOME"}"
-                                    restoreConky "$VAL"
-                                fi
-                                ;;
-            "[TINT2]"       )   if [[ $VAL ]];then
-                                    VAL="${VAL//"$home_marker"/"$HOME"}"
-                                    restoreTint2 "$VAL"
-                                fi
-                                ;;
-            "[DMENU]"       )   restoreFiles "$DMENU"
-                                ;;
-            "[LIGHTDM]"     )   restoreLightdm
-                                ;;
-            "[EXITRC]"      )   : #restoreBLexitrc "$THEMEPATH"
-                                ;;
-            "[XFILES]"      )   echo ".bashrc will not be overwritten: a copy is in $THEMEPATH/.bashrc"
-                                restoreFiles "$XFILE" #"$BASHFILE" # do not restore .bashrc for now
-                                xrdb ~/.Xresources
-                                ;;
-            '['*']'         )   restoreFiles "$VAL"
-                                ;;
-            *               )   echo -e "  Unknown value!" >&2
-                                restoreSettings
-                                ;;
-        esac
-    done < "$THEMEPATH/settings.cfg"
-    restoreSettings
 }
 
 ######################### end restore functions ########################
