@@ -41,7 +41,7 @@
 # USER VARIABLE: xdotool is used to move the mouse pointer, and assumes the
 # root-menu is shown with "Super + Space" keys, and the right mouse button is
 # set for "r-click". If you have set these to something else, then edit the
-# "MENUMODIFIER" and "MOUSECMD" variables.
+# "MENUMODIFIER" variable and "MOUSECMD" array.
 # Set the variable "KEYDOWN" to where "Preferences" is in the root-menu (or
 # anything else you might want displayed).
 # The image viewer is set to be "bl-image-viewer". Edit the "IMGCMD" variable
@@ -104,7 +104,7 @@ Configuration:
  USER VARIABLE: xdotool is used to move the mouse pointer, and assumes the
  root-menu is shown with \"Super + Space\" keys, and the right mouse button is
  set for \"r-click\". If you have set these to something else, then edit the
- \"MENUMODIFIER\" and \"MOUSECMD\" variables.
+ \"MENUMODIFIER\" variable and \"MOUSECMD\" array.
  Set the variable \"KEYDOWN\" to where \"Preferences\" is in the root-menu (or
  anything else you might want displayed).
  The image viewer is set to be \"bl-image-viewer\". Edit the \"IMGCMD\" variable
@@ -138,7 +138,7 @@ done
 ### USER SETTINGS
 IMGCMD="bl-image-viewer"    # application command to view screenshot
 MENUMODIFIER="super+space"  # keybind for show root-menu
-MOUSECMD="click 3"          # mouse r-click
+MOUSECMD=(click 3)          # mouse r-click
 KEYDOWN=11           # adjust this for where "Preferences" is in the menu
 
 ### GLOBALS
@@ -860,7 +860,7 @@ function getScrot(){
     scrot -t 9 "$SCROT"    # scrot thumbnail @9% fullsize
 
     # close root menu
-    xdotool mousemove_relative --sync --polar 0 10 $MOUSECMD
+    xdotool mousemove_relative --sync --polar 0 10 "${MOUSECMD[@]}"
     # kill lxappearance
     pkill -P "$$" lxappearance
 
