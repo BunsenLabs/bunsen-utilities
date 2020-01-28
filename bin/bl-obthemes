@@ -1089,7 +1089,7 @@ function restoreOBrc(){
     cp "$FTEMP" "$RCFILE"     # overwrite rc.xml
     echo -e "\n  rc.xml backed up and edited for OB theme"
     openbox --reconfigure && echo -e "\n Openbox reconfigured"
-    hash jgmenu 2>/dev/null && JGMENU_RCXML="$RCFILE" jgmenu init --apply-obtheme && echo -e "\n jgmenu reconfigured"
+    hash jgmenu_run 2>/dev/null && JGMENU_RCXML="$RCFILE" jgmenu_run init --apply-obtheme && echo -e "\n jgmenu reconfigured"
     echo -e "\n Openbox and jgmenu reconfigured"
     rm -f "$FTEMP"
 }
