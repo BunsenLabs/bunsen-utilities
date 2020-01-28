@@ -597,12 +597,17 @@ getIdCmd() {
 }
 
 function getConky(){
+    local conkyfile
     local CONKYCMD=""
     LISTMSGTXT="Running Conkys:"
     CMDTXT="[CONKY] "
     CONKYTXT=""
     NUM_DESKTOPS=$(xdotool get_num_desktops)
-
+    getCfile(){
+        for i in "${!idCmd[@]}"; do
+            [[ ${idCmd[i]} = '-c' ]] && { conkyfile="${idCmd[i+1]}"; break;}
+        done
+    }
     local -A arrSTICKY
     if [[ $(pidof conky) ]];then
         while read -r id;do  # get all running conky id's
@@ -614,11 +619,12 @@ function getConky(){
                 unset arrSTICKY["$id"] # remove from sticky list
                 if ! [[ -z "$id" ]];then
                     getIdCmd "$id" # generates array idCmd
+                    getCfile # extract conky config file
                     CONKYCMD=${idCmd[*]} # NB now in string, filepaths with spaces will be broken.
                     if [[ "$CONKYCMD" == "conky" ]] || [[ "$CONKYCMD" == "conky -q" ]];then
                         CONKYTXT="$CONKYTXT\n\tDesktop $i:  Default Conky"
                     else
-                        CONKYTXT="$CONKYTXT\n\tDesktop $i:  $CONKYCMD"
+                        CONKYTXT="$CONKYTXT\n\tDesktop $i:  $conkyfile"
                     fi
                     # command to start on specified desktop with wmctrl
                     CONKYCMD="sleep 1 && wmctrl -s $i && $CONKYCMD &;"
@@ -630,11 +636,12 @@ function getConky(){
         for id in "${!arrSTICKY[@]}";do  # get commands - we don't need wmctrl for these
             if ! [[ -z "$id" ]];then
                 getIdCmd "$id" # generates array idCmd
+                getCfile # extract conky config file
                 CONKYCMD=${idCmd[*]} # NB now in string, filepaths with spaces will be broken.
                 if [[ "$CONKYCMD" == "conky" ]] || [[ "$CONKYCMD" == "conky -q" ]];then
                     CONKYTXT="$CONKYTXT\n\tDefault Conky"
                 else
-                    CONKYTXT="$CONKYTXT\n\t$CONKYCMD"
+                    CONKYTXT="$CONKYTXT\n\t$conkyfile"
                 fi
                 CONKYCMD="sleep 1 && $CONKYCMD &;"
                 CMDTXT="$CMDTXT$CONKYCMD"
