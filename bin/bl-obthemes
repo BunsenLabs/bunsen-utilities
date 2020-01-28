@@ -262,9 +262,14 @@ yad_prompt() {
     yad "${popup_args[@]}" --title="$TITLE" --text="$1" "${@:2}"
 }
 
+yad_warning() {
+    yad "${popup_args[@]}" --title="$TITLE" --text="$1" \
+    --image="dialog-warning" --width=300 "$CLOSE"
+}
+
 yad_fatal_error() {
     yad "${popup_args[@]}" --title="$TITLE" --text="$1" \
-    --image="dialog-warning" "$EXIT"
+    --image="dialog-warning" --width=300 "$EXIT"
 }
 
 ### END DIALOG FUNCTIONS
@@ -438,7 +443,7 @@ function setName(){  # set name of collection, make dir and session settings fil
             if [[ -d $CONFIGDIR ]];then
                 echo -e "\n  $CONFIGDIR already exists"
 
-                $DIALOG --form --image="dialog-question" \
+                $DIALOG --image="dialog-question" \
                 --title="$TITLE" \
                 --text="Overwrite existing saved session?" \
                 "$CANCEL" "$OK" \
@@ -651,11 +656,7 @@ function getConky(){
         echo -e "$LISTMSGTXT\t$CONKYTXT\n" >> "$LISTMSG"
         echo -e "\n  Saved running Conky(s)"
     else
-        $DIALOG --form --image="dialog-warning" \
-        --title="$TITLE" \
-        --text="You selected to save Conkys\nbut none are running" \
-        "$OK" \
-        --width=300 2>/dev/null
+        yad_warning "You selected to save Conkys\nbut none are running"
     fi
     }
 
@@ -691,11 +692,7 @@ function getTint(){
         echo -e "$MSG\t$LISTMSGTXT\n" >> "$LISTMSG"
         echo -e "\n  Saved running Tint2(s)"
     else
-        $DIALOG --form --image="dialog-warning" \
-        --title="$TITLE" \
-        --text="You selected to save Tint2\nbut none are running" \
-        "$OK" \
-        --width=300 2>/dev/null
+        yad_warning "You selected to save Tint2\nbut none are running"
     fi
 }
 
@@ -1007,12 +1004,12 @@ function checkICONS(){ # check if icon theme is still present
                 then
                     return 0
                 else
-                    $DIALOG --title="$TITLE" --image="dialog-warning" "${T}Install failed." "$CLOSE" 2>/dev/null
+                    yad_warning "Package install failed."
                 fi
             fi
         fi
         echo -e "\n  Icon theme  $1  was not found\n  The default Icon theme will be used..."
-        $DIALOG --image="dialog-warning" "$T$ICOTXT" "$CLOSE" 2>/dev/null
+        yad_warning "$ICOTXT"
     fi
 }
 
@@ -1041,12 +1038,12 @@ function checkGTK(){    # check if gtk theme is still present
             then
                 return 0
             else
-                $DIALOG --title="$TITLE" --image="dialog-warning" "${T}Install failed." "$CLOSE" 2>/dev/null
+                yad_warning "Package install failed."
             fi
         fi
     fi
     echo -e "\n  GTK theme  $1  was not found\n  The default GTK theme will be used..."
-    $DIALOG --title="$TITLE" --image="dialog-warning" "$T$NOGTKTXT" "$CLOSE" 2>/dev/null
+    yad_warning "$NOGTKTXT"
     return 1
 }
 
@@ -1066,7 +1063,7 @@ function checkOBTHEME(){
     done
     if (( FOUNDOB == 0 ));then
         echo -e "\n  OB theme  $1  was not found\n  The default Openbox theme will be used..."
-        $DIALOG --title="$TITLE" --image="dialog-warning" "$T$OBTXT" "$CLOSE" 2>/dev/null
+        yad_warning "$OBTXT"
     fi
 }
 
@@ -1180,7 +1177,7 @@ function restoreLightdm(){   # need pkexec to restore lightdm-gtk-greeter.conf
                     ;;
             *   )   msg="  Password input failed\n\nlightdm-gtk-greeter.conf was not restored"
                     echo -e "\n  $msg" >&2
-                    $DIALOG --title="$TITLE" --image="dialog-warning" "$T$msg" "$OK" 2>/dev/null
+                    yad_warning "$msg"
                     ;;
         esac
     done
@@ -1526,7 +1523,7 @@ function displayBlobs(){
                 SYSDIRTXT="Sorry, system preset theme <b>${themename}</b> cannot be deleted"
                 if [[ "${THEMEPATH%/*}" = "$SYSCONFIGPATH" ]]
                 then
-                    $DIALOG --title="$TITLE" --image="dialog-warning" "$T$SYSDIRTXT" "$CLOSE" 2>/dev/null
+                    yad_warning "$SYSDIRTXT"
                     continue
                 fi
 
