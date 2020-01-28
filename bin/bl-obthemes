@@ -209,31 +209,15 @@ iconPaths=("$ICONPATH_1" "$ICONPATH_2" "$ICONPATH_3" "$ICONPATH_4")
 ### DIALOG VARIABLES
 TITLE="BLOB Configuration Manager"
 ICON="distributor-logo-bunsenlabs"
-DIALOG="yad --center --undecorated --borders=20 --window-icon=distributor-logo-bunsenlabs --fixed"
-DIALOGDEC="yad --center  --borders=20 --window-icon=distributor-logo-bunsenlabs"
+#DIALOG="yad --center --undecorated --borders=20 --window-icon=distributor-logo-bunsenlabs --fixed"
+#DIALOGDEC="yad --center  --borders=20 --window-icon=$ICON"
 yad_args=( --center  --borders=20 --window-icon="$ICON" )
-popup_args=( "${yad_args[@]}" --undecorated --fixed )
+popup_args=( "${yad_args[@]}" --title="$TITLE" --undecorated --fixed )
 T="--text="
 OK="--button=OK:0"
 CANCEL="--button=gtk-cancel:1"
 EXIT="--button=gtk-quit:1"
 CLOSE="--button=gtk-close:1"
-TXTINTRO='<big><b>BunsenLabs
-Openbox Configuration Manager</b></big>
-
-
-<b>Save or Restore settings for:</b>
-
-    Openbox theme
-    GTK theme
-    Conkys
-    Tint2
-    Desktop Background
-    Alt Menu (dmenu)
-    LightDM theme (currently disabled)
-    X configs (.bashrc, .Xresources)
-    Terminal (if config file exists)
-    + Screenshot'
 
 PICKOB="OB theme"
 PICKGTK="GTK theme"
@@ -259,17 +243,22 @@ PICKX="X configs"
 # yad displays cancel & OK buttons by default
 # arbitary options (eg --entry) can be passed *after* the text
 yad_prompt() {
-    yad "${popup_args[@]}" --title="$TITLE" --text="$1" "${@:2}"
+    yad "${popup_args[@]}" --text="$1" --width=300 "${@:2}"
+}
+
+yad_question() {
+    yad "${popup_args[@]}" --text="$1" \
+    --image="dialog-question" --width=300 "${@:2}"
 }
 
 yad_warning() {
-    yad "${popup_args[@]}" --title="$TITLE" --text="$1" \
+    yad "${popup_args[@]}" --text="$1" \
     --image="dialog-warning" --width=300 "$CLOSE"
 }
 
 yad_fatal_error() {
-    yad "${popup_args[@]}" --title="$TITLE" --text="$1" \
-    --image="dialog-warning" --width=300 "$EXIT"
+    yad "${popup_args[@]}" --text="$1" \
+    --image="dialog-error" --width=300 "$EXIT"
 }
 
 ### END DIALOG FUNCTIONS
@@ -372,25 +361,39 @@ function getCurrent(){      # get name of currently set BLOB config
 }
 
 function Intro(){
-    local RET
+    TXTINTRO='<big><b>BunsenLabs
+Openbox Configuration Manager</b></big>
+
+
+<b>Save or Restore settings for:</b>
+
+    Openbox theme
+    GTK theme
+    Conkys
+    Tint2
+    Desktop Background
+    Alt Menu (dmenu)
+    LightDM theme (currently disabled)
+    X configs (.bashrc, .Xresources)
+    Terminal (if config file exists)
+    + Screenshot'
+    
+#    local RET
     getCurrent
     #  if blob/ is empty, then don't display "View Saved" option in Intro dialog
     if (( NUMDIRS > 0 ));then
-        $DIALOGDEC "$T$TXTINTRO" \
-        --title="$TITLE" \
-        --button="Save Settings:0" --button="View Saved:2" $CLOSE \
-        --borders=30 \
-        2>/dev/null
+        yad "${yad_args[@]}" "$T$TXTINTRO" \
+        --title="$TITLE" --borders=30 \
+        --button="Save Settings:0" --button="View Saved:2" $CLOSE
+        
     else
-        $DIALOGDEC \
-        --title="$TITLE" \
-        "$T$TXTINTRO" \
-        --button="Save Settings:0" $CLOSE \
-        --borders=30 \
-        2>/dev/null
+        yad "${yad_args[@]}" "$T$TXTINTRO" \
+        --title="$TITLE" --borders=30 \
+        --button="Save Settings:0" $CLOSE
+        
     fi
-    RET=$?
-    case $RET in
+#    RET=$?
+    case $? in
         0)  setName
             saveSettings
             getScrot
@@ -424,13 +427,9 @@ function setName(){  # set name of collection, make dir and session settings fil
         if (( $? == 1 )) ;then # Cancel was selected
             Intro
         elif [[ ! $NEWNAME ]] ;then     # entry was empty
-            $DIALOG --image="dialog-question" \
-            --title="$TITLE" \
-            "$CANCEL" "$OK" \
-            "$T$MSG2" \
-            2>/dev/null
-            RET=$?
             echo -e "\n  No name entered for new collection!" >&2
+            yad_question "$MSG2"
+            RET=$?
             if (( RET == 0 ));then
                 continue
             else
@@ -442,14 +441,7 @@ function setName(){  # set name of collection, make dir and session settings fil
             CONFIGDIR_BKP="${CONFIGDIR}.bkp"
             if [[ -d $CONFIGDIR ]];then
                 echo -e "\n  $CONFIGDIR already exists"
-
-                $DIALOG --image="dialog-question" \
-                --title="$TITLE" \
-                --text="Overwrite existing saved session?" \
-                "$CANCEL" "$OK" \
-                --width=300 \
-                2>/dev/null
-
+                yad_question "Overwrite existing saved session?"
                 if (( $? == 0 ));then
                     mv "$CONFIGDIR" "$CONFIGDIR_BKP" # && mkdir -p "$CONFIGDIR"
                     DEL=1
@@ -991,7 +983,7 @@ function checkICONS(){ # check if icon theme is still present
         then
             echo -e "\n  Icon theme  $1  was not found\n  Offering to install $pkg..."
             local INSTICOTXT="Needed icon theme <b>$1</b> not found\n Would you like to install the package <b>${pkg}</b> which contains that theme?"
-            $DIALOG --title="$TITLE" --image="dialog-question" "$T$INSTICOTXT" "CANCEL" "OK" 2>/dev/null
+            yad_question "$INSTICOTXT"
             if (( $? == 0 ))
             then
                 local retfile retval
@@ -1026,7 +1018,7 @@ function checkGTK(){    # check if gtk theme is still present
     if [[ -n "${pkg}" ]] && hash bl-install >/dev/null
     then
         echo -e "\n  GTK theme  $1  was not found\n  Offering to install $pkg..."
-        $DIALOG --title="$TITLE" --image="dialog-question" "$T$INSTGTKTXT" "CANCEL" "OK" 2>/dev/null
+        yad_question "$INSTGTKTXT"
         if (( $? == 0 ))
         then
             local retfile retval
@@ -1338,10 +1330,9 @@ restoreSettings() {
         do
             columns+=("$select" "$i")
         done
-        CHOICE=$($DIALOGDEC --list --checklist \
+        CHOICE=$(yad "${yad_args[@]}" --list --checklist \
             --title="Choose the configs to restore..." \
-            --button="Select All:2" \
-            $CANCEL $OK \
+            --button="Select All:2" $CANCEL $OK \
             --height=340 \
             --column="Select" --column="Config" "${columns[@]}" )
         ret=$?
@@ -1353,12 +1344,7 @@ restoreSettings() {
             continue
         else
             if [[ ! $CHOICE ]] ; then # entry field is empty, so try again
-                RET=$($DIALOG  --image="dialog-question" \
-                --title="$TITLE" \
-                --text="\n  Make a selection...." \
-                $EXIT $OK \
-                --width=300 \
-                2>/dev/null )
+                yad_question "\n  Make a selection...." $EXIT $OK
                 if (( $? == 1 ));then
                     cleanup all
                     exit 0
@@ -1464,7 +1450,7 @@ function displayBlobs(){
     getActiveMonitorDimensions
     while true ;do
         UpdateDisplayDialog # generates DLGARR
-        CONFIG=$($DIALOGDEC --list --title="$TITLE" \
+        CONFIG=$(yad "${yad_args[@]}" --list --title="$TITLE" \
             --text="Double-click selection, or \"Enter\", or use the \"Restore\" button to restore settings\n" \
             --separator=" " \
             --button="About:5" \
@@ -1501,9 +1487,9 @@ function displayBlobs(){
         fi
         case $RET in
             0)  SAVED="$THEMEPATH/LISTMSG.txt"
-                TEXT="Restoring Configs saved as $CONFIG\n\n"
+                TEXT="These configs saved as $CONFIG can be restored:\n\n"
                 TEXT="$TEXT$(< "$SAVED")"
-                $DIALOG --title="$TITLE" "$T$TEXT" "$CANCEL" "$OK" 2>/dev/null
+                yad_prompt "$TEXT"
                 if (( $? == 0 ));then
                     echo "$themename" > "$CURSESSFILE"
                     restoreSettings
@@ -1512,7 +1498,7 @@ function displayBlobs(){
             1)  exit 0
                 ;;
             2)  if [[ ! $CONFIG ]];then
-                    $DIALOG --title="$TITLE" --text="Make a selection before trying to delete" "$EXIT" "$OK" 2>/dev/null
+                    yad_prompt "Make a selection before trying to delete" "$EXIT" "$OK"
                     if (( $? == 0 ));then
                         continue
                     else
@@ -1528,8 +1514,7 @@ function displayBlobs(){
                 fi
 
                 TEXT="Delete saved configurations <b>$THEMEPATH</b>\nand screenshot?"
-                $DIALOG --title="$TITLE" "$T$TEXT" "$CANCEL" "$OK" 2>/dev/null
-    
+                yad_prompt "$TEXT"
                 if (( $? == 0 ));then
                     rm -rf "$THEMEPATH"
                     echo -e "\n$themename DELETED"
@@ -1542,7 +1527,7 @@ function displayBlobs(){
             3)  setName
                 saveSettings
                 getScrot
-                $DIALOG --title="$TITLE" --text="Settings were saved as <b>$NEWNAME</b>" --image="gtk-save" "$OK" 2>/dev/null
+                yad_prompt "Settings were saved as <b>$NEWNAME</b>" --image="gtk-save" "$OK"
                 if [[ -d $CONFIGDIR_BKP ]];then
                     rm -rf "$CONFIGDIR_BKP"
                     echo -e "\n  Temporary backup of $CONFIGDIR deleted\n"
@@ -1561,7 +1546,7 @@ function displayBlobs(){
                     fi
                     $IMGCMD "$img"
                 else
-                    $DIALOG --title="$TITLE" --text="Make a selection" 2>/dev/null
+                    yad_prompt "Make a selection" "$OK"
                 fi
                 continue
                 ;;
