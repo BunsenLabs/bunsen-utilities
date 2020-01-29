@@ -241,6 +241,8 @@ PICKX="X configs"
 ### DIALOG FUNCTIONS
 
 # yad displays cancel & OK buttons by default
+# --button=* arguments will overrule this default
+
 # arbitary options (eg --entry) can be passed *after* the text
 yad_prompt() {
     yad "${popup_args[@]}" --text="$1" --width=300 "${@:2}"
@@ -421,7 +423,8 @@ function setName(){  # set name of collection, make dir and session settings fil
     MSG="  Configurations will be saved to a new directory in  \
     \n  $USRCONFIGPATH\n\n  Enter name of new collection...  "
     MSG2="  No file specified for new saved session.\n\n  Try again?"
-    DEL=0
+    local del time txt 
+    del=0
     while true;do  # loop dialog if nothing is selected
         NEWNAME=$( yad_prompt "$MSG" --entry )
         if (( $? == 1 )) ;then # Cancel was selected
@@ -444,7 +447,7 @@ function setName(){  # set name of collection, make dir and session settings fil
                 yad_question "Overwrite existing saved session?"
                 if (( $? == 0 ));then
                     mv "$CONFIGDIR" "$CONFIGDIR_BKP" # && mkdir -p "$CONFIGDIR"
-                    DEL=1
+                    del=1
                 else
                     continue
                 fi
@@ -457,16 +460,16 @@ function setName(){  # set name of collection, make dir and session settings fil
             break
         fi
     done
-    TIME=$(date)
-    if (( DEL == 1 ));then
-        TXT="  (Existing session overwritten)"
+    time=$(date)
+    if (( del == 1 ));then
+        txt="  (Existing session overwritten)"
     else
-        TXT=""
+        txt=""
     fi
-    echo -e "\n  Configuration will be saved as: $NEWNAME$TXT"
+    echo -e "\n  Configuration will be saved as: $NEWNAME$txt"
 
 #     store list in listfile
-    echo -e "<b>Configuration name: $NEWNAME</b>\t$TXT\nSaved at $TIME\n" >> "$LISTMSG"
+    echo -e "<b>Configuration name: $NEWNAME</b>\t$txt\nSaved at $time\n" >> "$LISTMSG"
 }
 
 # $1 [$2...] are relative paths passed from save functions
@@ -1288,41 +1291,40 @@ restoreSettings() {
     # get chosen saved configs and restore them
     # Conky and Tint2 will be killed by their restore functions, if called.
     BKP_SFX=".blob.$(date +"%Y%m%d-%H%M%S")" # global: unified backup suffix that restore functions will inherit
-    local TAG VAL configs columns select
+    local TAG VAL configs columns select CHOICE
     declare -A configs
     while read -r TAG VAL; do
         case "$TAG" in
-            "[OBTHEME]"     )   configs["$PICKOB"]=false
+            "[OBTHEME]"     )   configs["$PICKOB"]="$VAL"
                                 ;;
-            "[GTK]"         )   configs["$PICKGTK"]=false
+            "[GTK]"         )   configs["$PICKGTK"]="$VAL"
                                 ;;
-            "[ICONS]"       )   configs["$PICKICONS"]=false
+            "[ICONS]"       )   configs["$PICKICONS"]="$VAL"
                                 ;;
-            "[BACKGROUND]"  )   configs["$PICKBG"]=false
+            "[BACKGROUND]"  )   configs["$PICKBG"]="$VAL"
                                 ;;
-            "[CONKY]"       )   configs["$PICKCONKY"]=false
+            "[CONKY]"       )   configs["$PICKCONKY"]="$VAL"
                                 ;;
-            "[TINT2]"       )   configs["$PICKTINT"]=false
+            "[TINT2]"       )   configs["$PICKTINT"]="$VAL"
                                 ;;
-            "[DMENU]"       )   configs["$PICKDMENU"]=false
+            "[DMENU]"       )   configs["$PICKDMENU"]="$VAL"
                                 ;;
-            "[LIGHTDM]"     )   configs["$PICKLDM"]=false
+            "[LIGHTDM]"     )   configs["$PICKLDM"]="$VAL"
                                 ;;
             "[EXITRC]"      )   : # do nothing
                                 ;;
-            "[XFILES]"      )   configs["$PICKX"]=false
+            "[XFILES]"      )   configs["$PICKX"]="$VAL"
                                 ;;
             '['*']'         )   TAG="${TAG#[}"
                                 TAG="${TAG%]}"
-                                configs["$TAG"]=false
+                                configs["$TAG"]="$VAL"
                                 ;;
-            *               )   echo -e "$TAG: Unknown value!" >&2
-                                return 1
+            *               )   echo "$0: Ignoring unknown value: ${TAG} in $THEMEPATH/settings.cfg" >&2
                                 ;;
         esac
     done < "$THEMEPATH/settings.cfg"
 
-    select="FALSE"
+    select='FALSE'
     while true
     do
         columns=()
@@ -1342,62 +1344,35 @@ restoreSettings() {
         elif (( ret == 2 ));then
             select="TRUE"
             continue
-        else
-            if [[ ! $CHOICE ]] ; then # entry field is empty, so try again
-                yad_question "\n  Make a selection...." $EXIT $OK
-                if (( $? == 1 ));then
-                    cleanup all
-                    exit 0
-                else
-                    select='FALSE'
-                    continue
-                fi
+        fi
+        if [[ ! $CHOICE ]] ; then # entry field is empty, so try again
+            yad_question "\n  Make a selection...." $EXIT $OK
+            if (( $? == 1 ));then
+                cleanup all
+                exit 0
             else
-                i=0
-                retChoice=()
-                OIFS=$IFS # save Internal Field Separator
-                IFS='|' # separator is "|" in returned choices
-                # dialog return is in format 'TRUE|value|\nTRUE|value'
-                for ret in $CHOICE; do
-                    if [[ $ret = *TRUE* ]];then
-                        continue
-                    fi
-                    retChoice[$i]="$ret"
-                    i=$((i+1))
-                done
-                IFS=$OIFS # reset IFS back to default
-                for item in "${retChoice[@]}";do
-                    configs["$item"]=true
-                done
-                break
+                select='FALSE'
+                continue
             fi
         fi
+        break
     done
 
-    # rescan settings.cfg to get filepaths, if set
-    while read -r TAG VAL; do
+    # Go through user's selected choices.
+    while IFS='|' read -r _ label; do
         home_marker='%USERHOME%'
-        case "$TAG" in
-            "[OBTHEME]"     )   [[ ${configs["$PICKOB"]} = true ]] || continue
-                                if [[ $VAL ]];then
-                                    checkOBTHEME "$VAL"
-                                fi
+        VAL="${configs[$label]}"
+        case "$label" in
+            "$PICKOB"       )   [[ -n $VAL ]] && checkOBTHEME "$VAL"
                                 restoreOBrc
                                 ;;
-            "[GTK]"         )   [[ ${configs["$PICKGTK"]} = true ]] || continue
-                                if [[ $VAL ]];then
-                                    checkGTK "$VAL"
-                                fi
+            "$PICKGTK"      )   [[ -n $VAL ]] && checkGTK "$VAL"
                                 restoreGTK
                                 reloadGTK
                                 ;;
-            "[ICONS]"       )   [[ ${configs["$PICKICONS"]} = true ]] || continue
-                                if [[ $VAL ]];then
-                                    checkICONS "$VAL"
-                                fi
+            "$PICKICONS"    )   [[ -n $VAL ]] && checkICONS "$VAL"
                                 ;;
-            "[BACKGROUND]"  )   [[ ${configs["$PICKBG"]} = true ]] || continue
-                                if [[ $VAL = FEH ]];then
+            "$PICKBG"       )   if [[ $VAL = FEH ]];then
                                     restoreFiles "$FEHFILE"
                                     source "$HOME/$FEHFILE"
                                 else
@@ -1405,41 +1380,28 @@ restoreSettings() {
                                     nitrogen --restore
                                 fi
                                 ;;
-            "[CONKY]"       )   [[ ${configs["$PICKCONKY"]} = true ]] || continue
-                                if [[ $VAL ]];then
+            "$PICKCONKY"    )   if [[ -n $VAL ]];then
                                     VAL="${VAL//"$home_marker"/"$HOME"}"
                                     restoreConky "$VAL"
                                 fi
                                 ;;
-            "[TINT2]"       )   [[ ${configs["$PICKTINT"]} = true ]] || continue
-                                if [[ $VAL ]];then
+            "$PICKTINT"     )   if [[ -n $VAL ]];then
                                     VAL="${VAL//"$home_marker"/"$HOME"}"
                                     restoreTint2 "$VAL"
                                 fi
                                 ;;
-            "[DMENU]"       )   [[ ${configs["$PICKDMENU"]} = true ]] || continue
-                                restoreFiles "$DMENU"
+            "$PICKDMENU"    )   restoreFiles "$DMENU"
                                 ;;
-            "[LIGHTDM]"     )   [[ ${configs["$PICKLDM"]} = true ]] || continue
-                                restoreLightdm
+            "$PICKLDM"      )   restoreLightdm
                                 ;;
-            "[EXITRC]"      )   : # do nothing
-                                ;;
-            "[XFILES]"      )   [[ ${configs["$PICKX"]} = true ]] || continue
-                                echo ".bashrc will not be overwritten: a copy is in $THEMEPATH/.bashrc"
+            "$PICKX"        )   echo ".bashrc will not be overwritten: a copy is in $THEMEPATH/.bashrc"
                                 restoreFiles "$XFILE" #"$BASHFILE" # do not restore .bashrc for now
                                 xrdb ~/.Xresources
                                 ;;
-            '['*']'         )   TAG="${TAG#[}"
-                                TAG="${TAG%]}"
-                                [[ ${configs["$TAG"]} = true ]] || continue
-                                restoreFiles "$VAL"
-                                ;;
-            *               )   echo -e "$TAG: Unknown value!" >&2
-                                return 1
+            *               )   restoreFiles "$VAL"
                                 ;;
         esac
-    done < "$THEMEPATH/settings.cfg"
+    done <<< "$CHOICE"
 }
 
 ########################################################################
