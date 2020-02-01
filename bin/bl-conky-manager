@@ -256,6 +256,7 @@ loadDialog() {
     fi
 
     # Find the chosen conkys and start them
+    # This will break if any file paths have spaces.
     for name in ${retConky[*]};do       # loop through checkmarked conky names
         for ((j=0; j<${#conkysPath[*]}; j++));do  # traverse through elements
             for f in ${conkysPath[j]};do    # compare with choice from dialog
