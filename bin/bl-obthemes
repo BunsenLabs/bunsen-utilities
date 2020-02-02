@@ -24,7 +24,7 @@
 #                       Background (uses Nitrogen or feh, depending which
 #                                   has the newer saved bg config file)
 #                       Alt Menu (dmenu)
-#                       Lightdm login gtk greeter (currently disabled)
+#                       Lightdm login gtk greeter
 #                       Exit dialog theme
 #                       X configs (.bashrc, .Xresources)
 #                       Terminator config
@@ -83,7 +83,7 @@ Save options:
 
             Alt Menu (dmenu)
 
-            Lightdm login gtk greeter (currently disabled)
+            Lightdm login gtk greeter
 
             X configs (.bashrc, .Xresources)
 
@@ -1104,12 +1104,12 @@ function restoreConky(){    # arg = $VAL from displayBlobs()
             echo "${CONKYCMD//;/$'\n'}" >> "$CONKYSESSION"
             safeKill conky
             source "$CONKYSESSION"  # run conky commands
-            wait
+#            wait
         fi
     else
         safeKill conky
         eval "$CONKYCMD"    # no bl-conky-manager, so just run conky commands
-        wait
+#        wait
     fi
     echo -e "\n  Restored Conky\n"
     wmctrl -s "$currDESKTOP" && sleep 1 # return to desktop that BLOB was started on, if conkys used 'wmctrl -s'
