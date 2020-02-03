@@ -63,10 +63,10 @@
 
 HELP="bl-obthemes is a script to save or restore openbox gui configurations
 
-Usage:  $0 [-h|--help]
+Usage:  $0 [-h|--help][-v|--verbose]
 Options:
-        -h, --help   show this message
-
+        -h, --help      show this message
+        -v, --verbose   describe actions being performed
 No other CLI options are supported.
 
 Save options:
@@ -122,13 +122,19 @@ KNOWN ISSUES:
  A workaround is to move the cursor to some free space, and use the \"Enter\" key in the
  \"Configurations to be saved:\" dialog.
 "
-# look for a help option somewhere
+
+debug() { : ;}
 for i in "$@"
 do
     case "$i" in
     -h|--help)
         echo "$HELP"
         exit 0
+        ;;
+    -v|--verbose)
+        debug() {
+            echo -e "$*"
+        }
         ;;
     esac
 done
@@ -379,6 +385,8 @@ Openbox Configuration Manager</b></big>
     X configs (.bashrc, .Xresources)
     Terminal (if config file exists)
     + Screenshot'
+
+    debug 'Welcome to BLOB!'
     
 #    local RET
     getCurrent
@@ -401,17 +409,17 @@ Openbox Configuration Manager</b></big>
             getScrot
             if [[ -d $CONFIGDIR_BKP ]];then
                 rm -rf "$CONFIGDIR_BKP"
-                echo -e "\n  Temporary backup of $CONFIGDIR deleted\n"
+                debug "\n  Temporary backup of $CONFIGDIR deleted\n"
             fi
             displayBlobs
             ;;
-        1)  echo "CANCELLED..."
+        1)  debug "CANCELLED..."
             exit 0
             ;;
-        2)  getCurrent
-            displayBlobs
+        2)  displayBlobs
             ;;
         *)  echo "RETURN ERROR" >&2
+            exit 1
             ;;
     esac
 }
@@ -430,7 +438,7 @@ function setName(){  # set name of collection, make dir and session settings fil
         if (( $? == 1 )) ;then # Cancel was selected
             Intro
         elif [[ ! $NEWNAME ]] ;then     # entry was empty
-            echo -e "\n  No name entered for new collection!" >&2
+            debug "\n  No name entered for new collection!" >&2
             yad_question "$MSG2"
             RET=$?
             if (( RET == 0 ));then
@@ -443,7 +451,7 @@ function setName(){  # set name of collection, make dir and session settings fil
             CONFIGDIR="$USRCONFIGPATH/$NEWNAME"
             CONFIGDIR_BKP="${CONFIGDIR}.bkp"
             if [[ -d $CONFIGDIR ]];then
-                echo -e "\n  $CONFIGDIR already exists"
+                debug "\n  $CONFIGDIR already exists"
                 yad_question "Overwrite existing saved session?"
                 if (( $? == 0 ));then
                     mv "$CONFIGDIR" "$CONFIGDIR_BKP" # && mkdir -p "$CONFIGDIR"
@@ -466,10 +474,10 @@ function setName(){  # set name of collection, make dir and session settings fil
     else
         txt=""
     fi
-    echo -e "\n  Configuration will be saved as: $NEWNAME$txt"
+    debug "\n  Configuration will be saved as: $NEWNAME$txt"
 
 #     store list in listfile
-    echo -e "<b>Configuration name: $NEWNAME</b>\t$txt\nSaved at $time\n" >> "$LISTMSG"
+    debug "<b>Configuration name: $NEWNAME</b>\t$txt\nSaved at $time\n" >> "$LISTMSG"
 }
 
 # $1 [$2...] are relative paths passed from save functions
@@ -505,10 +513,10 @@ function saveFileAbs(){
     mkdir -p "$target_dir"
     if [[ -d $src_file ]];then
         cp -r "$src_file" "$target_file" || return 1
-        echo "directory $src_file and contents saved to $target_dir"
+        debug "directory $src_file and contents saved to $target_dir"
     else
         cp "$src_file" "$target_file" || return 1
-        echo "file $src_file saved to $target_dir"
+        debug "file $src_file saved to $target_dir"
     fi
 }
 
@@ -524,10 +532,10 @@ function getBg(){    # find if feh or nitrogen was used. Save config file(s)
     elif [[ -e $HOME/$NITROFILE ]];then    # use nitrogen for background
         BGSET="NITROGEN"
     else
-        echo -e "\n  No background-setting application found" >&2
+        echo "$0:  No background-setting application found" >&2
         BGSET="None"
     fi
-    echo -e "\n  Background to be set with $BGSET"
+    debug "\n  Background to be set with $BGSET"
     case "$BGSET" in
         FEH     )   saveFiles "$FEHFILE"
                     getFeh
@@ -535,7 +543,7 @@ function getBg(){    # find if feh or nitrogen was used. Save config file(s)
         NITROGEN)   saveFiles "$NITROFILE"
                     getNitrogen
                     ;;
-        None    )   echo -e "\n  No background-setting application found" >&2
+        None    )   echo "$0: No background-setting application found" >&2
                     ;;
     esac
     echo "[BACKGROUND] $BGSET" >> "$SETTINGS"
@@ -551,11 +559,11 @@ function getFeh(){    # get Feh saved backgrounds
         while read -r line;do
             BG="$BG$line;\n\t"
         done < <(grep -o "'[^']*'" "$ffile" | sed "s/'//g" 2>/dev/null)
-        echo -e "\n  Backgrounds set with Feh, using:\t$FEHFILE"
-        echo -e "\t$BG"
+        debug "\n  Backgrounds set with Feh, using:\t$FEHFILE"
+        debug "\t$BG"
         echo -e "Background set with feh:\n\t$BG" >> "$LISTMSG"
     else
-        echo -e "\n  $ffile not found" >&2
+        echo "$0:  $ffile not found" >&2
     fi
 }
 
@@ -569,17 +577,18 @@ function getNitrogen(){  # get Nitrogen saved backgrounds
             [[ $line = 'file='* ]] || continue
             BG="$BG${line#file=};\n\t"
         done < "$NFILE"
-        echo -e "\n  Backgrounds set with Nitrogen, using:\t$CONFIGDIR/user/$NITROFILE"
-        echo -e "\t$BG"
+        debug "\n  Backgrounds set with Nitrogen, using:\t$CONFIGDIR/user/$NITROFILE"
+        debug "\t$BG"
         echo -e "Background set with nitrogen:\n\t$BG" >> "$LISTMSG"
     else
-        echo -e "\n  $NFILE not found" >&2
+        echo "$0:  $NFILE not found" >&2
     fi
 }
 
 # generates command array idCmd from window id (hex or decimal)
 # WARNING WM_COMMAND is deprecated: https://www.x.org/releases/X11R7.6/doc/xorg-docs/specs/ICCCM/icccm.html#obsolete_session_manager_conventions
 # Usage: getIdCmd <id>
+# called in getConky()
 getIdCmd() {
     local wmc del s
     wmc=$(xprop -id "$1"  WM_COMMAND)
@@ -596,6 +605,14 @@ getIdCmd() {
     done
 }
 
+# extracts path to conky config file from idCmd array generated by getIdCmd()
+getCfile(){
+    conkyfile=''
+    for i in "${!idCmd[@]}"; do
+        [[ ${idCmd[i]} = '-c' ]] && { conkyfile="${idCmd[i+1]}"; break;}
+    done
+}
+
 function getConky(){
     local conkyfile
     local CONKYCMD=""
@@ -603,11 +620,6 @@ function getConky(){
     CMDTXT="[CONKY] "
     CONKYTXT=""
     NUM_DESKTOPS=$(xdotool get_num_desktops)
-    getCfile(){
-        for i in "${!idCmd[@]}"; do
-            [[ ${idCmd[i]} = '-c' ]] && { conkyfile="${idCmd[i+1]}"; break;}
-        done
-    }
     local -A arrSTICKY
     if [[ $(pidof conky) ]];then
         while read -r id;do  # get all running conky id's
@@ -623,8 +635,10 @@ function getConky(){
                     CONKYCMD=${idCmd[*]} # NB now in string, filepaths with spaces will be broken.
                     if [[ "$CONKYCMD" == "conky" ]] || [[ "$CONKYCMD" == "conky -q" ]];then
                         CONKYTXT="$CONKYTXT\n\tDesktop $i:  Default Conky"
+                        debug "Found running default conky"
                     else
                         CONKYTXT="$CONKYTXT\n\tDesktop $i:  $conkyfile"
+                        debug "Found running conky file $conkyfile"
                     fi
                     # command to start on specified desktop with wmctrl
                     CONKYCMD="sleep 1 && wmctrl -s $i && $CONKYCMD &;"
@@ -648,8 +662,8 @@ function getConky(){
             fi
         done
         echo "$CMDTXT" >> "$SETTINGS"
-        echo -e "$LISTMSGTXT\t$CONKYTXT\n" >> "$LISTMSG"
-        echo -e "\n  Saved running Conky(s)"
+        echo -e "$listmsgtxt\t$CONKYTXT\n" >> "$LISTMSG"
+        debug "\n  Saved running Conky(s)"
     else
         yad_warning "You selected to save Conkys\nbut none are running"
     fi
@@ -685,7 +699,7 @@ function getTint(){
 
         echo "[TINT2] $TINTCMD" >> "$SETTINGS"
         echo -e "$MSG\t$LISTMSGTXT\n" >> "$LISTMSG"
-        echo -e "\n  Saved running Tint2(s)"
+        debug "\n  Saved running Tint2(s)"
     else
         yad_warning "You selected to save Tint2\nbut none are running"
     fi
@@ -697,6 +711,7 @@ function getOBtheme(){   # copy <theme> section from rc.xml to obtheme.txt
     sed -n "/<$tag>/,/<\/$tag>/p" "$RCFILE" > "$CONFIGDIR/obtheme.txt"
     getOBname
     echo "[OBTHEME] $OBTHEME" >> "$SETTINGS"
+    debug "copied Openbox theme (${OBTHEME}) section from $RCFILE"
 }
 
 function getOBname(){    # get Openbox theme name
@@ -705,7 +720,7 @@ function getOBname(){    # get Openbox theme name
     # sed command is long, but it's more precise, and a little bit faster than two awk calls
     OBTHEME=$(sed -nr '/<theme>/ {N;s/^[[:blank:]]*<theme>[[:space:]]*<name>([^<]*)<\/name>.*$/\1/p;q}' "$OBFILE")
     TXT="Openbox theme:  $OBTHEME\n"
-    echo -e "\n  Saved $TXT"
+    debug "\n  Saved $TXT"
     echo "$TXT" >> "$LISTMSG"
 }
 
@@ -727,14 +742,14 @@ function getGTKname(){   # get GTK theme name and Icons name
         fi
     done < "$GTKFILE"
     TXT="GTK theme:  $GTKTHEME;  Icon Theme: $ICONS\n"
-    echo -e "\n  Saved $TXT"
+    debug "\n  Saved $TXT"
     echo  "$TXT" >> "$LISTMSG"
 }
 
 function getDmenu(){
     saveFiles "$DMENU"
     TXT="dmenu config:  $HOME/$DMENU\n"
-    echo -e "\n  Saved $TXT"
+    debug "\n  Saved $TXT"
     echo "[DMENU]" >> "$SETTINGS"
     echo "$TXT" >> "$LISTMSG"
 }
@@ -742,7 +757,7 @@ function getDmenu(){
 function getLightdm(){
     saveFileAbs "$LDMDIR/$LDM" "$CONFIGDIR/$LDM"
     TXT="Lightdm config:  $LDMDIR/$LDM\n(password will be needed to restore)\n"
-    echo -e "\n  Saved $TXT"
+    debug "\n  Saved $TXT"
     echo "[LIGHTDM]" >> "$SETTINGS"
     echo "$TXT" >> "$LISTMSG"
 }
@@ -754,7 +769,7 @@ function getTerminal(){
     termname="$2"
     saveFiles "$termfile"
     TXT="$termname config:  ~/$termfile\n"
-    echo -e "\n  Saved $TXT"
+    debug "\n  Saved $TXT"
     echo "[$termname] $termfile" >> "$SETTINGS"
     echo "$TXT" >> "$LISTMSG"
 }
@@ -762,7 +777,7 @@ function getTerminal(){
 function getXconfig(){
     saveFiles "$XFILE" "$BASHFILE"
     TXT="X config:  ~/.Xresources; ~/.bashrc; (~/.bashrc will not be auto-restored)\n"
-    echo -e "\n  Saved $TXT"
+    debug "\n  Saved $TXT"
     echo "[XFILES]" >> "$SETTINGS"
     echo "$TXT" >> "$LISTMSG"
 }
@@ -924,6 +939,7 @@ function saveSettings(){
         "$PICKLDM"
         "$PICKX"
     )
+    debug "Saving current configs as \"$NEWNAME\""
     checkTerm # sets termfile and pickterm
     # add terminal to array if one with a config file is in use
     if  [[ -n $termfile ]];then
@@ -949,7 +965,7 @@ function saveSettings(){
                             ;;
             "$pickterm" )   getTerminal "$termfile" "$pickterm"
                             ;;
-            *           )   echo -e "\n  Unknown value!" >&2
+            *           )   echo "$0:  Unknown config value in saveSettings function" >&2
                             exit 1
                             ;;
         esac
@@ -975,7 +991,7 @@ function checkICONS(){ # check if icon theme is still present
     local ICOTXT="Icon theme <b>$1</b> not found\n\n  The default icon theme will be used..."
     for i in "${iconPaths[@]}";do # iconPaths defined at top
         if [[ -d "$i/$1" ]];then
-            echo -e "\n  Found $1 icon theme"
+            debug "\n  Found $1 icon theme"
             FOUNDICONS=1
             break
         fi
@@ -984,7 +1000,7 @@ function checkICONS(){ # check if icon theme is still present
         local pkg="${icon_pkgs[$1]}"
         if [[ -n "${pkg}" ]] && hash bl-install >/dev/null
         then
-            echo -e "\n  Icon theme  $1  was not found\n  Offering to install $pkg..."
+            debug "\n  Icon theme  $1  was not found\n  Offering to install $pkg..."
             local INSTICOTXT="Needed icon theme <b>$1</b> not found\n Would you like to install the package <b>${pkg}</b> which contains that theme?"
             yad_question "$INSTICOTXT"
             if (( $? == 0 ))
@@ -1003,7 +1019,7 @@ function checkICONS(){ # check if icon theme is still present
                 fi
             fi
         fi
-        echo -e "\n  Icon theme  $1  was not found\n  The default Icon theme will be used..."
+        debug "\n  Icon theme  $1  was not found\n  The default Icon theme will be used..."
         yad_warning "$ICOTXT"
     fi
 }
@@ -1013,14 +1029,14 @@ function checkGTK(){    # check if gtk theme is still present
     local NOGTKTXT="GTK theme <b>$1</b> not found\n\n  The default GTK theme will be used..."
     for i in "${gtkPaths[@]}";do # gtkPaths defined at top
         if [[ -d "$i/$1" ]];then
-            echo -e "\n  Found $1 GTK theme"
+            debug "\n  Found $1 GTK theme"
             return 0
         fi
     done
     local pkg="${theme_pkgs[$1]}"
     if [[ -n "${pkg}" ]] && hash bl-install >/dev/null
     then
-        echo -e "\n  GTK theme  $1  was not found\n  Offering to install $pkg..."
+        debug "\n  GTK theme  $1  was not found\n  Offering to install $pkg..."
         yad_question "$INSTGTKTXT"
         if (( $? == 0 ))
         then
@@ -1037,7 +1053,7 @@ function checkGTK(){    # check if gtk theme is still present
             fi
         fi
     fi
-    echo -e "\n  GTK theme  $1  was not found\n  The default GTK theme will be used..."
+    debug "\n  GTK theme  $1  was not found\n  The default GTK theme will be used..."
     yad_warning "$NOGTKTXT"
     return 1
 }
@@ -1051,13 +1067,13 @@ function checkOBTHEME(){
     local OBTXT="Openbox theme <b>$1</b> not found\n\n  The default Openbox theme will be used..."
     for i in "${gtkPaths[@]}";do # gtkPaths defined at top
         if [[ -d "$i/$1/openbox-3" ]];then
-            echo -e "\n  Found $1 Openbox theme"
+            debug "\n  Found $1 Openbox theme"
             FOUNDOB=1
             break
         fi
     done
     if (( FOUNDOB == 0 ));then
-        echo -e "\n  OB theme  $1  was not found\n  The default Openbox theme will be used..."
+        debug "\n  OB theme  $1  was not found\n  The default Openbox theme will be used..."
         yad_warning "$OBTXT"
     fi
 }
@@ -1086,10 +1102,10 @@ function restoreOBrc(){
     }" "$FTEMP"
     sed -i '/^$/d' "$FTEMP"   # remove empty lines
     cp "$FTEMP" "$RCFILE"     # overwrite rc.xml
-    echo -e "\n  rc.xml backed up and edited for OB theme"
-    openbox --reconfigure && echo -e "\n Openbox reconfigured"
-    hash jgmenu_run 2>/dev/null && JGMENU_RCXML="$RCFILE" jgmenu_run init --apply-obtheme && echo -e "\n jgmenu reconfigured"
-    echo -e "\n Openbox and jgmenu reconfigured"
+    debug "\n  rc.xml backed up and edited for OB theme"
+    openbox --reconfigure && debug "\n Openbox reconfigured"
+    hash jgmenu_run 2>/dev/null && JGMENU_RCXML="$RCFILE" jgmenu_run init --apply-obtheme && debug "\n jgmenu reconfigured"
+    debug "\n Openbox and jgmenu reconfigured"
     rm -f "$FTEMP"
 }
 
@@ -1111,7 +1127,7 @@ function restoreConky(){    # arg = $VAL from displayBlobs()
         eval "$CONKYCMD"    # no bl-conky-manager, so just run conky commands
 #        wait
     fi
-    echo -e "\n  Restored Conky\n"
+    debug "\n  Restored Conky\n"
     wmctrl -s "$currDESKTOP" && sleep 1 # return to desktop that BLOB was started on, if conkys used 'wmctrl -s'
 }
 
@@ -1127,11 +1143,11 @@ function restoreTint2(){    # arg = $VAL from displayBlobs()
                 if [[ "$tintline" == "tint2" ]];then
                     tint2 >/dev/null 2>&1 &
                     sleep 1
-                    echo -e "\n  Restored Tint2: $tintline\n"
+                    debug "\n  Restored Tint2: $tintline\n"
                 elif [[ -n "$tintline" ]];then
                     tint2 -c "$tintline" >/dev/null 2>&1 &
                     sleep 1s
-                    echo -e "\n  Restored Tint2: $tintline\n"
+                    debug "\n  Restored Tint2: $tintline\n"
                 fi
             done < "$TINTSESSION"
         fi
@@ -1141,11 +1157,11 @@ function restoreTint2(){    # arg = $VAL from displayBlobs()
             if [[ "$tintpath" == "tint2" ]] >/dev/null;then
                 tint2 >/dev/null 2>&1 &     # default tint2 command
                 sleep 1
-                echo -e "\n  Restored Tint2: $tintpath\n"
+                debug "\n  Restored Tint2: $tintpath\n"
             else
                 tint2 -c "$tintpath" >/dev/null 2>&1 &
                 sleep 1s
-                echo -e "\n  Restored Tint2: $tintpath\n"
+                debug "\n  Restored Tint2: $tintpath\n"
             fi
         done
     fi
@@ -1163,15 +1179,15 @@ function restoreLightdm(){   # need pkexec to restore lightdm-gtk-greeter.conf
         ret=$?
         case "$ret" in
             0   )   msg="Restored: lightdm-gtk-greeter.conf"
-                    echo -e "\n  $msg"
+                    debug "\n  $msg"
                     break
                     ;;
             126 )   msg="  Authentication cancelled\n\nlightdm-gtk-greeter.conf was not restored"
-                    echo -e "\n  $msg" >&2
+                    echo "$0:  $msg" >&2
                     break
                     ;;
             *   )   msg="  Password input failed\n\nlightdm-gtk-greeter.conf was not restored"
-                    echo -e "\n  $msg" >&2
+                    echo "$0:  $msg" >&2
                     yad_warning "$msg"
                     ;;
         esac
@@ -1216,10 +1232,10 @@ function restoreFileAbs(){
         bkp_file="${target_file}${BKP_SFX}"
         mv "$target_file" "$bkp_file"
         cp "$src_file" "$target_file"
-        echo -e "\n  $target_file backed up and restored"
+        debug "\n  $target_file backed up and restored"
     else
         cp "$src_file" "$target_file"
-        echo -e "\n  $target_file did not exist, now added"
+        debug "\n  $target_file did not exist, now added"
     fi
 }
 
@@ -1394,7 +1410,7 @@ restoreSettings() {
                                 ;;
             "$PICKLDM"      )   restoreLightdm
                                 ;;
-            "$PICKX"        )   echo ".bashrc will not be overwritten: a copy is in $THEMEPATH/.bashrc"
+            "$PICKX"        )   debug ".bashrc will not be overwritten: a copy is in $THEMEPATH/.bashrc"
                                 restoreFiles "$XFILE" #"$BASHFILE" # do not restore .bashrc for now
                                 xrdb ~/.Xresources
                                 ;;
@@ -1479,7 +1495,7 @@ function displayBlobs(){
                 yad_prompt "$TEXT"
                 if (( $? == 0 ));then
                     rm -rf "$THEMEPATH"
-                    echo -e "\n$themename DELETED"
+                    debug "\n$themename DELETED"
                     if [[ $(< "$CURSESSFILE") = "$themename" ]];then
                         :> "$CURSESSFILE"
                     fi
@@ -1492,7 +1508,7 @@ function displayBlobs(){
                 yad_prompt "Settings were saved as <b>$NEWNAME</b>" --image="gtk-save" "$OK"
                 if [[ -d $CONFIGDIR_BKP ]];then
                     rm -rf "$CONFIGDIR_BKP"
-                    echo -e "\n  Temporary backup of $CONFIGDIR deleted\n"
+                    debug "\n  Temporary backup of $CONFIGDIR deleted\n"
                 fi
                 continue
                 ;;
@@ -1515,9 +1531,9 @@ function displayBlobs(){
             5)  Intro
                 ;;
             *)  if (( RET == 252 ));then
-                    echo -e "\n  Exited with \"ESC\" key" >&2
+                    echo "$0:  Exited with \"ESC\" key" >&2
                 else
-                    echo -e "\n  Error= $RET" >&2
+                    echo "$0:  Error= $RET" >&2
                 fi
                 exit 1
                 ;;
@@ -1531,11 +1547,11 @@ function cleanup(){
     if [[ $1 = all ]];then
         if [[ -d $CONFIGDIR ]];then
             rm -rf "$CONFIGDIR"
-            echo -e "\n  Deleted $CONFIGDIR"
+            debug "\n  Deleted $CONFIGDIR"
         fi
         if [[ -d $CONFIGDIR_BKP ]];then
             mv "$CONFIGDIR_BKP" "$CONFIGDIR"
-            echo -e "\n  Cancelled\n..Backup $CONFIGDIR restored\n"
+            debug "\n  Cancelled\n..Backup $CONFIGDIR restored\n"
         fi
         rm -f /tmp/blob.*
     elif [[ $1 = save ]];then
@@ -1548,7 +1564,7 @@ function cleanup(){
 
 # Do not run as root (Bad Things may happen).
 if [[ $( id -u ) -eq 0 ]]; then
-    echo $"Error: This script should not be run by root." >&2
+    echo $"$0: Error: This script should not be run by root." >&2
     exit 1
 fi
 
