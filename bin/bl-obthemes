@@ -428,18 +428,19 @@ Openbox Configuration Manager</b></big>
 
 # sets globals CONFIGDIR CONFIGDIR_BKP SETTINGS LISTMSG NEWNAME for storing new theme
 function setName(){  # set name of collection, make dir and session settings file
-    MSG="  Configurations will be saved to a new directory in  \
+    local msg msg2
+    msg="  Configurations will be saved to a new directory in  \
     \n  $USRCONFIGPATH\n\n  Enter name of new collection...  "
-    MSG2="  No file specified for new saved session.\n\n  Try again?"
+    msg2="  No file specified for new saved session.\n\n  Try again?"
     local del time txt 
     del=0
     while true;do  # loop dialog if nothing is selected
-        NEWNAME=$( yad_prompt "$MSG" --entry )
+        NEWNAME=$( yad_prompt "$msg" --entry )
         if (( $? == 1 )) ;then # Cancel was selected
             Intro
         elif [[ ! $NEWNAME ]] ;then     # entry was empty
             debug "\n  No name entered for new collection!" >&2
-            yad_question "$MSG2"
+            yad_question "$msg2"
             RET=$?
             if (( RET == 0 ));then
                 continue
@@ -614,9 +615,9 @@ getCfile(){
 }
 
 function getConky(){
-    local conkyfile
+    local conkyfile listmsgtxt
     local CONKYCMD=""
-    LISTMSGTXT="Running Conkys:"
+    listmsgtxt="Running Conkys:"
     CMDTXT="[CONKY] "
     CONKYTXT=""
     NUM_DESKTOPS=$(xdotool get_num_desktops)
@@ -670,35 +671,35 @@ function getConky(){
     }
 
 function getTint(){
-    local TINTCMD
-    declare -a arrTINT
+    local tpath msg tintcmd listmsgtxt tint
+    local -a arrTINT
     if [[ $(pidof tint2) ]];then
         while read -r pid cmd;do
             if [[ ${cmd%% *} == tint2 ]];then
-                TPATH=$(echo "$cmd" | awk '{print $NF";"}')
-                arrTINT+=("$TPATH")
+                tpath=$(echo "$cmd" | awk '{print $NF";"}')
+                arrTINT+=("$tpath")
             fi
         done < <(pgrep -a -u "$USER" tint2)
 
-        TXT="Tint2s:\n\n"
-        MSG="Running Tint2s:"
-        TINTCMD=""
-        LISTMSGTXT=""
+#        TXT="Tint2s:\n\n" # TXT seems not to be used?
+        msg="Running Tint2s:"
+        tintcmd=""
+        listmsgtxt=""
 
         for i in "${arrTINT[@]}";do
-            TXT="$TXT$i"
-            TINT=${i//;}
-            if [[ "$TINT" == "tint2" ]];then
-                TINTCMD="$TINTCMD$TINT;"
-                LISTMSGTXT="$LISTMSGTXT\n\tDefault Tint2"
+#            TXT="$TXT$i"
+            tint=${i//;}
+            if [[ "$tint" == "tint2" ]];then
+                tintcmd="$tintcmd$tint;"
+                listmsgtxt="$listmsgtxt\n\tDefault Tint2"
             else
-                TINTCMD="$TINTCMD$TINT;"
-                LISTMSGTXT="$LISTMSGTXT\n\t$TINT"
+                tintcmd="$tintcmd$tint;"
+                listmsgtxt="$listmsgtxt\n\t$tint"
             fi
         done
 
-        echo "[TINT2] $TINTCMD" >> "$SETTINGS"
-        echo -e "$MSG\t$LISTMSGTXT\n" >> "$LISTMSG"
+        echo "[TINT2] $tintcmd" >> "$SETTINGS"
+        echo -e "$msg\t$listmsgtxt\n" >> "$LISTMSG"
         debug "\n  Saved running Tint2(s)"
     else
         yad_warning "You selected to save Tint2\nbut none are running"
@@ -715,13 +716,14 @@ function getOBtheme(){   # copy <theme> section from rc.xml to obtheme.txt
 }
 
 function getOBname(){    # get Openbox theme name
-    OBFILE="$CONFIGDIR/obtheme.txt"
-    # OBTHEME=$(awk 'NR==2 {print;exit}' "$OBFILE" | awk -F'[>|<]' '{print $3}')
+    local txt obfile obtheme
+    obfile="$CONFIGDIR/obtheme.txt"
+    # obtheme=$(awk 'NR==2 {print;exit}' "$obfile" | awk -F'[>|<]' '{print $3}')
     # sed command is long, but it's more precise, and a little bit faster than two awk calls
-    OBTHEME=$(sed -nr '/<theme>/ {N;s/^[[:blank:]]*<theme>[[:space:]]*<name>([^<]*)<\/name>.*$/\1/p;q}' "$OBFILE")
-    TXT="Openbox theme:  $OBTHEME\n"
-    debug "\n  Saved $TXT"
-    echo "$TXT" >> "$LISTMSG"
+    obtheme=$(sed -nr '/<theme>/ {N;s/^[[:blank:]]*<theme>[[:space:]]*<name>([^<]*)<\/name>.*$/\1/p;q}' "$obfile")
+    txt="Openbox theme:  $obtheme\n"
+    debug "\n  Saved $txt"
+    echo "$txt" >> "$LISTMSG"
 }
 
 function getGTKtheme(){
@@ -730,6 +732,7 @@ function getGTKtheme(){
 }
 
 function getGTKname(){   # get GTK theme name and Icons name
+    local txt
     GTKFILE="$CONFIGDIR/user/$GTK2"
     while read -r line;do
         if [[ $line = *"gtk-theme-name"* ]];then
@@ -741,45 +744,48 @@ function getGTKname(){   # get GTK theme name and Icons name
             echo "[ICONS] $ICONS" >> "$SETTINGS"
         fi
     done < "$GTKFILE"
-    TXT="GTK theme:  $GTKTHEME;  Icon Theme: $ICONS\n"
-    debug "\n  Saved $TXT"
-    echo  "$TXT" >> "$LISTMSG"
+    txt="GTK theme:  $GTKTHEME;  Icon Theme: $ICONS\n"
+    debug "\n  Saved $txt"
+    echo  "$txt" >> "$LISTMSG"
 }
 
 function getDmenu(){
+    local txt
     saveFiles "$DMENU"
-    TXT="dmenu config:  $HOME/$DMENU\n"
-    debug "\n  Saved $TXT"
+    txt="dmenu config:  $HOME/$DMENU\n"
+    debug "\n  Saved $txt"
     echo "[DMENU]" >> "$SETTINGS"
-    echo "$TXT" >> "$LISTMSG"
+    echo "$txt" >> "$LISTMSG"
 }
 
 function getLightdm(){
+    local txt
     saveFileAbs "$LDMDIR/$LDM" "$CONFIGDIR/$LDM"
-    TXT="Lightdm config:  $LDMDIR/$LDM\n(password will be needed to restore)\n"
-    debug "\n  Saved $TXT"
+    txt="Lightdm config:  $LDMDIR/$LDM\n(password will be needed to restore)\n"
+    debug "\n  Saved $txt"
     echo "[LIGHTDM]" >> "$SETTINGS"
-    echo "$TXT" >> "$LISTMSG"
+    echo "$txt" >> "$LISTMSG"
 }
 
 # passed termfile as $1 and pickterm as $2 by saveSettings()
 function getTerminal(){
-    local termfile termname
+    local termfile termname txt
     termfile="$1"
     termname="$2"
     saveFiles "$termfile"
-    TXT="$termname config:  ~/$termfile\n"
-    debug "\n  Saved $TXT"
+    txt="$termname config:  ~/$termfile\n"
+    debug "\n  Saved $txt"
     echo "[$termname] $termfile" >> "$SETTINGS"
-    echo "$TXT" >> "$LISTMSG"
+    echo "$txt" >> "$LISTMSG"
 }
 
 function getXconfig(){
+    local txt
     saveFiles "$XFILE" "$BASHFILE"
-    TXT="X config:  ~/.Xresources; ~/.bashrc; (~/.bashrc will not be auto-restored)\n"
-    debug "\n  Saved $TXT"
+    txt="X config:  ~/.Xresources; ~/.bashrc; (~/.bashrc will not be auto-restored)\n"
+    debug "\n  Saved $txt"
     echo "[XFILES]" >> "$SETTINGS"
-    echo "$TXT" >> "$LISTMSG"
+    echo "$txt" >> "$LISTMSG"
 }
 
 function checkTint2(){   # kill or restart tint2s for screenshot, if necessary
@@ -928,7 +934,7 @@ function checkTerm(){
 }
 
 function saveSettings(){
-    local configs termfile pickterm
+    local configs termfile pickterm txt txt2
     configs=(
         "$PICKOB"
         "$PICKGTK"
@@ -970,13 +976,13 @@ function saveSettings(){
                             ;;
         esac
     done
-    TXT="<big><b><u>Openbox Configurations to be saved:</u></b></big>\n\n"
-    TXT2=$(cat "$LISTMSG")
-    yad_prompt "$TXT$TXT2"
+    txt="<big><b><u>Openbox Configurations to be saved:</u></b></big>\n\n"
+    txt2=$(cat "$LISTMSG")
+    yad_prompt "$txt$txt2"
     ret=$?
     if (( ret == 1 ));then
         cleanup all
-        displayBlobs
+        Intro
     else
         echo "$NEWNAME" > "$CURSESSFILE"     # replace entry in saved config flag file
     fi
@@ -1132,12 +1138,12 @@ function restoreConky(){    # arg = $VAL from displayBlobs()
 }
 
 function restoreTint2(){    # arg = $VAL from displayBlobs()
-    local TINTCMD="${1//;/$'\n'}"
+    local tintcmd="${1//;/$'\n'}"
     if type bl-tint2-manager >/dev/null;then    # see if bl-tint2-manager is installed
         if [[ -f $TINTSESSION ]] 2>/dev/null; then
             :> "$TINTSESSION"    # create/overwrite tint2 session file
             # write to tint2 session file...
-            echo "$TINTCMD" >> "$TINTSESSION"
+            echo "$tintcmd" >> "$TINTSESSION"
             safeKill tint2
             while read -r tintline;do
                 if [[ "$tintline" == "tint2" ]];then
@@ -1153,7 +1159,7 @@ function restoreTint2(){    # arg = $VAL from displayBlobs()
         fi
     else                    # no bl-tint2-manager, so just run tint2 commands
         safeKill tint2
-        for tintpath in $TINTCMD;do
+        for tintpath in $tintcmd;do
             if [[ "$tintpath" == "tint2" ]] >/dev/null;then
                 tint2 >/dev/null 2>&1 &     # default tint2 command
                 sleep 1
@@ -1356,7 +1362,7 @@ restoreSettings() {
         ret=$?
         if (( ret == 1 )); then # cancel button pressed
             cleanup all
-            displayBlobs
+            return 
         elif (( ret == 2 ));then
             select="TRUE"
             continue
