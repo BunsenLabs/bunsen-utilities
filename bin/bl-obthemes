@@ -1357,7 +1357,7 @@ restoreSettings() {
         CHOICE=$(yad "${yad_args[@]}" --list --checklist \
             --title="Choose the configs to restore..." \
             --button="Select All:2" $CANCEL $OK \
-            --height=340 \
+            --height=400 \
             --column="Select" --column="Config" "${columns[@]}" )
         ret=$?
         if (( ret == 1 )); then # cancel button pressed
