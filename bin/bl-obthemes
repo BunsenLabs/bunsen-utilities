@@ -1204,24 +1204,43 @@ function restoreLightdm(){   # need pkexec to restore lightdm-gtk-greeter.conf
 # THEMEPATH is global set by displayBlobs()
 # If source is directory, its contents will be copied to the equivalent user directory.
 function restoreFiles(){
+    local src_file target_file i
     for i in "$@"
     do
-        local src_file target_file
         src_file="$THEMEPATH/user/$i"
         target_file="$HOME/$i"
         if [[ -d $src_file ]]; then
-            [[ -f $target_file ]] && {
-                echo "$0: target directory $target_file is an ordinary file" >&2
-                return 1
-            }
-            [[ -d $target_file ]] || mkdir -p "$target_file" || return 1
-            for j in "$src_file"/* ; do
-                restoreFileAbs "$j" "$target_file/${j##*/}" || return 1
-            done
+            copyDir "$src_file" "$target_file" || return 1
         elif [[ -f $src_file ]]; then
             restoreFileAbs "$src_file" "$target_file" || return 1
         else
             echo "$0: File to restore, $src_file does not exist." >&2
+            return 1
+        fi
+    done
+}
+
+# Copy all the contents of a directory, recursively.
+# $1 and $2 are absolute paths of source and target directories.
+function copyDir(){
+    local src_dir target_dir i
+    src_dir="$1"
+    target_dir="$2"
+    if [[ -f $target_dir ]]
+    then
+        echo "$0: target directory $target_dir is an ordinary file" >&2
+        return 1
+    fi
+    debug "\n  making directory $target_dir"
+    mkdir -p "$target_dir" || return 1
+    for i in "$src_dir"/*
+    do
+        [[ -e "$i" ]] || continue
+        if [[ -d "$i" ]]
+        then
+            copyDir "$i" "$target_dir/${i##*/}" || return 1
+        else
+            restoreFileAbs "$i" "$target_dir/${i##*/}" || return 1
         fi
     done
 }
@@ -1233,14 +1252,18 @@ function restoreFileAbs(){
     src_file="$1"
     target_file="$2"
     target_dir="${target_file%/*}"
-    mkdir -p "$target_dir"
+    mkdir -p "$target_dir" || return 1
     if [[ -e $target_file ]];then        # backup config first
+        cmp "$src_file" "$target_file" >/dev/null 2>&1 && {
+            debug "\n  $target_file and $src_file are identical, no need to restore."
+            return 0
+        }
         bkp_file="${target_file}${BKP_SFX}"
-        mv "$target_file" "$bkp_file"
-        cp "$src_file" "$target_file"
+        mv "$target_file" "$bkp_file" || return 1
+        cp "$src_file" "$target_file" || return 1
         debug "\n  $target_file backed up and restored"
     else
-        cp "$src_file" "$target_file"
+        cp "$src_file" "$target_file" || return 1
         debug "\n  $target_file did not exist, now added"
     fi
 }
