@@ -430,15 +430,15 @@ function setName(){  # set name of collection, make dir and session settings fil
     while true;do  # loop dialog if nothing is selected
         NEWNAME=$( yad_prompt "$msg" --entry )
         if (( $? == 1 )) ;then # Cancel was selected
-            Intro
+            return 1
         elif [[ ! $NEWNAME ]] ;then     # entry was empty
-            debug "\n  No name entered for new collection!" >&2
+            debug "\n  No name entered for new collection!"
             yad_question "$msg2"
             RET=$?
             if (( RET == 0 ));then
                 continue
             else
-                Intro
+                return 1
             fi
         else
             NEWNAME=${NEWNAME// /_}    # replace any spaces in dir name
@@ -446,15 +446,15 @@ function setName(){  # set name of collection, make dir and session settings fil
             CONFIGDIR_BKP="${CONFIGDIR}.bkp"
             if [[ -d $CONFIGDIR ]];then
                 debug "\n  $CONFIGDIR already exists"
-                yad_question "Overwrite existing saved session?"
-                if (( $? == 0 ));then
+                if yad_question "Overwrite existing saved session?"
+                then
                     mv "$CONFIGDIR" "$CONFIGDIR_BKP" # && mkdir -p "$CONFIGDIR"
                     del=1
                 else
                     continue
                 fi
             fi
-            mkdir -p "$CONFIGDIR"
+            mkdir -p "$CONFIGDIR" || return 1
             SETTINGS="$CONFIGDIR/settings.cfg"
             LISTMSG="$CONFIGDIR/LISTMSG.txt"
             :> "$SETTINGS"
@@ -976,7 +976,7 @@ function saveSettings(){
     ret=$?
     if (( ret == 1 ));then
         cleanup all
-        Intro
+        return 1
     else
         echo "$NEWNAME" > "$CURSESSFILE"     # replace entry in saved config flag file
     fi
@@ -1002,8 +1002,7 @@ function checkICONS(){ # check if icon theme is still present
         then
             debug "\n  Icon theme  $1  was not found\n  Offering to install $pkg..."
             local INSTICOTXT="Needed icon theme <b>$1</b> not found\n Would you like to install the package <b>${pkg}</b> which contains that theme?"
-            yad_question "$INSTICOTXT"
-            if (( $? == 0 ))
+            if yad_question "$INSTICOTXT"
             then
                 local retfile retval
                 retfile="$( mktemp )"
@@ -1037,8 +1036,7 @@ function checkGTK(){    # check if gtk theme is still present
     if [[ -n "${pkg}" ]] && hash bl-install >/dev/null
     then
         debug "\n  GTK theme  $1  was not found\n  Offering to install $pkg..."
-        yad_question "$INSTGTKTXT"
-        if (( $? == 0 ))
+        if yad_question "$INSTGTKTXT"
         then
             local retfile retval
             retfile="$( mktemp )"
@@ -1327,9 +1325,9 @@ function getActiveMonitorDimensions(){   # set width and height for View dialog
 restoreSettings() {
     # get chosen saved configs and restore them
     # Conky and Tint2 will be killed by their restore functions, if called.
-    BKP_SFX=".blob.$(date +"%Y%m%d-%H%M%S")" # global: unified backup suffix that restore functions will inherit
-    local TAG VAL configs columns select CHOICE
-    declare -A configs
+    BKP_SFX=".blob.$(date +"%Y%m%d-%H%M%S")" # global: unified backup suffix that restore functions will use
+    local TAG VAL labels columns select ret CHOICE
+    declare -A values
     while read -r TAG VAL; do
         case "$TAG" in
             "[OBTHEME]"     )   configs["$PICKOB"]="$VAL"
@@ -1548,17 +1546,16 @@ Save settings first?"
                 SAVED="$THEMEPATH/LISTMSG.txt"
                 TEXT="These configs saved as $CONFIG can be restored:\n\n"
                 TEXT="$TEXT$(< "$SAVED")"
-                yad_prompt "$TEXT"
-                if (( $? == 0 ));then
-                    echo "$themename" > "$CURSESSFILE"
-                    restoreSettings
-                fi
+                yad_prompt "$TEXT" || continue
+                debug "\n Restoring BLOB theme $themename"
+                echo "$themename" > "$CURSESSFILE"
+                restoreSettings
                 ;;
             1)  exit 0
                 ;;
             2)  if [[ ! $CONFIG ]];then
-                    yad_prompt "Make a selection before trying to delete" "$EXIT" "$OK"
-                    if (( $? == 0 ));then
+                    if yad_prompt "Make a selection before trying to delete" "$EXIT" "$OK"
+                    then
                         continue
                     else
                         exit 0
@@ -1573,15 +1570,14 @@ Save settings first?"
                 fi
 
                 TEXT="Delete saved configurations <b>$THEMEPATH</b>\nand screenshot?"
-                yad_prompt "$TEXT"
-                if (( $? == 0 ));then
+                if yad_prompt "$TEXT"
+                then
                     rm -rf "$THEMEPATH"
                     debug "\n$themename DELETED"
                     if [[ $(< "$CURSESSFILE") = "$themename" ]];then
                         :> "$CURSESSFILE"
                     fi
                 fi
-                continue
                 ;;
             3)  saveNewBlob
                 ;;
@@ -1599,7 +1595,6 @@ Save settings first?"
                 else
                     yad_prompt "Make a selection" "$OK"
                 fi
-                continue
                 ;;
             5)  Intro
                 ;;
