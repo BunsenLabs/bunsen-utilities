@@ -218,8 +218,8 @@ TITLE="BLOB Configuration Manager"
 ICON="distributor-logo-bunsenlabs"
 #DIALOG="yad --center --undecorated --borders=20 --window-icon=distributor-logo-bunsenlabs --fixed"
 #DIALOGDEC="yad --center  --borders=20 --window-icon=$ICON"
-yad_args=( --center  --borders=20 --window-icon="$ICON" )
-popup_args=( "${yad_args[@]}" --title="$TITLE" --undecorated --fixed )
+yad_args=( '--center'  '--borders=20' "--window-icon=$ICON" )
+popup_args=( "${yad_args[@]}" "--title=$TITLE" '--undecorated' '--fixed' )
 T="--text="
 OK="--button=OK:0"
 CANCEL="--button=gtk-cancel:1"
@@ -382,28 +382,26 @@ Openbox Configuration Manager</b></big>
     Tint2
     Desktop Background
     Alt Menu (dmenu)
-    LightDM theme (currently disabled)
+    LightDM theme
     X configs (.bashrc, .Xresources)
     Terminal (if config file exists)
     + Screenshot'
 
     debug 'Welcome to BLOB!'
-    
-#    local RET
-    getCurrent
+
+    getCurrent # generates NUMDIRS
     #  if blob/ is empty, then don't display "View Saved" option in Intro dialog
     if (( NUMDIRS > 0 ));then
         yad "${yad_args[@]}" "$T$TXTINTRO" \
         --title="$TITLE" --borders=30 \
         --button="Save Settings:0" --button="View Saved:2" $CLOSE
-        
+
     else
         yad "${yad_args[@]}" "$T$TXTINTRO" \
         --title="$TITLE" --borders=30 \
         --button="Save Settings:0" $CLOSE
-        
+
     fi
-#    RET=$?
     case $? in
         0)  setName
             saveSettings
@@ -433,7 +431,7 @@ function setName(){  # set name of collection, make dir and session settings fil
     msg="  Configurations will be saved to a new directory in  \
     \n  $USRCONFIGPATH\n\n  Enter name of new collection...  "
     msg2="  No file specified for new saved session.\n\n  Try again?"
-    local del time txt 
+    local del time txt
     del=0
     while true;do  # loop dialog if nothing is selected
         NEWNAME=$( yad_prompt "$msg" --entry )
@@ -479,7 +477,7 @@ function setName(){  # set name of collection, make dir and session settings fil
     debug "\n  Configuration will be saved as: $NEWNAME$txt"
 
 #     store list in listfile
-    debug "<b>Configuration name: $NEWNAME</b>\t$txt\nSaved at $time\n" >> "$LISTMSG"
+    echo "<b>Configuration name: $NEWNAME</b>\t$txt\nSaved at $time\n" >> "$LISTMSG"
 }
 
 # $1 [$2...] are relative paths passed from save functions
@@ -707,6 +705,7 @@ function getTint(){
     fi
 }
 
+# global OBTHEME from getOBname()
 function getOBtheme(){   # copy <theme> section from rc.xml to obtheme.txt
     [[ -r $RCFILE ]] || RCFILE="$OLDRCFILE"
     tag="theme"
@@ -716,13 +715,13 @@ function getOBtheme(){   # copy <theme> section from rc.xml to obtheme.txt
     debug "copied Openbox theme (${OBTHEME}) section from $RCFILE"
 }
 
-function getOBname(){    # get Openbox theme name
-    local txt obfile obtheme
+function getOBname(){    # get Openbox theme name, generate OBTHEME
+    local txt obfile
     obfile="$CONFIGDIR/obtheme.txt"
-    # obtheme=$(awk 'NR==2 {print;exit}' "$obfile" | awk -F'[>|<]' '{print $3}')
+    # OBTHEME=$(awk 'NR==2 {print;exit}' "$obfile" | awk -F'[>|<]' '{print $3}')
     # sed command is long, but it's more precise, and a little bit faster than two awk calls
-    obtheme=$(sed -nr '/<theme>/ {N;s/^[[:blank:]]*<theme>[[:space:]]*<name>([^<]*)<\/name>.*$/\1/p;q}' "$obfile")
-    txt="Openbox theme:  $obtheme\n"
+    OBTHEME=$(sed -nr '/<theme>/ {N;s/^[[:blank:]]*<theme>[[:space:]]*<name>([^<]*)<\/name>.*$/\1/p;q}' "$obfile")
+    txt="Openbox theme:  $OBTHEME\n"
     debug "\n  Saved $txt"
     echo "$txt" >> "$LISTMSG"
 }
@@ -1176,8 +1175,8 @@ function restoreTint2(){    # arg = $VAL from displayBlobs()
 
 # THEMEPATH and BKP_SFX are globals,
 # set by displayBlobs() and restoreSettings() respectively.
-function restoreLightdm(){   # need pkexec to restore lightdm-gtk-greeter.conf
-    local ret msg
+function restoreLightdm(){   # need sudo to restore lightdm-gtk-greeter.conf
+    local msg ret
     [[ -r "$THEMEPATH/$LDM" ]] || {
         echo "$0: Cannot read file $THEMEPATH/$LDM" >&2
         return 1
@@ -1209,6 +1208,7 @@ function restoreFiles(){
     local src_file target_file i
     for i in "$@"
     do
+        debug "Restoring ${i}..."
         src_file="$THEMEPATH/user/$i"
         target_file="$HOME/$i"
         if [[ -d $src_file ]]; then
@@ -1285,38 +1285,34 @@ END
 }
 
 # This function is run in displayBlobs() below
-# $CURRENTSESSION from getCurrent()
-# DLGARR is local to displayBlobs()
+# CURRENTSESSION and NUMDIRS from getCurrent()
+# DLGARR and CURRENTSESSDIR are local to displayBlobs()
 function UpdateDisplayDialog(){   # list saved theme collections for yad as DLGARR
-    getCurrent                      # get name of latest set BLOB config
+    getCurrent                    # get name of latest set BLOB config
     if (( NUMDIRS == 0 ));then  # no saved configs; go back to Intro dialog
         Intro
     fi
     local seticon themename thumbnail
     declare -A uniqnames # hide duplicate directories
     DLGARR=()
-    i=0
     for dir in "$USRCONFIGPATH"/* "$SYSCONFIGPATH"/* ;do
-        if [[ -d $dir ]];then
-            if [[ -e $dir/settings.cfg ]];then
-                themename="${dir##*/}" # strip path
-                themename=${themename// /_}   # replace any spaces in dir name
-                [[ "${uniqnames["$themename"]}" = 'found' ]] && continue
-                uniqnames["$themename"]='found'
-                # get name of current session, set icon for TRUE/FALSE
-                if [[ $CURRENTSESSION = "$themename" ]];then
-                    seticon="gtk-yes"
-                elif [[ "$dir" = "$SYSCONFIGPATH"/* ]]; then
-                    seticon="system"
-                else
-                    seticon="gtk-home"
-                fi
-                thumbnail="$dir/$themename-thumb.jpg"
-                [[ -r $thumbnail ]] || thumbnail='None'     # placeholder if no thumbnail found
-                DLGARR+=( "$seticon" "<big>$themename</big>" "$thumbnail" )
-            fi
-            i=$((i+1))
+        [[ -d $dir && -e $dir/settings.cfg ]] || continue
+        themename="${dir##*/}" # strip path
+        themename=${themename// /_}   # replace any spaces in dir name
+        [[ "${uniqnames[$themename]}" = 'found' ]] && continue
+        uniqnames["$themename"]='found'
+        # get name of current session, set icon for TRUE/FALSE
+        if [[ $CURRENTSESSION = "$themename" ]];then
+            seticon="gtk-yes"
+            CURRENTSESSDIR="$dir"
+        elif [[ "$dir" = "$SYSCONFIGPATH"/* ]]; then
+            seticon="system"
+        else
+            seticon="gtk-home"
         fi
+        thumbnail="$dir/$themename-thumb.jpg"
+        [[ -r $thumbnail ]] || thumbnail='None'     # placeholder if no thumbnail found
+        DLGARR+=( "$seticon" "<big>$themename</big>" "$thumbnail" )
     done
 }
 
@@ -1387,7 +1383,7 @@ restoreSettings() {
         ret=$?
         if (( ret == 1 )); then # cancel button pressed
             cleanup all
-            return 
+            return
         elif (( ret == 2 ));then
             select="TRUE"
             continue
@@ -1428,12 +1424,12 @@ restoreSettings() {
                                 fi
                                 ;;
             "$PICKCONKY"    )   if [[ -n $VAL ]];then
-                                    VAL="${VAL//"$home_marker"/"$HOME"}"
+                                    VAL="${VAL//$home_marker/$HOME}"
                                     restoreConky "$VAL"
                                 fi
                                 ;;
             "$PICKTINT"     )   if [[ -n $VAL ]];then
-                                    VAL="${VAL//"$home_marker"/"$HOME"}"
+                                    VAL="${VAL//$home_marker/$HOME}"
                                     restoreTint2 "$VAL"
                                 fi
                                 ;;
@@ -1494,6 +1490,7 @@ function displayBlobs(){
             echo "$0: $msg" >&2
             exit 1
         fi
+
         case $RET in
             0)  SAVED="$THEMEPATH/LISTMSG.txt"
                 TEXT="These configs saved as $CONFIG can be restored:\n\n"
