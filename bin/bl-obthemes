@@ -1454,6 +1454,34 @@ function saveNewBlob() {
     fi
 }
 
+# used in displayBlobs() below
+# tests if every file in $1 is identical with its equivalent in $2
+# (files not present in $2 are ignored)
+function sameFiles() {
+    local smalldir bigdir dir
+    smalldir=$1
+    bigdir=$2
+    debug "Comparing $smalldir and $bigdir"
+    for dir in "$smalldir" "$bigdir"
+    do
+        [[ -d $dir ]] || {
+            echo "$0: ${dir} is not a directory." >&2
+            return 1
+        }
+    done
+    shopt -s globstar dotglob
+    for file in "$smalldir"/**
+    do
+        [[ -f $file ]] || continue
+        [[ -f ${file/#$smalldir/$bigdir} ]] || continue
+        cmp "$file" "${file/#$smalldir/$bigdir}" >/dev/null 2>&1 || {
+            debug "Some files in $smalldir are different from those in $bigdir"
+            return 1
+        }
+    done
+    shopt -u globstar dotglob
+    debug "All files in $smalldir are identical with those in $bigdir"
+}
 
 ########################################################################
 ######## Main BLOB list display function ###############################
