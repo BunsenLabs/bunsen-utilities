@@ -1336,29 +1336,39 @@ restoreSettings() {
     declare -A values
     while read -r TAG VAL; do
         case "$TAG" in
-            "[OBTHEME]"     )   configs["$PICKOB"]="$VAL"
+            "[OBTHEME]"     )   labels+=("$PICKOB")       # Order of associative array values is not defined,
+                                values["$PICKOB"]="$VAL"  # but indexed array labels preserves order of settings.cfg.
                                 ;;
-            "[GTK]"         )   configs["$PICKGTK"]="$VAL"
+            "[GTK]"         )   labels+=("$PICKGTK")
+                                values["$PICKGTK"]="$VAL"
                                 ;;
-            "[ICONS]"       )   configs["$PICKICONS"]="$VAL"
+            "[ICONS]"       )   labels+=("$PICKICONS")
+                                values["$PICKICONS"]="$VAL"
                                 ;;
-            "[BACKGROUND]"  )   configs["$PICKBG"]="$VAL"
+            "[BACKGROUND]"  )   labels+=("$PICKBG")
+                                values["$PICKBG"]="$VAL"
                                 ;;
-            "[CONKY]"       )   configs["$PICKCONKY"]="$VAL"
+            "[CONKY]"       )   labels+=("$PICKCONKY")
+                                values["$PICKCONKY"]="$VAL"
                                 ;;
-            "[TINT2]"       )   configs["$PICKTINT"]="$VAL"
+            "[TINT2]"       )   labels+=("$PICKTINT")
+                                values["$PICKTINT"]="$VAL"
                                 ;;
-            "[DMENU]"       )   configs["$PICKDMENU"]="$VAL"
+            "[DMENU]"       )   labels+=("$PICKDMENU")
+                                values["$PICKDMENU"]="$VAL"
                                 ;;
-            "[LIGHTDM]"     )   configs["$PICKLDM"]="$VAL"
+            "[LIGHTDM]"     )   labels+=("$PICKLDM")
+                                values["$PICKLDM"]="$VAL"
                                 ;;
             "[EXITRC]"      )   : # do nothing
                                 ;;
-            "[XFILES]"      )   configs["$PICKX"]="$VAL"
+            "[XFILES]"      )   labels+=("$PICKX")
+                                values["$PICKX"]="$VAL"
                                 ;;
-            '['*']'         )   TAG="${TAG#[}"
+            '['*']'         )   TAG="${TAG#[}" # strip outside brackets
                                 TAG="${TAG%]}"
-                                configs["$TAG"]="$VAL"
+                                labels+=("$TAG")
+                                values["$TAG"]="$VAL"
                                 ;;
             *               )   echo "$0: Ignoring unknown value: ${TAG} in $THEMEPATH/settings.cfg" >&2
                                 ;;
@@ -1369,14 +1379,15 @@ restoreSettings() {
     while true
     do
         columns=()
-        for i in "${!configs[@]}"
+        for i in "${labels[@]}"
         do
             columns+=("$select" "$i")
         done
         CHOICE=$(yad "${yad_args[@]}" --list --checklist \
             --title="Choose the configs to restore..." \
             --button="Select All:2" $CANCEL $OK \
-            --height=400 \
+            --height=400 --width=400 \
+            --print-column=2 --separator='' \
             --column="Select" --column="Config" "${columns[@]}" )
         ret=$?
         if (( ret == 1 )); then # cancel button pressed
@@ -1386,7 +1397,7 @@ restoreSettings() {
             select="TRUE"
             continue
         fi
-        if [[ ! $CHOICE ]] ; then # entry field is empty, so try again
+        if [[ -z $CHOICE ]] ; then # entry field is empty, so try again
             yad_question "\n  Make a selection...." $EXIT $OK
             if (( $? == 1 ));then
                 cleanup all
@@ -1398,11 +1409,12 @@ restoreSettings() {
         fi
         break
     done
-
     # Go through user's selected choices.
-    while IFS='|' read -r _ label; do
-        home_marker='%USERHOME%'
-        VAL="${configs[$label]}"
+    home_marker='%USERHOME%'
+    while read -r label
+    do
+        debug "\n Restoring $label"
+        VAL="${values[$label]}"
         case "$label" in
             "$PICKOB"       )   [[ -n $VAL ]] && checkOBTHEME "$VAL"
                                 restoreOBrc
