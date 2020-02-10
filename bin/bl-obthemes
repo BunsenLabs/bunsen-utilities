@@ -1173,23 +1173,29 @@ function restoreLightdm(){   # need sudo to restore lightdm-gtk-greeter.conf
         echo "$0: Cannot read file $THEMEPATH/$LDM" >&2
         return 1
     }
+    cmp "$THEMEPATH/$LDM" "$LDMDIR/$LDM" >/dev/null 2>&1 && {
+        debug "\n $THEMEPATH/$LDM and $LDMDIR/$LDM are identical, no need to restore."
+        return 0
+    }
     while true;do
-        pkexec cp --backup --suffix="$BKP_SFX" "$THEMEPATH/$LDM" "$LDMDIR/$LDM"
-        ret=$?
-        case "$ret" in
-            0   )   msg="Restored: lightdm-gtk-greeter.conf"
-                    debug "\n  $msg"
-                    break
-                    ;;
-            126 )   msg="  Authentication cancelled\n\nlightdm-gtk-greeter.conf was not restored"
-                    echo "$0:  $msg" >&2
-                    break
-                    ;;
-            *   )   msg="  Password input failed\n\nlightdm-gtk-greeter.conf was not restored"
-                    echo "$0:  $msg" >&2
-                    yad_warning "$msg"
-                    ;;
-        esac
+        msg="Please enter your password to edit the system file lightdm-gtk-greeter.conf"
+        yad_prompt "$msg" --entry --hide-text | sudo -S cp --backup --suffix="$BKP_SFX" "$THEMEPATH/$LDM" "$LDMDIR/$LDM" 2>/dev/null
+        ret=( "${PIPESTATUS[@]}" )
+        if [[ ${ret[1]} = 0 ]]
+        then
+            msg="Restored: lightdm-gtk-greeter.conf"
+            debug "\n  $msg"
+            return 0
+        elif [[ ${ret[0]} = 1 ]]
+        then
+            msg="Authentication cancelled\n\nlightdm-gtk-greeter.conf was not restored"
+            echo "$0: $msg" >&2
+            return 1
+        else
+            msg="Password input failed\n\nlightdm-gtk-greeter.conf was not restored"
+            echo "$0: $msg" >&2
+            yad_warning "$msg"
+        fi
     done
 }
 
