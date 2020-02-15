@@ -12,6 +12,7 @@ Package: bunsen-utilities
 Architecture: all
 Depends: ${misc:Depends},
   bunsen-common,
+  dconf-cli,
   python2.7,
   python3 (>=3.5.3),
   python3-distutils,
