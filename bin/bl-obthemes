@@ -514,6 +514,26 @@ function saveFileAbs(){
     fi
 }
 
+# CONFIGDIR is global set by setName()
+function saveDconf(){ # passed dconf directory as #1 and name of app (for dumpfile) as $2
+    local dconfdir appname dumpfile
+    dconfdir=$1
+    appname=$2
+    mkdir -p "$CONFIGDIR/dconf" || return 1
+    dumpfile="$CONFIGDIR/dconf/${appname// /_}" # remove any spaces from name
+    dconf dump "$dconfdir" > "$dumpfile" || return 1
+    if [[ -s $dumpfile ]]
+    then
+        debug "Saved dconf $dconfdir to $dumpfile"
+    elif [[ -e $dumpfile ]]
+    then
+        debug "dconf $dconfdir is default, created empty file $dumpfile"
+    else
+        "$0: failed to create $dumpfile" >&2
+        return 1
+    fi
+}
+
 function getBg(){    # find if feh or nitrogen was used. Save config file(s)
     if [[ -e $HOME/$NITROFILE ]] && [[ -e $HOME/$FEHFILE ]];then  # see which was last used to set background
         if [[ $HOME/$NITROFILE -nt $HOME/$FEHFILE ]];then # use most recent method
@@ -761,13 +781,21 @@ function getLightdm(){
     echo "$txt" >> "$LISTMSG"
 }
 
-# passed termfile as $1 and pickterm as $2 by saveSettings()
+# passed pickterm as $1 and termfile as $2 by saveSettings()
 function getTerminal(){
-    local termfile termname txt
-    termfile="$1"
-    termname="$2"
-    saveFiles "$termfile"
-    txt="$termname config:  ~/$termfile\n"
+    local termname termfile txt
+    termname="$1"
+    termfile="$2"
+    case "$termfile" in # dconf directories get prefixed with %dconf% in checkTerm()
+    '%dconf%'*)
+        saveDconf "${termfile#'%dconf%'}" "$termname"
+        txt="$termname dconf config: ${termfile#'%dconf%'}\n"
+        ;;
+    *)
+        saveFiles "$termfile"
+        txt="$termname config:  ~/$termfile\n"
+        ;;
+    esac
     debug "\n  Saved $txt"
     echo "[$termname] $termfile" >> "$SETTINGS"
     echo "$txt" >> "$LISTMSG"
@@ -902,7 +930,7 @@ function getScrot(){
     checkTint2 start                # restore any stopped Tint2s
 }
 
-# sets termfile and pickterm inside saveSettings()
+# sets termfile and pickterm, local inside saveSettings()
 function checkTerm(){
     case $( readlink /etc/alternatives/x-terminal-emulator ) in
     /usr/bin/lxterminal)
@@ -920,6 +948,18 @@ function checkTerm(){
     /usr/bin/sakura)
         termfile='.config/sakura/sakura.conf'
         pickterm='Sakura'
+        ;;
+    /usr/bin/gnome-terminal.wrapper)
+        termfile='%dconf%/org/gnome/terminal/'
+        pickterm='Gnome-terminal'
+        ;;
+    /usr/bin/mate-terminal.wrapper)
+        termfile='%dconf%/org/mate/terminal/'
+        pickterm='Mate-terminal'
+        ;;
+    /usr/bin/tilix.wrapper)
+        termfile='%dconf%/com/gexperts/Tilix/'
+        pickterm='Tilix'
         ;;
     *)
         termfile=''
@@ -963,7 +1003,7 @@ function saveSettings(){
                             ;;
             "$PICKX"    )   getXconfig
                             ;;
-            "$pickterm" )   getTerminal "$termfile" "$pickterm"
+            "$pickterm" )   getTerminal "$pickterm" "$termfile"
                             ;;
             *           )   echo "$0:  Unknown config value in saveSettings function" >&2
                             exit 1
@@ -1268,6 +1308,33 @@ function restoreFileAbs(){
     fi
 }
 
+# THEMEPATH and BKP_SFX are globals set by displayBlobs() and restoreSettings() respectively.
+# dconfdir and appname passed as $1 and $2 from restoreSettings()
+function restoreDconf(){
+    local dconfdir appname src_file bkpdir bkp_file current_state blob_state
+    dconfdir=$1
+    appname=$2
+    src_file="$THEMEPATH/dconf/${appname// /_}"
+    bkpdir="$HOME/.config/dconf-backups"
+    bkp_file="$bkpdir/${appname// /_}${BKP_SFX}"
+    current_state=$( dconf dump "$dconfdir" ) || return 1
+    blob_state=$(< "$src_file" )
+    [[ $current_state = "$blob_state" ]] && { # including when both are empty, ie default state
+        debug "${appname}: no need to restore dconf, settings are the same."
+        return 0
+    }
+    [[ -n $current_state ]] && {
+        mkdir -p "$bkpdir" || return 1
+        debug "${appname}: backing up dconf settings to $bkp_file"
+        printf '%s\n' "$current_state" > "$bkp_file" || return 1
+        dconf reset -f "$dconfdir" || return 1
+    }
+    [[ -n $blob_state ]] && {
+        debug "${appname}: restoring dconf settings from $src_file"
+        dconf load "$dconfdir" < "$src_file" || return 1
+    }
+}
+    
 function reloadGTK(){ # reload gtk theme after restoring saved config
 python - <<END
 import gtk
@@ -1451,7 +1518,12 @@ restoreSettings() {
                                 restoreFiles "$XFILE" #"$BASHFILE" # do not restore .bashrc for now
                                 xrdb ~/.Xresources
                                 ;;
-            *               )   restoreFiles "$VAL"
+            *               )   if [[ $VAL = '%dconf%'* ]] # dconf directories come prefixed with %dconf% in checkTerm (and others in future?)
+                                then
+                                    restoreDconf "${VAL#'%dconf%'}" "$label"
+                                else
+                                    restoreFiles "$VAL"
+                                fi
                                 ;;
         esac
     done <<< "$CHOICE"
