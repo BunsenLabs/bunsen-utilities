@@ -140,7 +140,7 @@ do
     esac
 done
 
-#### VARIABLES #########################################################
+######################### VARIABLES ####################################
 
 ### USER SETTINGS
 IMGCMD="bl-image-viewer"    # application command to view screenshot
@@ -169,7 +169,7 @@ NITROFILE=".config/nitrogen/bg-saved.cfg"
 DMENU=".config/dmenu/dmenu-bind.sh"
 XFILE=".Xresources"
 BASHFILE=".bashrc"
-#TERMFILE='' # now termfile is set dynamically in saveSettings()
+#TERMFILE='' # now termfile is set dynamically by checkTerm() in saveSettings()
 
 ### SYSTEM CONFIG VARIABLES TO BE SAVED AND RESTORED
 LDMDIR="/etc/lightdm"
@@ -235,15 +235,15 @@ PICKTINT="Tint2"
 PICKDMENU="dmenu (Alt menu)"
 PICKLDM="Lightdm Login theme"
 #PICKEXIT="Exit dialog theme"
-#PICKTERM='' # now not global, pickterm local in saveSettings()
+#PICKTERM='' # now not global, pickterm is from checkTerm(), local in saveSettings()
 PICKX="X configs"
 
 ### END DIALOG VARIABLES
 
-#### END VARIABLES #####################################################
+####################### END VARIABLES ##################################
 
 
-### FUNCTIONS ##########################################################
+######################### FUNCTIONS ####################################
 
 ### DIALOG FUNCTIONS
 
@@ -471,7 +471,7 @@ function setName(){  # set name of collection, make dir and session settings fil
     debug "\n  Configuration will be saved as: $NEWNAME$txt"
 
 #     store list in listfile
-    echo "<b>Configuration name: $NEWNAME</b>\t$txt\nSaved at $time\n" >> "$LISTMSG"
+    echo -e "<b>Configuration name: $NEWNAME</b>\t$txt\nSaved at $time\n" >> "$LISTMSG"
 }
 
 # $1 [$2...] are relative paths passed from save functions
@@ -504,7 +504,7 @@ function saveFileAbs(){
         echo "$0: Cannot read source file $src_file" >&2
         return 1
     }
-    mkdir -p "$target_dir"
+    mkdir -p "$target_dir" || return 1
     if [[ -d $src_file ]];then
         cp -r "$src_file" "$target_file" || return 1
         debug "directory $src_file and contents saved to $target_dir"
@@ -1332,7 +1332,7 @@ restoreSettings() {
     # get chosen saved configs and restore them
     # Conky and Tint2 will be killed by their restore functions, if called.
     BKP_SFX=".blob.$(date +"%Y%m%d-%H%M%S")" # global: unified backup suffix that restore functions will use
-    local TAG VAL labels columns select ret CHOICE
+    local TAG VAL labels label columns select ret CHOICE
     declare -A values
     while read -r TAG VAL; do
         case "$TAG" in
@@ -1413,8 +1413,8 @@ restoreSettings() {
     home_marker='%USERHOME%'
     while read -r label
     do
-        debug "\n Restoring $label"
         VAL="${values[$label]}"
+        debug "\n Restoring $label with $VAL"
         case "$label" in
             "$PICKOB"       )   [[ -n $VAL ]] && checkOBTHEME "$VAL"
                                 restoreOBrc
@@ -1460,7 +1460,7 @@ restoreSettings() {
 # used in displayBlobs() below
 function saveNewBlob() {
     setName || return 1
-    debug "Saving settings as $NEWNAME"
+    debug "\n  Saving settings as $NEWNAME"
     saveSettings 
     getScrot
     yad_prompt "Settings were saved as <b>$NEWNAME</b>" --image="gtk-save" "$OK"
@@ -1627,7 +1627,7 @@ Save settings first?"
     done
 }
 
-######################### end restore functions ########################
+################### end restore functions ##############################
 
 function cleanup(){
     if [[ $1 = all ]];then
@@ -1646,7 +1646,7 @@ function cleanup(){
 }
 
 
-### END FUNCTIONS ######################################################
+###################### END FUNCTIONS ###################################
 
 # Do not run as root (Bad Things may happen).
 if [[ $( id -u ) -eq 0 ]]; then
