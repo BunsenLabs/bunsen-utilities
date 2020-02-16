@@ -26,9 +26,8 @@
 #                                   has the newer saved bg config file)
 #                       Alt Menu (dmenu)
 #                       Lightdm login gtk greeter
-#                       Exit dialog theme
 #                       X configs (.bashrc, .Xresources)
-#                       Terminator config
+#                       Terminal emulator config
 #
 # Paths are assumed to be BunsenLabs defaults
 #
@@ -271,6 +270,14 @@ yad_fatal_error() {
 }
 
 ### END DIALOG FUNCTIONS
+
+# trap will pass the line number where the error ocurred as $1
+trap_error_exit(){
+    local msg="An error ocurred on line ${1}.\nPlease report this to the developers!"
+    echo -e "$0: $msg" >&2
+    yad_fatal_error "$msg"
+    exit 1
+}
 
 function upgradeBlobs(){
     moveFile(){ # $1 is file, $2 is target dir
@@ -1098,6 +1105,27 @@ function checkGTK(){    # check if gtk theme is still present
 
 function restoreGTK(){
     restoreFiles "$GTK2" "$GTK2MINE" "$GTK3" "$GTK3x"
+    reloadGTK
+    restartThunar
+}
+
+function reloadGTK(){ # reload gtk theme after restoring saved config
+python - <<END
+import gtk
+
+events=gtk.gdk.Event(gtk.gdk.CLIENT_EVENT)
+data=gtk.gdk.atom_intern("_GTK_READ_RCFILES", False)
+events.data_format=8
+events.send_event=True
+events.message_type=data
+events.send_clientmessage_toall()
+
+END
+}
+
+function restartThunar(){
+    pkill -fx 'thunar[[:blank:]]+--daemon' || return 0
+    thunar --daemon & # only restart if it was previously running as daemon
 }
 
 function checkOBTHEME(){
@@ -1335,20 +1363,6 @@ function restoreDconf(){
     }
 }
     
-function reloadGTK(){ # reload gtk theme after restoring saved config
-python - <<END
-import gtk
-
-events=gtk.gdk.Event(gtk.gdk.CLIENT_EVENT)
-data=gtk.gdk.atom_intern("_GTK_READ_RCFILES", False)
-events.data_format=8
-events.send_event=True
-events.message_type=data
-events.send_clientmessage_toall()
-
-END
-}
-
 # This function is run in displayBlobs() below
 # CURRENTSESSION and NUMDIRS from getCurrent()
 # DLGARR and CURRENTSESSDIR are local to displayBlobs()
@@ -1476,6 +1490,11 @@ restoreSettings() {
         fi
         break
     done
+
+    trap 'trap_error_exit $LINENO' ERR
+    # exit if any restore function fails
+    # TODO: add 'return 1' to functions as needed
+
     # Go through user's selected choices.
     home_marker='%USERHOME%'
     while read -r label
@@ -1488,7 +1507,7 @@ restoreSettings() {
                                 ;;
             "$PICKGTK"      )   [[ -n $VAL ]] && checkGTK "$VAL"
                                 restoreGTK
-                                reloadGTK
+                                # reloadGTK now called in restoreGTK
                                 ;;
             "$PICKICONS"    )   [[ -n $VAL ]] && checkICONS "$VAL"
                                 ;;
@@ -1527,6 +1546,7 @@ restoreSettings() {
                                 ;;
         esac
     done <<< "$CHOICE"
+    trap - ERR # remove trap for normal error handling
 }
 
 # used in displayBlobs() below
@@ -1719,6 +1739,11 @@ function cleanup(){
 
 
 ###################### END FUNCTIONS ###################################
+
+# add this where an error should trigger exit:
+#trap 'trap_error_exit $LINENO' ERR
+# to remove trap:
+#trap - ERR
 
 # Do not run as root (Bad Things may happen).
 if [[ $( id -u ) -eq 0 ]]; then
