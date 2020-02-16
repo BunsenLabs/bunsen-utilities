@@ -1343,6 +1343,10 @@ function restoreDconf(){
     dconfdir=$1
     appname=$2
     src_file="$THEMEPATH/dconf/${appname// /_}"
+    [[ -f $src_file ]] || {
+        echo "$0: cannot find dconf config $src_file for \"$appname\"" >&2
+        return 1
+    }
     bkpdir="$HOME/.config/dconf-backups"
     bkp_file="$bkpdir/${appname// /_}${BKP_SFX}"
     current_state=$( dconf dump "$dconfdir" ) || return 1
