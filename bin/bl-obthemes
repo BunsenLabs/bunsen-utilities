@@ -280,6 +280,20 @@ trap_error_exit(){
     exit 1
 }
 
+# Fork a process to the background, return 1 if it exits soon.
+# $1 is time to wait before checking if process is still running.
+# Other arguments are the command to run.
+forkncheck() {
+    local pid
+    local sleeptime=$1 # use anything accepted by 'sleep'
+    shift
+    "$@" >/dev/null 2>&1 & pid=$!
+    disown
+    sleep "$sleeptime" || return 1
+    kill -0 "$pid" >/dev/null 2>&1 && return 0
+    return 1
+}
+
 function upgradeBlobs(){
     moveFile(){ # $1 is file, $2 is target dir
         [[ -f "$2/${1##*/}" ]] && return 0
@@ -1210,11 +1224,11 @@ function restoreTint2(){    # arg = $VAL from displayBlobs()
             safeKill tint2
             while read -r tintline;do
                 if [[ "$tintline" == "tint2" ]];then
-                    tint2 >/dev/null 2>&1 &
+                    forkncheck 0.2 tint2 || return 1
                     sleep 1
                     debug "\n  Restored Tint2: $tintline\n"
                 elif [[ -n "$tintline" ]];then
-                    tint2 -c "$tintline" >/dev/null 2>&1 &
+                    forkncheck 0.2 tint2 -c "$tintline" || return 1
                     sleep 1s
                     debug "\n  Restored Tint2: $tintline\n"
                 fi
@@ -1224,11 +1238,11 @@ function restoreTint2(){    # arg = $VAL from displayBlobs()
         safeKill tint2
         for tintpath in $tintcmd;do
             if [[ "$tintpath" == "tint2" ]] >/dev/null;then
-                tint2 >/dev/null 2>&1 &     # default tint2 command
+                forkncheck 0.2 tint2 || return 1    # default tint2 command
                 sleep 1
                 debug "\n  Restored Tint2: $tintpath\n"
             else
-                tint2 -c "$tintpath" >/dev/null 2>&1 &
+                forkncheck 0.2 tint2 -c "$tintpath" || return 1
                 sleep 1s
                 debug "\n  Restored Tint2: $tintpath\n"
             fi
