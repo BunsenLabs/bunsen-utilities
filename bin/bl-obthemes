@@ -271,7 +271,8 @@ yad_fatal_error() {
 
 ### END DIALOG FUNCTIONS
 
-# trap will pass the line number where the error ocurred as $1
+# Trap will pass the line number where the error ocurred as $1
+# This should not be needed once error handling is all done separately.
 trap_error_exit(){
     local msg="An error ocurred on line ${1}.\nPlease report this to the developers!"
     echo -e "$0: $msg" >&2
@@ -1110,6 +1111,7 @@ function restoreGTK(){
 }
 
 function reloadGTK(){ # reload gtk theme after restoring saved config
+    debug "\nReloading GTK theme"
 python - <<END
 import gtk
 
@@ -1125,6 +1127,7 @@ END
 
 function restartThunar(){
     pkill -fx 'thunar[[:blank:]]+--daemon' || return 0
+    debug "Stopped Thunar daemon, now restarting..."
     thunar --daemon & # only restart if it was previously running as daemon
 }
 
@@ -1274,7 +1277,7 @@ function restoreFiles(){
     local src_file target_file i
     for i in "$@"
     do
-        debug "Restoring ${i}..."
+        debug "\nRestoring ${i}..."
         src_file="$THEMEPATH/user/$i"
         target_file="$HOME/$i"
         if [[ -d $src_file ]]; then
@@ -1344,7 +1347,7 @@ function restoreDconf(){
     appname=$2
     src_file="$THEMEPATH/dconf/${appname// /_}"
     [[ -f $src_file ]] || {
-        echo "$0: cannot find dconf config $src_file for \"$appname\"" >&2
+        echo "$0: cannot find dconf config $src_file for ${appname}" >&2
         return 1
     }
     bkpdir="$HOME/.config/dconf-backups"
@@ -1557,7 +1560,7 @@ restoreSettings() {
 function saveNewBlob() {
     setName || return 1
     debug "\n  Saving settings as $NEWNAME"
-    saveSettings 
+    saveSettings || return 1
     getScrot
     yad_prompt "Settings were saved as <b>$NEWNAME</b>" --image="gtk-save" "$OK"
     if [[ -d $CONFIGDIR_BKP ]];then
@@ -1653,7 +1656,7 @@ Save settings first?"
                         ;;
                         2)
                             debug "\n Saving current desktop settings before restoring $themename"
-                            saveNewBlob
+                            saveNewBlob || debug "Current settings were not saved."
                         ;;
                     esac
                 }   
@@ -1693,7 +1696,7 @@ Save settings first?"
                     fi
                 fi
                 ;;
-            3)  saveNewBlob
+            3)  saveNewBlob || debug "Settings were not saved"
                 ;;
             4)  # show screenshot in image viewer
                 if [[ -n $themename ]];then
