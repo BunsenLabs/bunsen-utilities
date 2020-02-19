@@ -1570,7 +1570,7 @@ restoreSettings() {
     trap - ERR # remove trap for normal error handling
 }
 
-# used in displayBlobs() below
+# used in displayBlobs() below and intro()
 function saveNewBlob() {
     setName || return 1
     debug "\n  Saving settings as $NEWNAME"
@@ -1586,10 +1586,13 @@ function saveNewBlob() {
 # used in displayBlobs() below
 # tests if every file in $1 is identical with its equivalent in $2
 # (files not present in $2 are ignored)
+# $1 is usually the blob theme directory and $2 is usually $HOME
+# difflist is local inside displayBlobs()
 function sameFiles() {
-    local smalldir bigdir dir
+    local smalldir bigdir dir file
     smalldir=$1
     bigdir=$2
+    difflist=()
     debug "Comparing $smalldir and $bigdir"
     for dir in "$smalldir" "$bigdir"
     do
@@ -1604,19 +1607,23 @@ function sameFiles() {
         [[ -f $file ]] || continue
         [[ -f ${file/#$smalldir/$bigdir} ]] || continue
         cmp "$file" "${file/#$smalldir/$bigdir}" >/dev/null 2>&1 || {
-            debug "Some files in $smalldir are different from those in $bigdir"
-            return 1
+            debug "$file is different from ${file/#$smalldir/$bigdir}"
+            difflist+=("${file/#$smalldir/$bigdir}")
         }
     done
     shopt -u globstar dotglob
-    debug "All files in $smalldir are identical with those in $bigdir"
+    [[ ${#difflist[@]} -eq 0 ]] && {
+        debug "All files in $smalldir are identical with those in $bigdir"
+        return 0
+    }
+    return 1
 }
 
 ########################################################################
 ######## Main BLOB list display function ###############################
 # sets globals THEMEPATH and BKP_SFX (via restoreSettings) for restore functions
 function displayBlobs(){
-    local DLGWIDTH DLGHEIGHT DLGARR RET CONFIG CURRENTSESSDIR themename 
+    local DLGWIDTH DLGHEIGHT DLGARR RET CONFIG CURRENTSESSDIR themename difflist
     getActiveMonitorDimensions
     while true ;do
         UpdateDisplayDialog # generates DLGARR
@@ -1658,11 +1665,11 @@ function displayBlobs(){
 
         case $RET in
             0)  sameFiles "$CURRENTSESSDIR/user" "$HOME" || {
-                    TEXT="You have modified your desktop appearance since it was saved as <b>${CURRENTSESSION}</b>
-You might want to save your current session before restoring <b>${themename}</b>,
-or some settings might be overwritten.
-Save settings first?"              
-                    yad_prompt "$TEXT" --image="dialog-warning" --button='Save settings first':2 --button='No, restore now':0 --button='Cancel':1
+                    TEXT="You might have modified your desktop appearance since it was saved as <b>${CURRENTSESSION}</b>.
+These files are now different:
+ ${difflist[*]/%/\\n}
+Do you want to save your current session before restoring <b>${themename}</b>?"              
+                    yad_prompt "$TEXT" --image="dialog-question" --button='Save settings first':2 --button='No, restore now':0 --button='Cancel':1
                     case $? in
                         1)
                             debug "\n Cancelled restoring of $themename"
