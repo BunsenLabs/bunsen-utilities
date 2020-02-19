@@ -1069,7 +1069,7 @@ function checkICONS(){ # check if icon theme is still present
                 local retfile retval
                 retfile="$( mktemp )"
                 bl-install -f "$retfile" "$pkg"
-                wait $!
+                sleep 0.3 # allow time for bl-install to write to $retfile
                 retval="$(<"$retfile")"
                 rm "$retfile"
                 if [[ "$retval" = 0 ]]
