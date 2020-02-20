@@ -1496,7 +1496,7 @@ restoreSettings() {
             --column="Select" --column="Config" "${columns[@]}" )
         ret=$?
         if (( ret == 1 )); then # cancel button pressed
-            cleanup all
+            debug " Cancelled restore of $themename"
             return
         elif (( ret == 2 ));then
             select="TRUE"
@@ -1505,7 +1505,6 @@ restoreSettings() {
         if [[ -z $CHOICE ]] ; then # entry field is empty, so try again
             yad_question "\n  Make a selection...." $EXIT $OK
             if (( $? == 1 ));then
-                cleanup all
                 exit 0
             else
                 select='FALSE'
