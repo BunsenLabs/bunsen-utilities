@@ -1570,6 +1570,7 @@ restoreSettings() {
         esac
     done <<< "$CHOICE"
     trap - ERR # remove trap for normal error handling
+    echo "$themename" > "$CURSESSFILE"
 }
 
 # used in displayBlobs() below and intro()
@@ -1688,7 +1689,6 @@ Do you want to save your current session before restoring <b>${themename}</b>?"
                 TEXT="$TEXT$(< "$SAVED")"
                 yad_prompt "$TEXT" || continue
                 debug "\n Restoring BLOB theme $themename"
-                echo "$themename" > "$CURSESSFILE"
                 restoreSettings
                 ;;
             1)  exit 0
