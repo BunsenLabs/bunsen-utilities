@@ -782,7 +782,7 @@ function getGTKname(){   # get GTK theme name and Icons name
             echo "[ICONS] $ICONS" >> "$SETTINGS"
         fi
     done < "$GTKFILE"
-    txt="GTK theme:  $GTKTHEME;  Icon Theme: $ICONS\n"
+    txt="GTK theme:  $GTKTHEME;  Icon Theme: $ICONS\n (When restoring, Thunar will be restarted to use new theme.)\n"
     debug "\n  Saved $txt"
     echo  "$txt" >> "$LISTMSG"
 }
@@ -1042,6 +1042,7 @@ function saveSettings(){
         cleanup all
         return 1
     else
+        debug "Current configs saved as \"$NEWNAME\""
         echo "$NEWNAME" > "$CURSESSFILE"     # replace entry in saved config flag file
     fi
 }
@@ -1514,16 +1515,16 @@ restoreSettings() {
         break
     done
 
-    trap 'trap_error_exit $LINENO' ERR
     # exit if any restore function fails
     # TODO: add 'return 1' to functions as needed
+    trap 'trap_error_exit $LINENO' ERR
 
     # Go through user's selected choices.
     home_marker='%USERHOME%'
     while read -r label
     do
         VAL="${values[$label]}"
-        debug "\n Restoring $label with $VAL"
+        debug "\n Restoring $label${VAL:+ with $VAL}"
         case "$label" in
             "$PICKOB"       )   [[ -n $VAL ]] && checkOBTHEME "$VAL"
                                 restoreOBrc
