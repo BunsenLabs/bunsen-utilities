@@ -176,6 +176,10 @@ LDM="lightdm-gtk-greeter.conf"
 
 ### END CONFIGS VARIABLES
 
+# used by forkncheck()
+FORKWAIT=0.3 # time to wait before checking if a forked process is still running
+# use any value which is  accepted by 'sleep'
+
 # packages needed for particular GTK themes
 declare -A theme_pkgs=(
 [Beam]=bunsen-themes
@@ -285,11 +289,9 @@ trap_error_exit(){
 # Other arguments are the command to run.
 forkncheck() {
     local pid
-    local sleeptime=$1 # use anything accepted by 'sleep'
-    shift
     "$@" >/dev/null 2>&1 & pid=$!
     disown
-    sleep "$sleeptime" || return 1
+    sleep "$FORKWAIT" || return 1 # check for bad sleep syntax
     kill -0 "$pid" >/dev/null 2>&1 && return 0
     return 1
 }
@@ -374,7 +376,7 @@ function safeKill() {
     pkill -x -u "$USER" "$1"
 }
 
-# sets globals NUMDIRS and CURRENTSESSION
+# sets globals NUMDIRS and CURRENTSESSION, inside intro()
 function getCurrent(){      # get name of currently set BLOB config
     local dirs
     NUMDIRS=0
@@ -1142,7 +1144,7 @@ END
 function restartThunar(){
     pkill -fx 'thunar[[:blank:]]+--daemon' || return 0
     debug "Stopped Thunar daemon, now restarting..."
-    thunar --daemon & # only restart if it was previously running as daemon
+    forkncheck thunar --daemon # only restart if it was previously running as daemon
 }
 
 function checkOBTHEME(){
@@ -1224,11 +1226,11 @@ function restoreTint2(){    # arg = $VAL from displayBlobs()
             safeKill tint2
             while read -r tintline;do
                 if [[ "$tintline" == "tint2" ]];then
-                    forkncheck 0.2 tint2 || return 1
+                    forkncheck tint2 || return 1
                     sleep 1
                     debug "\n  Restored Tint2: $tintline\n"
                 elif [[ -n "$tintline" ]];then
-                    forkncheck 0.2 tint2 -c "$tintline" || return 1
+                    forkncheck tint2 -c "$tintline" || return 1
                     sleep 1s
                     debug "\n  Restored Tint2: $tintline\n"
                 fi
@@ -1238,11 +1240,11 @@ function restoreTint2(){    # arg = $VAL from displayBlobs()
         safeKill tint2
         for tintpath in $tintcmd;do
             if [[ "$tintpath" == "tint2" ]] >/dev/null;then
-                forkncheck 0.2 tint2 || return 1    # default tint2 command
+                forkncheck tint2 || return 1    # default tint2 command
                 sleep 1
                 debug "\n  Restored Tint2: $tintpath\n"
             else
-                forkncheck 0.2 tint2 -c "$tintpath" || return 1
+                forkncheck tint2 -c "$tintpath" || return 1
                 sleep 1s
                 debug "\n  Restored Tint2: $tintpath\n"
             fi
@@ -1669,7 +1671,7 @@ function displayBlobs(){
 These files are now different:
  ${difflist[*]/%/\\n}
 Do you want to save your current session before restoring <b>${themename}</b>?"              
-                    yad_prompt "$TEXT" --image="dialog-question" --button='Save settings first':2 --button='No, restore now':0 --button='Cancel':1
+                    yad_question "$TEXT" --button='Save settings first':2 --button='No, restore now':0 --button='Cancel':1
                     case $? in
                         1)
                             debug "\n Cancelled restoring of $themename"
