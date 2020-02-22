@@ -651,6 +651,22 @@ function getCfile(){
     done
 }
 
+# trim /home/<user>/ from filepath
+# reject absolute path elsewhere in system
+# pass relative path as-is, assume relative to ~/
+userFilepath(){
+    local file=$1
+    if [[ $file = "$HOME"/* ]]
+    then
+        file=${file#"$HOME"/}
+    elif [[ $file = /* ]]
+    then
+        debug "${file} is not in user HOME, not using."
+        return 1
+    fi
+    printf '%s' "$file"
+}
+        
 function getConky(){
     local conkyfile listmsgtxt
     local CONKYCMD=""
@@ -674,9 +690,15 @@ function getConky(){
                     if [[ "$CONKYCMD" == "conky" ]] || [[ "$CONKYCMD" == "conky -q" ]];then
                         CONKYTXT="$CONKYTXT\n\tDesktop $i:  Default Conky"
                         debug "Found running default conky"
+                        debug "saving copy of default conky file"
+                        saveFiles '.config/conky/conky.conf'
                     else
                         CONKYTXT="$CONKYTXT\n\tDesktop $i:  $conkyfile"
                         debug "Found running conky file $conkyfile"
+                        conkyfile=$( userFilepath "$conkyfile" ) && {
+                            debug "Saving copy of $conkyfile"
+                            saveFiles "$conkyfile"
+                        }
                     fi
                     # command to start on specified desktop with wmctrl
                     CONKYCMD="sleep 1 && wmctrl -s $i && $CONKYCMD &;"
@@ -692,8 +714,16 @@ function getConky(){
                 CONKYCMD=${idCmd[*]} # NB now in string, filepaths with spaces will be broken.
                 if [[ "$CONKYCMD" == "conky" ]] || [[ "$CONKYCMD" == "conky -q" ]];then
                     CONKYTXT="$CONKYTXT\n\tDefault Conky"
+                    debug "Found running default conky"
+                    debug "saving copy of default conky file"
+                    saveFiles '.config/conky/conky.conf'
                 else
                     CONKYTXT="$CONKYTXT\n\t$conkyfile"
+                    debug "Found running conky file $conkyfile"
+                    conkyfile=$( userFilepath "$conkyfile" ) && {
+                        debug "Saving copy of $conkyfile"
+                        saveFiles "$conkyfile"
+                    }
                 fi
                 CONKYCMD="sleep 1 && $CONKYCMD &;"
                 CMDTXT="$CMDTXT$CONKYCMD"
@@ -705,7 +735,7 @@ function getConky(){
     else
         yad_warning "You selected to save Conkys\nbut none are running"
     fi
-    }
+}
 
 function getTint(){
     local tpath msg tintcmd listmsgtxt tint
@@ -1196,7 +1226,20 @@ function restoreOBrc(){
 }
 
 function restoreConky(){    # arg = $VAL from displayBlobs()
-    local currDESKTOP CONKYCMD
+    local currDESKTOP CONKYCMD cfiles
+    # cd only applies during subshell
+    (
+        cd $THEMEPATH/user
+        shopt -s globstar dotglob nullglob
+        cfiles=( **/*conky*.conf **/*conkyrc **/*conky )
+        for i in "${cfiles[@]}"
+        do
+            [[ -f "$i" ]] || continue
+            debug "restoring conky file $i"
+            restoreFiles "$i" || echo "$0: failed to restore conky file $i" >&2
+        done
+        shopt -u globstar dotglob nullglob
+    )    
     currDESKTOP=$(xprop -root _NET_CURRENT_DESKTOP | tail -c -2)   # Conkys may have been started on different desktops
     CONKYCMD="$1"
     if type bl-conky-manager &>/dev/null;then    # see if bl-conky-manager is installed
