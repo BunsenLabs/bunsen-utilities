@@ -731,14 +731,14 @@ function getConky(){
         done
         echo "$CMDTXT" >> "$SETTINGS"
         echo -e "$listmsgtxt\t$CONKYTXT\n" >> "$LISTMSG"
-        debug "\n  Saved running Conky(s)"
+        debug "\n  Saved running Conky(s)\n"
     else
         yad_warning "You selected to save Conkys\nbut none are running"
     fi
 }
 
 function getTint(){
-    local tpath msg tintcmd listmsgtxt tint
+    local tpath msg tintcmd tintfile listmsgtxt tint
     local -a arrTINT
     if [[ $(pidof tint2) ]];then
         while read -r pid cmd;do
@@ -748,26 +748,30 @@ function getTint(){
             fi
         done < <(pgrep -a -u "$USER" tint2)
 
-#        TXT="Tint2s:\n\n" # TXT seems not to be used?
         msg="Running Tint2s:"
         tintcmd=""
         listmsgtxt=""
 
         for i in "${arrTINT[@]}";do
-#            TXT="$TXT$i"
             tint=${i//;}
             if [[ "$tint" == "tint2" ]];then
                 tintcmd="$tintcmd$tint;"
                 listmsgtxt="$listmsgtxt\n\tDefault Tint2"
+                debug "saving copy of default tint2 config file"
+                saveFiles '.config/tint2/tint2rc'
             else
                 tintcmd="$tintcmd$tint;"
                 listmsgtxt="$listmsgtxt\n\t$tint"
+                tintfile=$( userFilepath "$tint" ) && {
+                    debug "saving copy of $tintfile"
+                    saveFiles "$tintfile"
+                }
             fi
         done
 
         echo "[TINT2] $tintcmd" >> "$SETTINGS"
         echo -e "$msg\t$listmsgtxt\n" >> "$LISTMSG"
-        debug "\n  Saved running Tint2(s)"
+        debug "\n  Saved running Tint2(s)\n"
     else
         yad_warning "You selected to save Tint2\nbut none are running"
     fi
@@ -1262,6 +1266,9 @@ function restoreConky(){    # arg = $VAL from displayBlobs()
 
 function restoreTint2(){    # arg = $VAL from displayBlobs()
     local tintcmd="${1//;/$'\n'}"
+    # restore any tint2 configs that have been saved
+    # assume they are all in the tint2 directory
+    restoreFiles '.config/tint2'
     if type bl-tint2-manager >/dev/null;then    # see if bl-tint2-manager is installed
         if [[ -f $TINTSESSION ]] 2>/dev/null; then
             :> "$TINTSESSION"    # create/overwrite tint2 session file
