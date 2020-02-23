@@ -390,7 +390,7 @@ function safeKill() {
     pkill -x -u "$USER" "$1"
 }
 
-# sets globals NUMDIRS and CURRENTSESSION, inside intro()
+# sets globals NUMDIRS and CURRENTSESSION, inside intro() and UpdateDisplayDialog() 
 function getCurrent(){      # get name of currently set BLOB config
     local dirs
     NUMDIRS=0
@@ -427,7 +427,7 @@ Openbox Configuration Manager</b></big>
 
     debug 'Welcome to BLOB!'
 
-    getCurrent # generates NUMDIRS
+    getCurrent # generates NUMDIRS and CURRENTSESSION
     #  if blob/ is empty, then don't display "View Saved" option in Intro dialog
     if (( NUMDIRS > 0 ));then
         yad "${yad_args[@]}" "$T$TXTINTRO" \
@@ -961,7 +961,6 @@ function getScrot(){
     screenW=$(xrandr -q | awk '/Screen/ {print $8}')
     screenH=$(xrandr -q | awk '/Screen/ {print $10}')
     screenH=${screenH%,}
-
     if (( MONS == 1 ));then # single monitor
         appX=$(( (screenW/20)*8 ))
         menuX=$(( (screenW/20)*2 ))
@@ -1054,6 +1053,7 @@ function checkTerm(){
     esac
 }
 
+# NEWNAME global set by setName()
 function saveSettings(){
     local configs termfile pickterm txt txt2
     configs=(
@@ -1066,7 +1066,6 @@ function saveSettings(){
         "$PICKLDM"
         "$PICKX"
     )
-    debug "Saving current configs as \"$NEWNAME\""
     checkTerm # sets termfile and pickterm
     # add terminal to array if one with a config file is in use
     if  [[ -n $termfile ]];then
@@ -1539,6 +1538,7 @@ function getActiveMonitorDimensions(){   # set width and height for View dialog
 
 # This function is run in displayBlobs() below
 # global THEMEPATH is set there
+# themename is local to displayBlobs()
 restoreSettings() {
     # get chosen saved configs and restore them
     # Conky and Tint2 will be killed by their restore functions, if called.
@@ -1731,7 +1731,7 @@ function displayBlobs(){
     local DLGWIDTH DLGHEIGHT DLGARR RET CONFIG CURRENTSESSDIR themename difflist
     getActiveMonitorDimensions
     while true ;do
-        UpdateDisplayDialog # generates DLGARR
+        UpdateDisplayDialog # generates DLGARR aand CURRENTSESSDIR
         CONFIG=$(yad "${yad_args[@]}" --list --title="$TITLE" \
             --text="Double-click selection, or \"Enter\", or use the \"Restore\" button to restore settings\n" \
             --separator=" " \
@@ -1770,10 +1770,16 @@ function displayBlobs(){
 
         case $RET in
             0)  sameFiles "$CURRENTSESSDIR/user" "$HOME" || {
-                    TEXT="You might have modified your desktop appearance since it was saved as <b>${CURRENTSESSION}</b>.
+                    if [[ -d $CURRENTSESSDIR ]]
+                    then
+                        TEXT="You might have modified your desktop appearance since it was saved as <b>${CURRENTSESSION}</b>.
 These files are now different:
  ${difflist[*]/%/\\n}
-Do you want to save your current session before restoring <b>${themename}</b>?"              
+Do you want to save your current session before restoring <b>${themename}</b>?"
+                    else
+                        TEXT="You might have modified your desktop appearance since it was last saved.
+Do you want to save your current session before restoring <b>${themename}</b>?"
+                    fi
                     yad_question "$TEXT" --button='Save settings first':2 --button='No, restore now':0 --button='Cancel':1
                     case $? in
                         1)
