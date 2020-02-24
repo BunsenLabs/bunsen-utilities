@@ -143,9 +143,9 @@ done
 
 ### USER SETTINGS
 IMGCMD="bl-image-viewer"    # application command to view screenshot
-#MENUMODIFIER="super+space"  # keybind for show root-menu
-MOUSECMD=(click 3)          # mouse r-click
+MENUMODIFIER="super+space"  # keybind for show root-menu (not used in standard BunsenLabs sessions)
 KEYDOWN=10                  # adjust this for where "Preferences" is in the menu
+MOUSECMD=(click 3)          # mouse r-click
 
 ### GLOBALS
 USRCONFIGPATH="$HOME/.config/blob"
@@ -179,6 +179,10 @@ LDMDIR="/etc/lightdm"
 LDM="lightdm-gtk-greeter.conf"
 
 ### END CONFIGS VARIABLES
+
+# current running openbox session, tested when script starts
+# usually set to "bunsenlabs", but "openbox" for a vanilla openbox session
+OBSESSION=''
 
 # used by forkncheck()
 FORKWAIT='0.3' # time to wait before checking if a forked process is still running
@@ -286,6 +290,46 @@ trap_error_exit(){
     echo -e "$0: $msg" >&2
     yad_fatal_error "$msg"
     exit 1
+}
+
+# This is run at the start.
+# OBSESSION global used in getScrot()
+firstChecks() {
+    # Do not run as root (Bad Things may happen).
+    if [[ $( id -u ) -eq 0 ]]; then
+        echo $"$0: Error: This script should not be run by root." >&2
+        exit 1
+    fi
+
+    # Test if openbox is running, and with what session file.
+    obline=$(pgrep -ax -u "$USER" openbox) || {
+        yad_fatal_error "This script can only be used with openbox."
+        exit 1
+    }
+    [[ $obline =~ --startup[[:blank:]]+([^[:blank:]]+) ]] || {
+        yad_fatal_error "Openbox was started without a startup file."
+        exit 1
+    }
+    case ${BASH_REMATCH[1]} in
+    */bunsen-autostart)
+        debug "  BunsenLabs session detected."
+        OBSESSION=bunsenlabs
+        ;;
+    */openbox-autostart)
+        debug "  Vanilla Openbox session detected."
+        yad_warning "BunsenLabs uses Openbox with some custom config files,
+    but we have detected that you are running a standard Openbox session.
+    Some things might not work as expected without editing this script.
+    You can copy /usr/bin/bl-obthemes to ~/bin/ and edit it there.
+    At least, check if MENUMODIFIER and KEYDOWN at the top of the file
+    are set appropriately to trigger the menu display for screenshots." "$OK" "$EXIT" || exit 1
+        OBSESSION=openbox
+        ;;
+    *)
+        yad_fatal_error "Unable to determine the current openbox session."
+        exit 1
+        ;;
+    esac
 }
 
 # Fork a process to the background, return 1 if it exits soon.
@@ -731,7 +775,7 @@ function getConky(){
         if ! [[ -z "$id" ]];then
             getIdCmd "$id" # generates array idCmd
             getCfile # extract conky config file
-            CONKYCMD=${idCmd[*]} # NB now in string, filepaths with spaces will be broken.
+            CONKYCMD=${idCmd[*]} # TODO now in string, filepaths with spaces will be broken.
             if [[ "$CONKYCMD" == "conky" ]] || [[ "$CONKYCMD" == "conky -q" ]];then
                 CONKYTXT="$CONKYTXT\n\tDefault Conky"
                 debug "Found running default conky"
@@ -767,7 +811,7 @@ function getTint(){
     while read -r pid cmd;do
         if [[ ${cmd%% *} == tint2 ]];then
             #tpath=$(echo "$cmd" | awk '{print $NF";"}')
-            tpath=${cmd##* } # breaks if filepath has spaces
+            tpath=${cmd##* } # TODO breaks if filepath has spaces
             arrTINT+=("$tpath")
         fi
     done < <(pgrep -a -u "$USER" tint2)
@@ -986,17 +1030,30 @@ function getScrot(){
     xdotool windowmove --sync "$LX" "$appX" "$appY" && sleep 0.1 && \
     xdotool mousemove --sync --window "$LX" -- -50 0 && xdotool click 1
 
-    xdotool mousemove --sync "$menuX" "$menuY" #&& xdotool key --clearmodifiers "$MENUMODIFIER"
-    jgmenu_run &
-    sleep 0.3
-    xdotool key --delay 50 Home
-    i=1
-    while (( i <= KEYDOWN ));do
-        xdotool key --delay 50 Down
-        i=$(( i+1 ))
-    done
-    xdotool key --delay 20 Right
-    xdotool key --delay 20 Right && sleep 0.3
+    xdotool mousemove --sync "$menuX" "$menuY"
+    case $OBSESSION in
+    bunsenlabs)
+        jgmenu_run &
+        sleep 0.3
+        xdotool key --delay 50 Home
+        i=1
+        while (( i <= KEYDOWN ));do
+            xdotool key --delay 50 Down
+            i=$(( i+1 ))
+        done
+        xdotool key --delay 20 Right
+        xdotool key --delay 20 Right && sleep 0.3
+        ;;
+    openbox)
+        xdotool key --clearmodifiers "$MENUMODIFIER"
+        i=1
+        while (( i <= KEYDOWN ));do
+            xdotool key --delay 50 Down
+            i=$(( i+1 ))
+        done
+        xdotool key --delay 20 Right && sleep 0.3
+        ;;
+    esac
 
     # take scrot
     scrot -t 9 "$SCROT"    # scrot thumbnail @9% fullsize
@@ -1728,7 +1785,7 @@ function sameFiles() {
 ######## Main BLOB list display function ###############################
 # sets globals THEMEPATH and BKP_SFX (via restoreSettings) for restore functions
 function displayBlobs(){
-    local DLGWIDTH DLGHEIGHT DLGARR RET CONFIG CURRENTSESSDIR themename difflist
+    local DLGWIDTH DLGHEIGHT DLGARR RET CONFIG CURRENTSESSDIR themename TEXT difflist
     getActiveMonitorDimensions
     while true ;do
         UpdateDisplayDialog # generates DLGARR aand CURRENTSESSDIR
@@ -1883,11 +1940,9 @@ function cleanup(){
 # to remove trap:
 #trap - ERR
 
-# Do not run as root (Bad Things may happen).
-if [[ $( id -u ) -eq 0 ]]; then
-    echo $"$0: Error: This script should not be run by root." >&2
-    exit 1
-fi
+# check not running as root, test for openbox session startup file
+# sets OBSESSION
+firstChecks
 
 # test for blobthemes config directory, create if it doesn't exist
 mkdir -p "$USRCONFIGPATH"
@@ -1898,6 +1953,7 @@ if [[ ! -f $CURSESSFILE ]];then
 fi
 
 # convert config filepaths in any existing user saved BLOBs to new scheme
+# store conky and tint2 commands in session files
 upgradeBlobs
 
 Intro
