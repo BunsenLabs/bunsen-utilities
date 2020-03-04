@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-#   bl-imgur: script to take screenshots and upload them to Imgur; this
+#   bl-imgur-upload: script to take screenshots and upload them to Imgur; this
 #   can be to an existing account, or anonymously.
 #
 #   Credentials and an access token for an account can be set up.
