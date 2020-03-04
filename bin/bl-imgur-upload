@@ -60,13 +60,13 @@ read -d '' USAGE <<EOF
   -a, --album <album_title>    Upload to specified album
   -t, --title <image title>    Label uploaded image
   --file  <filepath/filename>  Upload specified image. Overrides scrot options
-  --thunar                     Upload image from filemanager, put BBCode on clipboard 
+  --auto-upload                Upload image from filemanager, put BBCode on clipboard 
   
   The final dialog displays forum BB-Code for both the direct image link and
   the linked image thumbnail. These can be copy/pasted as desired.
 
   There is an option to delete uploaded and/or local screenshot images \
-  before exiting the script. This doesn't apply if using '--thunar'.
+  before exiting the script. This doesn't apply if using '--auto-upload'.
 
 EOF
 
