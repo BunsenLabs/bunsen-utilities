@@ -27,6 +27,7 @@ Conflicts: bunsen-lock, bunsen-user-setup
 Recommends: bunsen-exit (>=9.1-1),
   bunsen-conky,
   gmrun,
+  libglib2.0-bin,
   light-locker,
   openbox,
   tint2,
