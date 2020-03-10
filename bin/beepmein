@@ -8,9 +8,19 @@
 # Copyright (C) 2019/2020 brontosaurusrex
 # License: GPLv3 or later.
 
+# superecho
+superecho () {
+    local msg="$1"
+    if [[ -t 0 ]] ; then
+        echo "$msg"
+    else
+        notify-send -t 3500 "$msg"
+    fi
+}
+
 # prepare config dir
 config="$HOME/.cache/beepmein"
-mkdir -p "$config"
+mkdir -p "$config" || superecho "$config not found, warning."
 
 # var
 delay="0"
@@ -26,8 +36,6 @@ trap 'kill $(jobs -p) >/dev/null 2>&1' EXIT
 command -v at >/dev/null 2>&1 || { >&2 echo "I need at: sudo apt install --no-install-recommends at" ; exit 1; }
 command -v speaker-test >/dev/null 2>&1 || { >&2 echo "I need speaker-test from alsa-utils (for reminder sound)." ; exit 1; }
 command -v notify-send >/dev/null 2>&1 || { >&2 echo "I need notify-send." ; exit 1; }
-#( command -v mpv >/dev/null 2>&1 || command -v cvlc >/dev/null 2>&1 ) || { >&2 echo "I need mpv or vlc (for alarm sounds)." ; exit 1; }
-command -v yad >/dev/null 2>&1 || { >&2 echo "I need yad." ; exit 1; }
 
 # help
 help () { 
@@ -69,21 +77,13 @@ beepmein help
 EOF
 }
 
-# superecho
-superecho () {
-    if [ -t 0 ] ; then
-        echo "$1"
-    else
-        notify-send -t 3500 "$1"
-    fi
-}
-
 # reminder sound, needs speaker-test (alsa-utils)
 beep () {
-    [ -z "$1" ] && loops="1" || loops="$1"
+    local loops="$1"
+    [[ -z "$loops" ]] && loops="1"
     for ((i=1; i<=loops; i++))
     do
-        timeout -s HUP 0.2 speaker-test -t sine -f 1000  > /dev/null 2>&1
+        timeout -s HUP 0.2 speaker-test -t sine -f 1000 &>/dev/null
         sleep 0.2
     done
 }
@@ -92,18 +92,18 @@ beep () {
 blink () {
     # find primary connected or else 1st connected monitor
     monitor="$(xrandr -q | grep -w "connected" | grep "primary" | cut -f1 -d ' ')"
-    if [ -z "$monitor" ]; then # no primary AND connected found, lets try 1st connected
+    if [[ -z "$monitor" ]]; then # no primary AND connected found, lets try 1st connected
         monitor="$(xrandr -q | grep -w "connected" | cut -f1 -d ' ')"
     fi 
-    [ -z "$monitor" ] && { >&2 echo "No monitors found error" ; exit 1; }
+    [[ -z "$monitor" ]] && { >&2 echo "No monitors found error" ; exit 1; }
     
     # find current brightness of that monitor
     now="$(xrandr --verbose | grep -A 15 "$monitor" | grep -i brightness | cut -f2 -d ' ')"
-    [ -z "$now" ] && { >&2 echo "Could not get current brightness error" ;  exit 1; }
+    [[ -z "$now" ]] && { >&2 echo "Could not get current brightness error" ;  exit 1; }
     
-    
-    [ -z "$1" ] && loops="1" || loops="$1"
-    for ((c=1; c<=loops; c++))
+    local blinks="$1"
+    [[ -z "$blinks" ]] && blinks="1"
+    for ((c=1; c<=blinks; c++))
     do
         # blink up
         for i in $(seq "$now" 0.2 3.0); do     
@@ -116,7 +116,10 @@ blink () {
             xrandr --output "$monitor" --brightness "$i"
             sleep 0.01
         done
-    sleep "$2"
+
+    local pause="$2"
+    [[ -z "$pause" ]] && pause="0.1"
+    sleep "$pause"
     xrandr --output "$monitor" --brightness "$now"
     done
 }
@@ -174,8 +177,8 @@ test () {
 
 # validate 'at' time syntax by generating fake job
 validate () {
-tmpjob="$(at "$1" <<< "$(echo "test")" 2>&1 | grep ^job | cut -f2 -d ' ')"
-if [ -n "$tmpjob" ]; then
+tmpjob="$(at "$1" <<<"test" 2>&1 | grep ^job | cut -f2 -d ' ')"
+if [[ -n "$tmpjob" ]]; then
     # job was generated ok
     atrm "$tmpjob"
 else
@@ -185,14 +188,14 @@ fi
 }
 
 # help or test
-if [ "$1" == "--help" ] || [ "$1" == "-h" ] || [ $# -eq 0 ]; then
+if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]] || [[ $# -eq 0 ]]; then
     help; exit
-elif [ "$1" == "--test" ]; then
+elif [[ "$1" == "--test" ]]; then
     test; exit
 fi
 
 # list all 'at' jobs, last non-empty line only
-if [ "$1" == "-l" ] || [ "$1" == "--list" ]; then
+if [[ "$1" == "-l" ]] || [[ "$1" == "--list" ]]; then
     atq | sort -r | while read -r job rest ; do
         echo -n "$job $rest | "
         at -c "$job" | tac | grep -vm 1 '^[[:space:]]*$'
@@ -201,11 +204,11 @@ if [ "$1" == "-l" ] || [ "$1" == "--list" ]; then
 fi
 
 # --set-alarm (via softlink)
-if [ "$1" == "--set-alarm" ]; then
+if [[ "$1" == "--set-alarm" ]]; then
     if [[ -z "$2" ]]; then
         alarmpath="$(yad --on-top --center --title="Select alarm sample path" --file)"
     else
-        alarmpath=$(readlink -f "$2") # must be absolute path
+        alarmpath="$(readlink -f "$2")" # must be absolute path
     fi
     [[ -f "$alarmpath" ]] || { superecho "No valid alarm path given." ; beep "2"; exit 1; }
     # f=force
@@ -213,11 +216,11 @@ if [ "$1" == "--set-alarm" ]; then
     exit
 fi
 # --set-remind (via softlink)
-if [ "$1" == "--set-remind" ]; then
+if [[ "$1" == "--set-remind" ]]; then
     if [[ -z "$2" ]]; then
         remindpath="$(yad --on-top --center --title="Select reminder sample path" --file)"
     else
-        remindpath=$(readlink -f "$2") # must be absolute path
+        remindpath="$(readlink -f "$2")" # must be absolute path
     fi
     [[ -f "$remindpath" ]] || { superecho "No valid reminder path given." ; beep "2"; exit 1; }
     # f=force
@@ -226,12 +229,12 @@ if [ "$1" == "--set-remind" ]; then
 fi
 
 # main
-if [ "$1" != "--reaction" ] ; then
-    if [ "$1" == "--nr" ] ; then       # --nr must be first
+if [[ "$1" != "--reaction" ]] ; then
+    if [[ "$1" == "--nr" ]] ; then       # --nr must be first
         # chop off first argument
         noreason="true" && shift
     fi
-    if [ "${!#}" == "--alarm" ] ; then # --alarm must be last
+    if [[ "${!#}" == "--alarm" ]] ; then # --alarm must be last
         # chop off last argument
         alarm="--alarm" && set -- "${@:1:$(($#-1))}"
         testAlarmPath
