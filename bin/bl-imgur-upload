@@ -61,6 +61,8 @@ USAGE="
   -t, --title <image title>    Label uploaded image
   --file  <filepath/filename>  Upload specified image. Overrides scrot options
   --auto-upload                Upload image from filemanager, put BBCode on clipboard
+  --test-account               For use by external command, to see if user
+                               has an Imgur account already
 
   The final dialog displays forum BB-Code for both the direct image link and
   the linked image thumbnail. These can be copy/pasted as desired.
@@ -78,7 +80,7 @@ USAGE="
 
 ### required commands ###
 declare -a APPS
-APPS=( "yad" "xprop" "wmctrl" "wget" "curl" "scrot" "gio" "xsel" )
+APPS=( "yad" "xprop" "wmctrl" "wget" "curl" "scrot" "xsel" )
 
 ### Get script args ####################################################
 function getargs(){
@@ -131,6 +133,8 @@ function getargs(){
                             F_FLAG=1
                             ;;
             --auto-upload)  THUNAR=1
+                            ;;
+            --test-account) TEST=1  # to test if user has Imgur account
                             ;;
                          *) MSG="\n\tFailed to parse options\n\tExiting script...\n"
                             echo -e "${MSG}" >&2
@@ -200,6 +204,7 @@ function declareDependencies(){     # adapted from bl-includes
         exit
     fi
 }
+
 ### File and Image functions #####################################################
 function getimage(){
     if (( F_FLAG == 1 ));then           # a file is being uploaded
@@ -249,10 +254,8 @@ function getimage(){
 
     if [[ -z "$1" ]] 2>/dev/null; then
         if [[ ${AUTH_MODE} = "L" ]];then
-            yad_common_args+=("--image=dialog-question")
-            yad_question "${MSG}"
+            yad_question "--image=dialog-question" "${MSG}"
             RET="$?"
-            yad_common_args+=("--image=0")
             (( RET == 1 )) && exit 0
         fi
         # new filename with date
@@ -343,19 +346,17 @@ function delete_img() {         # delete uploaded screenshot from Imgur
 function delete_local(){        # delete local screenshot or image file
     if (( F_FLAG == 1));then    # local file was uploaded
         MSG="\n\tConfirm moving local uploaded file to 'Trash'?\n\n\t${IMG_FILE}\n"
-        yad_common_args+=("--image=dialog-question")
-        yad_question "${MSG}"
+        yad_question "--image=dialog-question" "${MSG}"
         RET="$?"
-        yad_common_args+=("--image=0")
         if (( RET == 0 )); then
-            if type "/usr/bin/gio" > /dev/null;then # 'gio' is provided by 'libglib2.0-bin'
+            if type "/usr/bin/gio" > /dev/null;then # send to 'Wastebasket'
                 gio trash "${IMG_FILE}"
             else
                 rm -f "${IMG_FILE}"
             fi
         fi
     else
-        if type "/usr/bin/gio" > /dev/null;then # 'gio' is provided by 'libglib2.0-bin'
+        if type "/usr/bin/gio" > /dev/null;then # send to 'Wastebasket'
             gio trash "${IMG_FILE}"
         else
             rm -f "${IMG_FILE}"
@@ -663,15 +664,11 @@ function fetch_account_info() {
         fi
         MSG="\n\tLogged in as ${USERNAME}.\n\n\thttps://${USERNAME,,}.imgur.com\n"
         echo -e "${MSG}"
-        yad_common_args+=("--image=dialog-information")
-        yad_info "${MSG}"
-        yad_common_args+=("--image=0")
+        yad_info "--image=dialog-information" "${MSG}"
     else
         MSG="\n\tFailed to fetch info: ${RESPONSE}\n"
         echo -e "${MSG}"
-        yad_common_args+=("--image=dialog-information")
-        yad_info "${MSG}"
-        yad_common_args+=("--image=0")
+        yad_info "--image=dialog-information" "${MSG}"
     fi
 }
 
@@ -694,6 +691,7 @@ function switch_to_browser(){   # switch to new browser tab
         fi
     done
 }
+
 ######## End OAuth Functions ###########################################
 
 ######## YAD ###########################################################
@@ -718,7 +716,8 @@ F_FLAG=0                    # Flag for local image file upload
 SCROT="${SCREENSHOT_FULL_COMMAND}"
 DATETIME=$(date +%s)
 REGISTER=0                  # Flag for registering account
-KEEP_BB=1
+KEEP_BB=1                   # Flag to keep BBCode on clipboard
+TEST=0                      # Flag to test if user has Imgur account
 export -f run_browser       # to be used as YAD button command
 export -f switch_to_browser # used by run_browser
 
@@ -741,6 +740,15 @@ declareDependencies "${APPS[@]}"    # see if system has the required commands in
 
 getargs "${@}"                      # get script parameters
 
+# See if user has Imgur credentials, return exit code.
+if (( TEST == 1 ));then
+    if [[ ! -f "${CREDENTIALS_FILE}" ]];then
+        exit 1
+    else
+        exit 0
+    fi
+fi
+
 # Registering for account
 if (( REGISTER == 1 )) && [[ ! -f "${CREDENTIALS_FILE}" ]];then
     # no account set up yet
@@ -749,14 +757,12 @@ elif (( REGISTER == 1 )) && [[ -f "${CREDENTIALS_FILE}" ]];then
     # credentials file exists, so get username
     [[ -z "${USER_NAME}" ]] && get_user    # if not set in 'imgur.conf'
 
-    yad_common_args+=("--image=dialog-question")
-    yad_question "
+    yad_question "--image=dialog-question" "
         You are already registered with Imgur as\n
         \"${USER_NAME}\"\n
         Continue with script?
         "
     ret="$?"
-    yad_common_args+=("--image=0")
     (( ret == 1 )) && exit 0
 fi
 
