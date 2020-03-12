@@ -1,0 +1,13 @@
+#!/bin/bash
+#
+# bl-image-upload: script to upload files to an image hosting service
+# Taking of screenshots is also supported.
+# At present this is a wrapper script around bl-imgur-upload,
+# but may be extended in the future.
+
+hash bl-imgur-upload 2>/dev/null || {
+    echo "$0: bl-imgur-upload is not available" >&2
+    exit 1
+}
+
+bl-imgur-upload "$@"
