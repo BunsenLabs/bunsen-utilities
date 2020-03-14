@@ -1,0 +1,18 @@
+<b>Configuration name: BL-Fever_Room</b>
+Saved at Sat 14 Mar 16:12:36 GMT 2020
+
+Openbox theme:  BL-Fever_Room\n
+GTK theme:  BL-Fever_Room;  Icon Theme: Papirus-Bunsen-Dark-bluegrey\n
+Background set with nitrogen:
+	~/Pictures/wallpapers/bunsen/default/BL-Fever_Room.jpg;
+	
+Running Conkys:
+	conky -c ~/.config/conky/BL-Fever_Room-conky.conf
+
+Running Tint2s:	
+	~/.config/tint2/tint2rc-fever_room
+
+dmenu config:  ~/.config/dmenu/dmenu-bind.sh\n
+Lightdm config:  /etc/lightdm/lightdm-gtk-greeter.conf\n(password will be needed to restore)\n
+X config:  ~/.Xresources; ~/.bashrc; (~/.bashrc will not be auto-restored)\n
+Lxterminal config:  ~/.config/lxterminal/lxterminal.conf\n

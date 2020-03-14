@@ -1,0 +1,18 @@
+<b>Configuration name: Yeti</b>
+Saved at Mon 24 Feb 04:02:40 GMT 2020
+
+Openbox theme:  Yeti\n
+GTK theme:  Yeti;  Icon Theme: Papirus-Bunsen-Dark-bluegrey\n (When restoring, Thunar will be restarted to use new theme.)\n
+Background set with nitrogen:
+	~/Pictures/wallpapers/bunsen/default/Yeti.jpg;
+	
+Running Conkys:
+	~/.config/conky/BL-Yeti-conky.conf
+
+Running Tint2s:
+	~/.config/tint2/tint2rc-yeti
+
+dmenu config:  ~/.config/dmenu/dmenu-bind.sh\n
+Lightdm config:  /etc/lightdm/lightdm-gtk-greeter.conf\n(password will be needed to restore)\n
+X config:  ~/.Xresources; ~/.bashrc; (~/.bashrc will not be auto-restored)\n
+Terminator config:  ~/.config/terminator/config\n

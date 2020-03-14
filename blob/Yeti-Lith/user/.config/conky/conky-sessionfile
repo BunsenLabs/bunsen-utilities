@@ -1,0 +1,1 @@
+sleep 1 && conky -c /home/damo/.config/conky/BL-Yeti-conky.conf &
