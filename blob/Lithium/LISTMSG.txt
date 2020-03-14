@@ -1,17 +1,18 @@
-<b>Configuration name: Lithium</b>	
-Released with BunsenLabs Lithium
+<b>Configuration name: Lithium</b>
+Saved at Sat 14 Mar 16:32:44 GMT 2020
 
 Openbox theme:  BL-Lithium\n
 GTK theme:  BL-Lithium;  Icon Theme: Papirus-Bunsen-Dark-bluegrey\n
 Background set with nitrogen:
 	/usr/share/images/bunsen/wallpapers/default/BL-Lithium-logo-only.png;
 	
-Running Conkys:	
-	~/.config/conky/BL-Default-conky.conf
+Running Conkys:
+	conky -c ~/.config/conky/BL-Default-conky.conf
 
-Running Tint2s:	
+Running Tint2s:
 	~/.config/tint2/tint2rc-lithium
 
 dmenu config:  ~/.config/dmenu/dmenu-bind.sh\n
+Lightdm config:  /etc/lightdm/lightdm-gtk-greeter.conf\n(password will be needed to restore)\n
 X config:  ~/.Xresources; ~/.bashrc; (~/.bashrc will not be auto-restored)\n
 Lxterminal config:  ~/.config/lxterminal/lxterminal.conf\n

@@ -1,3 +1,4 @@
+###  Crunchbang theme colours ###
 [global_config]
   title_transmit_bg_color = "#000000"
   title_inactive_bg_color = "#000000"
