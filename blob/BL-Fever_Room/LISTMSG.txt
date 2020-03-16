@@ -1,13 +1,13 @@
 <b>Configuration name: BL-Fever_Room</b>
-Saved at Sat 14 Mar 16:12:36 GMT 2020
+Released with BunsenLabs Lithium
 
 Openbox theme:  BL-Fever_Room\n
 GTK theme:  BL-Fever_Room;  Icon Theme: Papirus-Bunsen-Dark-bluegrey\n
 Background set with nitrogen:
-	~/Pictures/wallpapers/bunsen/default/BL-Fever_Room.jpg;
+	/usr/share/images/bunsen/wallpapers/default/BL-Fever_Room.jpg
 	
 Running Conkys:
-	conky -c ~/.config/conky/BL-Fever_Room-conky.conf
+	~/.config/conky/BL-Fever_Room-conky.conf
 
 Running Tint2s:	
 	~/.config/tint2/tint2rc-fever_room

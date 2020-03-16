@@ -1,0 +1,2 @@
+sleep 1 && conky -c %USERHOME%/.config/conky/BL-Helium-conky.conf &
+

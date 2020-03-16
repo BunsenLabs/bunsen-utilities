@@ -1,5 +1,5 @@
 <b>Configuration name: Yeti</b>
-Saved at Mon 24 Feb 04:02:40 GMT 2020
+Released with BunsenLabs Lithium
 
 Openbox theme:  Yeti\n
 GTK theme:  Yeti;  Icon Theme: Papirus-Bunsen-Dark-bluegrey\n (When restoring, Thunar will be restarted to use new theme.)\n
@@ -15,4 +15,4 @@ Running Tint2s:
 dmenu config:  ~/.config/dmenu/dmenu-bind.sh\n
 Lightdm config:  /etc/lightdm/lightdm-gtk-greeter.conf\n(password will be needed to restore)\n
 X config:  ~/.Xresources; ~/.bashrc; (~/.bashrc will not be auto-restored)\n
-Terminator config:  ~/.config/terminator/config\n
+Lxterminal config:  ~/.config/lxterminal/lxterminal.conf\n

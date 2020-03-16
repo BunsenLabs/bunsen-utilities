@@ -1,11 +1,12 @@
 <b>Configuration name: Helium_Beam</b>
-Released with BunsenLabs Helium
+Released with BunsenLabs Lithium
 
 Openbox theme:  Beam\n
 GTK theme:  Beam;  Icon Theme: Paper-Bunsen\n
 Background set with nitrogen:\n/usr/share/images/bunsen/wallpapers/default/BL-beam.png;\n
-Running Conkys:\t\n\t~/.config/conky/BL-Default-conky.conf;\n
+Running Conkys:\t\n\t~/.config/conky/BL-Helium-conky.conf;\n
 Running Tint2s:\t\n\t~/.config/tint2/tint2rc-helium\n
 dmenu config:  ~/.config/dmenu/dmenu-bind.sh\n
+Lightdm config:  /etc/lightdm/lightdm-gtk-greeter.conf\n(password will be needed to restore)\n
 X terminal config:  ~/.Xresources\n
 Terminator config:  ~/.config/terminator/config\n

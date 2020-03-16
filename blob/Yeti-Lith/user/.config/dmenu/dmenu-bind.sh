@@ -37,4 +37,4 @@ fi
 # Bottom
 dmenu_run -b -l 10 -i -nb '#292d31' -nf '#9ba8bb' -sb '#202326' -sf '#bc4b4f'
 # Top
-dmenu_run -l 10 -i -nb '#292d31' -nf '#9ba8bb' -sb '#202326' -sf '#bc4b4f'
+#dmenu_run -l 10 -i -nb '#292d31' -nf '#9ba8bb' -sb '#202326' -sf '#bc4b4f'

@@ -1,13 +1,13 @@
-<b>Configuration name: Lithium</b>
-Saved at Sat 14 Mar 16:32:44 GMT 2020
+<b>Configuration name: Lithium</b>	
+Released with BunsenLabs Lithium
 
 Openbox theme:  BL-Lithium\n
 GTK theme:  BL-Lithium;  Icon Theme: Papirus-Bunsen-Dark-bluegrey\n
 Background set with nitrogen:
-	/usr/share/images/bunsen/wallpapers/default/BL-Lithium-logo-only.png;
+	/usr/share/images/bunsen/wallpapers/default/BL-Lithium-logo-only.png
 	
 Running Conkys:
-	conky -c ~/.config/conky/BL-Default-conky.conf
+	~/.config/conky/BL-Lithium-conky.conf
 
 Running Tint2s:
 	~/.config/tint2/tint2rc-lithium
