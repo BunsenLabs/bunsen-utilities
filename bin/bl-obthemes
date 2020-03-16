@@ -1331,7 +1331,7 @@ function restoreOBrc(){
 }
 
 function restoreConky(){    # $1 = $VAL from restoreSettings()
-    local conkycmds currDesktop user_conkysession saved_conkysession session
+    local conkycmds currDesktop user_conkysession saved_conkysession
     conkycmds="${1//;/$'\n'}"
     currDesktop=$(xprop -root _NET_CURRENT_DESKTOP | tail -c -2)   # Conkys may have been started on different desktops
     user_conkysession="$HOME/$CONKYSESSION"
@@ -1352,15 +1352,7 @@ function restoreConky(){    # $1 = $VAL from restoreSettings()
     if [[ -f $saved_conkysession ]]
     then
         debug "Restoring conky sessionfile."
-        session=$(<"$saved_conkysession")
-        if [[ $session = *"$HOME_MARKER"* ]] # HOME_MARKER is global, used in preset themes
-        then
-            echo "${session//$HOME_MARKER/$HOME}" > "${user_conkysession}.new"
-            restoreFileAbs "${user_conkysession}.new" "${user_conkysession}" || return 1
-            rm "${user_conkysession}.new"
-        else
-            restoreFiles "$CONKYSESSION" || return 1
-        fi
+        restoreFiles "$CONKYSESSION" || return 1
     elif [[ -n $conkycmds ]]
     then
         debug "No saved conkysession file found, using commands in settings.cfg"
@@ -1383,7 +1375,7 @@ function restoreConky(){    # $1 = $VAL from restoreSettings()
 }
 
 function restoreTint2(){    # $1 = $VAL from restoreSettings()
-    local tintcmds user_tintsession saved_tintsession session
+    local tintcmds user_tintsession saved_tintsession
     tintcmds="${1//;/$'\n'}"
     user_tintsession="$HOME/$TINTSESSION"
     saved_tintsession="$THEMEPATH/user/$TINTSESSION"
@@ -1403,15 +1395,7 @@ function restoreTint2(){    # $1 = $VAL from restoreSettings()
     if [[ -f "$saved_tintsession" ]]
     then
         debug "Restoring tint2 sessionfile."
-        session=$(<"$saved_tintsession")
-        if [[ $session = *"$HOME_MARKER"* ]]
-        then
-            echo "${session//$HOME_MARKER/$HOME}" > "${user_tintsession}.new"
-            restoreFileAbs "${user_tintsession}.new" "${user_tintsession}" || return 1
-            rm "${user_tintsession}.new"
-        else
-            restoreFiles "$TINTSESSION" || return 1
-        fi
+        restoreFiles "$TINTSESSION" || return 1
     elif [[ -n $tintcmds ]]
     then
         debug "No saved tintsession file found, using filepaths in settings.cfg"
@@ -1523,14 +1507,22 @@ function copyDir(){
 # $1 and $2 are absolute source and target filepaths
 # BKP_SFX is global set by restoreSettings()()
 function restoreFileAbs(){
-    local src_file target_file target_dir bkp_file
+    local src_file src_content tmpsrc target_file target_dir bkp_file extra_txt
     src_file="$1"
     target_file="$2"
     target_dir="${target_file%/*}"
     mkdir -p "$target_dir" || return 1
+    extra_txt=''
+    src_content=$(< "$src_file" )
+    [[ $src_content = *"$HOME_MARKER"* ]] && {
+        tmpsrc="$(mktemp)" || return 1
+        echo "${src_content//$HOME_MARKER/$HOME}" > "$tmpsrc"
+        src_file=$tmpsrc
+        extra_txt=' (home path adjusted)'
+    }
     if [[ -e $target_file ]];then        # backup config first
         cmp "$src_file" "$target_file" >/dev/null 2>&1 && {
-            debug "\n  $target_file and $src_file are identical, no need to restore."
+            debug "\n  $target_file and ${1}${extra_txt} are identical, no need to restore."
             return 0
         }
         needBackup "${target_file}" && {
@@ -1544,6 +1536,7 @@ function restoreFileAbs(){
         cp "$src_file" "$target_file" || return 1
         debug "\n  $target_file did not exist, now added"
     fi
+    rm -f "$tmpsrc"
 }
 
 # Take absolute filepath (in $HOME) as $1, from restoreFileAbs().
@@ -1551,12 +1544,14 @@ function restoreFileAbs(){
 # Return 1 if found (no backup needed before overwrite),
 # otherwise return 0 (do backup).
 needBackup(){
-    local path dir
+    local path dir homefile_content blobfile_content
     path=${1#"$HOME"/}
     for dir in "$USRCONFIGPATH"/*/user "$SYSCONFIGPATH"/*/user
     do
         [[ -f $dir/$path ]] || continue
-        cmp "$HOME/$path" "$dir/$path" >/dev/null 2>&1 && {
+        homefile_content=$(< "$HOME/$path" )
+        blobfile_content=$(< "$dir/$path" )
+        [[ $homefile_content = "$blobfile_content//$HOME_MARKER/$HOME}" ]]  && {
             debug "$HOME/$path has identical copy $dir/${path}, no need to backup"
             return 1
         }
@@ -1731,6 +1726,7 @@ restoreSettings() {
     while read -r label
     do
         VAL="${values[$label]}"
+        VAL="${VAL//$HOME_MARKER/$HOME}" # HOME_MARKER is global
         debug "\n Restoring $label${VAL:+ with $VAL}"
         case "$label" in
             "$PICKOB"       )   [[ -n $VAL ]] && checkOBTHEME "$VAL"
@@ -1750,11 +1746,9 @@ restoreSettings() {
                                     nitrogen --restore
                                 fi
                                 ;;
-            "$PICKCONKY"    )   VAL="${VAL//$HOME_MARKER/$HOME}" # HOME_MARKER is global
-                                restoreConky "$VAL"
+            "$PICKCONKY"    )   restoreConky "$VAL"
                                 ;;
-            "$PICKTINT"     )   VAL="${VAL//$HOME_MARKER/$HOME}"
-                                restoreTint2 "$VAL"
+            "$PICKTINT"     )   restoreTint2 "$VAL"
                                 ;;
             "$PICKDMENU"    )   restoreFiles "$DMENU"
                                 ;;
@@ -1796,7 +1790,7 @@ function saveNewBlob() {
 # $1 is usually the blob theme directory and $2 is usually $HOME
 # difflist is local inside displayBlobs()
 function sameFiles() {
-    local smalldir bigdir dir file
+    local smalldir bigdir dir file bigdirfile file_content bigdirfile_content
     smalldir=$1
     bigdir=$2
     difflist=()
@@ -1812,10 +1806,15 @@ function sameFiles() {
     for file in "$smalldir"/**
     do
         [[ -f $file ]] || continue
-        [[ -f ${file/#$smalldir/$bigdir} ]] || continue
-        cmp "$file" "${file/#$smalldir/$bigdir}" >/dev/null 2>&1 || {
-            debug "$file is different from ${file/#$smalldir/$bigdir}"
-            difflist+=("${file/#$smalldir/$bigdir}")
+        bigdirfile=${file/#$smalldir/$bigdir}
+        [[ -f $bigdirfile ]] || continue
+        file_content=$(< "$file" )
+        bigdirfile_content=$(< "$bigdirfile" )
+        extra_txt=''
+        [[ $file_content = *"$HOME_MARKER"* ]] && extra_txt=' (home path adjusted)'
+        [[ "${file_content//$HOME_MARKER/$HOME}" = "$bigdirfile_content" ]] || {
+            debug "${file}${extra_txt} is different from $bigdirfile"
+            difflist+=("$bigdirfile")
         }
     done
     shopt -u globstar dotglob
