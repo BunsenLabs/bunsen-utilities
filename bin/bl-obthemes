@@ -346,7 +346,7 @@ forkncheck() {
     set +m
     sleep "$FORKWAIT" || return 1 # check for bad sleep syntax
     kill -0 "$pid" >/dev/null 2>&1 && return 0
-    return 1
+    return 1 # process was not found
 }
 
 function upgradeBlobs(){
@@ -620,47 +620,47 @@ function saveDconf(){ # passed dconf directory as #1 and name of app (for dumpfi
 }
 
 function getBg(){    # find if feh or nitrogen was used. Save config file(s)
+    local bgset
     if [[ -e $HOME/$NITROFILE ]] && [[ -e $HOME/$FEHFILE ]];then  # see which was last used to set background
         if [[ $HOME/$NITROFILE -nt $HOME/$FEHFILE ]];then # use most recent method
-            BGSET="NITROGEN"
+            bgset="NITROGEN"
         else
-            BGSET="FEH"
+            bgset="FEH"
         fi
     elif [[ -e $HOME/$FEHFILE ]];then  # use feh for background
-        BGSET="FEH"
+        bgset="FEH"
     elif [[ -e $HOME/$NITROFILE ]];then    # use nitrogen for background
-        BGSET="NITROGEN"
+        bgset="NITROGEN"
     else
         echo "$0:  No background-setting application found" >&2
-        BGSET="None"
+        bgset="None"
     fi
-    debug "\n  Background to be set with $BGSET"
-    case "$BGSET" in
-        FEH     )   saveFiles "$FEHFILE"
-                    getFeh
+    debug "\n  Background to be set with $bgset"
+    case "$bgset" in
+        FEH     )   getFeh
                     ;;
-        NITROGEN)   saveFiles "$NITROFILE"
-                    getNitrogen
+        NITROGEN)   getNitrogen
                     ;;
         None    )   echo "$0: No background-setting application found" >&2
                     ;;
     esac
-    echo "[BACKGROUND] $BGSET" >> "$SETTINGS"
+    echo "[BACKGROUND] $bgset" >> "$SETTINGS"
 }
 
 # FEHFILE is config global
 # CONFIGDIR is global set by setName()
 function getFeh(){    # get Feh saved backgrounds
     local ffile="$CONFIGDIR/user/$FEHFILE"
+    saveFiles "$FEHFILE"
     if [[ -f $ffile ]];then
-        local BG=""
+        local bg=""
         # get fields between single quotes
         while read -r line;do
-            BG="$BG$line;\n\t"
+            bg="$bg$line;\n\t"
         done < <(grep -o "'[^']*'" "$ffile" | sed "s/'//g" 2>/dev/null)
         debug "\n  Backgrounds set with Feh, using:\t$FEHFILE"
-        debug "\t$BG"
-        echo -e "Background set with feh:\n\t$BG" >> "$LISTMSG"
+        debug "\t$bg"
+        echo -e "Background set with feh:\n\t$bg" >> "$LISTMSG"
     else
         echo "$0:  $ffile not found" >&2
     fi
@@ -669,18 +669,19 @@ function getFeh(){    # get Feh saved backgrounds
 # NITROFILE is config global
 # CONFIGDIR is global set by setName()
 function getNitrogen(){  # get Nitrogen saved backgrounds
-    local NFILE="$CONFIGDIR/user/$NITROFILE"
-    if [[ -f $NFILE ]];then
-        local BG=""
+    local nfile="$CONFIGDIR/user/$NITROFILE"
+    saveFiles "$NITROFILE"
+    if [[ -f $nfile ]];then
+        local bg=""
         while read -r line;do
             [[ $line = 'file='* ]] || continue
-            BG="$BG${line#file=};\n\t"
-        done < "$NFILE"
+            bg="$bg${line#file=};\n\t"
+        done < "$nfile"
         debug "\n  Backgrounds set with Nitrogen, using:\t$CONFIGDIR/user/$NITROFILE"
-        debug "\t$BG"
-        echo -e "Background set with nitrogen:\n\t$BG" >> "$LISTMSG"
+        debug "\t$bg"
+        echo -e "Background set with nitrogen:\n\t$bg" >> "$LISTMSG"
     else
-        echo "$0:  $NFILE not found" >&2
+        echo "$0:  $nfile not found" >&2
     fi
 }
 
