@@ -4,7 +4,7 @@ Released with BunsenLabs Lithium
 Openbox theme:  Yeti-Lith\n
 GTK theme:  Yeti-Lith;  Icon Theme: Papirus-Bunsen-Dark-bluegrey\n (When restoring, Thunar will be restarted to use new theme.)\n
 Background set with nitrogen:
-	~/Pictures/wallpapers/bunsen/default/Yeti.jpg;
+	~/Pictures/wallpapers/bunsen/default/Before-Sunrise.jpg;
 	
 Running Conkys:
 	~/.config/conky/BL-Yeti-conky.conf
