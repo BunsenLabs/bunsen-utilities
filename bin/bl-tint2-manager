@@ -62,8 +62,11 @@ tintRunning(){
     # make blank tempfile, to save running tint2 paths
     TEMPFILE=$(mktemp --tmpdir tint2.XXXX)
     pgrep -a tint2 | while read -r pid cmd; do
-        if [[ ${cmd%% *} = tint2 ]]; then
-            TPATH="$(echo "$cmd" | awk '{print $NF}')"
+#        if [[ ${cmd%% *} = tint2 ]]; then
+        TREGEX='^tint2.*[[:blank:]]+-c[[:blank:]]+(.+)$'
+        if [[ $cmd =~ $TREGEX ]]; then
+#            TPATH="$(echo "$cmd" | awk '{print $NF}')"
+            TPATH=${BASH_REMATCH[1]}
             if echo "$TPATH" | grep -v "$HOME";then     # in case started without full path
                 TPATH="$HOME/$TPATH"
             fi
@@ -110,13 +113,13 @@ findTint(){
 }
 
 loadDialog() {
-        LISTTINT="$1"
+#        LISTTINT="$1" # LISTTINT now a global array
         declare -a retTint
 ## Populate dialog from array, get return value(s)
         RET=$($DLGDEC $WINICON --list --title="$TITLE" \
             --text="Select Tint2s from the list:" \
             --checklist --width=400 --height=500 \
-            --column="Select" --column="tint2 Name" $LISTTINT --separator=":" \
+            --column="Select" --column="tint2 Name" "${LISTTINT[@]}" --separator=":" \
             $APPLY $CLOSE \
             )
         if (( $? == 1 )); then # close button pressed
@@ -142,17 +145,16 @@ loadDialog() {
                 fi
             done
 
-            for name in ${retTint[*]};do       # loop through checkmarked tint2 names
+            for name in "${retTint[@]}";do       # loop through checkmarked tint2 names
                 for ((j=0; j<${#tintsPath[*]}; j++));do  # traverse through elements
-                    for f in ${tintsPath[j]};do
-                        display=$( echo "$f" | awk -F"/" '{print $(NF-1)"/"$NF}')
-                        # see if it matches the returned name
-                        if [[ $display = "$name" ]];then
-                            echo -e "$f" >> "$SESSIONFILE"
-                            tint2 -c "$f" >/dev/null 2>&1 &  #start the tint2
-                            sleep 1s
-                        fi
-                    done
+                    file=${tintsPath[j]}
+                    display=${tintsArr[j]} #$( echo "$f" | awk -F"/" '{print $(NF-1)"/"$NF}')
+                    # see if it matches the returned name
+                    if [[ $display = "$name" ]];then
+                        echo -e "$file" >> "$SESSIONFILE"
+                        tint2 -c "$file" &  #start the tint2
+                        sleep 1s
+                    fi
                 done
             done
         #    bl-compositor --restart &   # restart compositor
@@ -174,7 +176,7 @@ if ! (( $# == 0 ));then
 fi
 
 while true;do
-        unset LISTTINT
+        LISTTINT=()
         declare -a tintsArr
         declare -a checkArr
         # get tint2 directories in .tint2, add to array
@@ -183,9 +185,9 @@ while true;do
 
         # loop through arrays, and build msg text for yad dialog
         for ((j=0; j<${#tintsArr[*]}; j++));do
-            LISTTINT="$LISTTINT ${checkArr[j]} ${tintsArr[j]}"
+            LISTTINT+=("${checkArr[j]}" "${tintsArr[j]}")
         done
-        loadDialog "$LISTTINT"
+        loadDialog #"$LISTTINT" now a global array
         rm -r "$TEMPFILE"
 
 done
