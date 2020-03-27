@@ -70,7 +70,6 @@ tintRunning(){
             if echo "$TPATH" | grep -v "$HOME";then     # in case started without full path
                 TPATH="$HOME/$TPATH"
             fi
-         echo "$TPATH"
             echo "$TPATH" >> "$TEMPFILE"
         fi
     done
@@ -177,8 +176,6 @@ fi
 
 while true;do
         LISTTINT=()
-        declare -a tintsArr
-        declare -a checkArr
         # get tint2 directories in .tint2, add to array
         tintRunning
         findTint
