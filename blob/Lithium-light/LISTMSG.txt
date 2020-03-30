@@ -4,7 +4,7 @@ Released with BunsenLabs Lithium
 Openbox theme:  BL-Lithium-light\n
 GTK theme:  BL-Lithium-light;  Icon Theme: Papirus-Bunsen-Dark-bluegrey\n
 Background set with nitrogen:
-	/usr/share/images/bunsen/wallpapers/default/BL-Lithium-logo-only.png;
+	/usr/share/images/bunsen/wallpapers/default/BL-Lithium-logo-only.png
 	
 Running Conkys:
 	~/.config/conky/BL-Lithium-conky.conf

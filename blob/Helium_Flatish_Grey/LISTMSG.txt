@@ -10,3 +10,4 @@ dmenu config:  ~/.config/dmenu/dmenu-bind.sh\n
 Lightdm config:  /etc/lightdm/lightdm-gtk-greeter.conf\n(password will be needed to restore)\n
 X terminal config:  ~/.Xresources\n
 Terminator config:  ~/.config/terminator/config\n
+Lxterminal config:  ~/.config/lxterminal/lxterminal.conf\n

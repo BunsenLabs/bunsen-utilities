@@ -2,7 +2,7 @@
 Released with BunsenLabs Lithium
 
 Openbox theme:  BL-Fever_Room\n
-GTK theme:  BL-Fever_Room;  Icon Theme: Papirus-Bunsen-Dark-bluegrey\n
+GTK theme:  BL-Fever_Room;  Icon Theme: Adwaita\n
 Background set with nitrogen:
 	/usr/share/images/bunsen/wallpapers/default/BL-Fever_Room.jpg
 	
