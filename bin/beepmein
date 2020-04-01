@@ -1,0 +1,283 @@
+#!/bin/bash
+
+# beepmein
+
+# A little wrapper around linux 'at' command, that will beep you at specific time, see --help.
+# On Debian systems make sure 'at' is installed with --no-install-recommends.
+
+# Copyright (C) 2019/2020 brontosaurusrex
+# License: GPLv3 or later.
+
+# superecho
+superecho () {
+    local msg="$1"
+    if [[ -t 0 ]] ; then
+        echo "$msg"
+    else
+        notify-send -t 3500 "$msg"
+    fi
+}
+
+# prepare config dir
+config="$HOME/.cache/beepmein"
+mkdir -p "$config" || superecho "$config not found, warning."
+
+# var
+delay="0"
+
+# softlinks to audio samples
+alarmSample="$config/alarm"     # longer sample
+reminderSample="$config/remind" # shorter sample
+
+# Will kill all children with 'killall beepmein'
+trap 'kill $(jobs -p) >/dev/null 2>&1' EXIT
+
+# required
+command -v at >/dev/null 2>&1 || { >&2 echo "I need at: sudo apt install --no-install-recommends at" ; exit 1; }
+command -v speaker-test >/dev/null 2>&1 || { >&2 echo "I need speaker-test from alsa-utils (for reminder sound)." ; exit 1; }
+command -v notify-send >/dev/null 2>&1 || { >&2 echo "I need notify-send." ; exit 1; }
+
+# help
+help () { 
+cat << EOF
+beepmein help
+
+    Set reminder or alarm:
+
+        beepmein now + 3 minutes # reminder ('at' time format)
+        beepmein 22:10           # reminder ('at' time format)
+        beepmein 3               # reminder (in 3 minutes, beepmein shortcut),
+        beepmein 8:00 --alarm    # alarm (must be last parameter)
+        beepmein --nr 5          # with no reason (must be first parameter)
+           
+    Set sounds: (playback depends on mpv or vlc)
+
+        beepmein --set-alarm <path/to/alarm.sound>
+        beepmein --set-remind <path/to/reminder.sound>
+
+    Test playback, blinking and notifications:
+
+        beepmein --reaction reminder_text
+        beepmein --reaction --alarm alarm_text
+        beepmein --test # test everything
+        
+    List jobs
+    
+        beepmein --list # or -l
+
+    Kill all running playback/beeping:
+
+        killall beepmein 
+
+    Notes:
+
+        at -l       # will list pending jobs (or atq)
+        at -r <num> # will remove job <num>  (or atrm)
+
+EOF
+}
+
+# reminder sound, needs speaker-test (alsa-utils)
+beep () {
+    local loops="$1"
+    [[ -z "$loops" ]] && loops="1"
+    for ((i=1; i<=loops; i++))
+    do
+        timeout -s HUP 0.2 speaker-test -t sine -f 1000 &>/dev/null
+        sleep 0.2
+    done
+}
+
+# $1 = how many times to blink, $2 = pause between each blink
+blink () {
+    # find primary connected or else 1st connected monitor
+    monitor="$(xrandr -q | grep -w "connected" | grep "primary" | cut -f1 -d ' ')"
+    if [[ -z "$monitor" ]]; then # no primary AND connected found, lets try 1st connected
+        monitor="$(xrandr -q | grep -w "connected" | cut -f1 -d ' ')"
+    fi 
+    [[ -z "$monitor" ]] && { >&2 echo "No monitors found error" ; exit 1; }
+    
+    # find current brightness of that monitor
+    now="$(xrandr --verbose | grep -A 15 "$monitor" | grep -i brightness | cut -f2 -d ' ')"
+    [[ -z "$now" ]] && { >&2 echo "Could not get current brightness error" ;  exit 1; }
+    
+    local blinks="$1"
+    [[ -z "$blinks" ]] && blinks="1"
+    for ((c=1; c<=blinks; c++))
+    do
+        # blink up
+        for i in $(seq "$now" 0.2 3.0); do     
+            xrandr --output "$monitor" --brightness "$i"
+            sleep 0.01
+        done
+        
+        # blink down
+        for i in $(seq 3.0 -0.2 "$now"); do     
+            xrandr --output "$monitor" --brightness "$i"
+            sleep 0.01
+        done
+
+    local pause="$2"
+    [[ -z "$pause" ]] && pause="0.1"
+    sleep "$pause"
+    xrandr --output "$monitor" --brightness "$now"
+    done
+}
+
+# alarm failsafe (by misko), this will be used if 'alarmSample' is not found.
+alarmfailsafe () {
+for ((i=1; i<=10; i++)); do
+      for ((c=1;c<=3;c++)); do
+          timeout -s HUP  0.2 speaker-test -t sine -f 3000  > /dev/null 2>&1
+          sleep 0.2
+       done
+       sleep 1
+done
+}
+
+# test alarm sample path (no test for reminder sample)
+testAlarmPath () {
+    [[ -f "$alarmSample" ]] || { >&2 superecho "Note: alarmSample $alarmSample not found, Internal fail-safe beep will be used instead."; }
+}
+
+# mpv or cvlc (by jr)
+playa () {
+    file="$1"
+    [[ -f $file ]] || { superecho "file not found" ; return 1; }
+    if command -v mpv >/dev/null 2>&1
+    then
+        mpv --no-resume-playback --no-video "$file"
+    elif command -v cvlc >/dev/null 2>&1
+    then
+        cvlc --no-video "$file" vlc://quit
+    else
+        superecho "no player"
+        return 1
+    fi
+}
+
+# test audio and notifications
+test () {
+    echo "notify test"
+    notify-send "notify test" || echo "failed"
+    echo
+    echo "fail-safe internal beep test used for reminders"
+    beep "3" || echo "failed"
+    echo
+    echo "mpv sample test used for alarms (either this or vlc must pass)"
+    mpv --no-resume-playback --no-video --length=10 "$alarmSample" || echo "mpv failed"
+    echo
+    echo "vlc sample test used for alarms"
+    cvlc --no-video --run-time=10 "$alarmSample" vlc://quit || echo "cvlc failed"
+    echo
+    echo "fail-safe internal beep test used for alarms"
+    alarmfailsafe || echo "failed"
+    echo
+}
+
+# validate 'at' time syntax by generating fake job
+validate () {
+tmpjob="$(at "$1" <<<"test" 2>&1 | grep ^job | cut -f2 -d ' ')"
+if [[ -n "$tmpjob" ]]; then
+    # job was generated ok
+    atrm "$tmpjob"
+else
+    # error
+    return 1
+fi
+}
+
+# help or test
+if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]] || [[ $# -eq 0 ]]; then
+    help; exit
+elif [[ "$1" == "--test" ]]; then
+    test; exit
+fi
+
+# list all 'at' jobs, last non-empty line only
+if [[ "$1" == "-l" ]] || [[ "$1" == "--list" ]]; then
+    atq | sort -r | while read -r job rest ; do
+        echo -n "$job $rest | "
+        at -c "$job" | tac | grep -vm 1 '^[[:space:]]*$'
+    done
+    exit
+fi
+
+# --set-alarm (via softlink)
+if [[ "$1" == "--set-alarm" ]]; then
+    if [[ -z "$2" ]]; then
+        alarmpath="$(yad --on-top --center --title="Select alarm sample path" --file)"
+    else
+        alarmpath="$(readlink -f -- "$2")" # must be absolute path
+    fi
+    [[ -f "$alarmpath" ]] || { superecho "No valid alarm path given." ; beep "2"; exit 1; }
+    # f=force
+    ln -fs "$alarmpath" "$config/alarm"
+    exit
+fi
+# --set-remind (via softlink)
+if [[ "$1" == "--set-remind" ]]; then
+    if [[ -z "$2" ]]; then
+        remindpath="$(yad --on-top --center --title="Select reminder sample path" --file)"
+    else
+        remindpath="$(readlink -f -- "$2")" # must be absolute path
+    fi
+    [[ -f "$remindpath" ]] || { superecho "No valid reminder path given." ; beep "2"; exit 1; }
+    # f=force
+    ln -fs "$remindpath" "$config/remind"
+    exit
+fi
+
+# main
+if [[ "$1" != "--reaction" ]] ; then
+    if [[ "$1" == "--nr" ]] ; then       # --nr must be first
+        # chop off first argument
+        noreason="true" && shift
+    fi
+    if [[ "${!#}" == "--alarm" ]] ; then # --alarm must be last
+        # chop off last argument
+        alarm="--alarm" && set -- "${@:1:$(($#-1))}"
+        testAlarmPath
+    fi
+    # input
+    attime="$*" #concat
+    # special case for minutes
+    if [[ $attime == ?(-)+([0-9]) ]] ; then # is integer
+        attime="now + $attime minutes"
+        # lets add delay in seconds, since 'at' is only about minutes,
+        # making this shortcut the only to seconds precise format.
+        setdelay="1"
+    fi
+    
+    # validate at time format, exit if fails
+    validate "$attime" || { >&2 superecho "at time format error." ; beep "2"; exit 1; } # beep two times for error
+    
+    # user input reason
+    if [[ $noreason != true ]]; then
+        read -rp "reason? " reason || reason="$(yad --on-top --center --title="beepmein" --width=300 --separator="" --form --field="reason?")"
+    fi
+    [[ -z "$reason" ]] && reason="beep beep beep"
+    echo "beepmein: $attime, reason: $reason $alarm"
+    
+    # if custom input
+    (( setdelay )) && delay="$(date +%_S.%N)"
+    
+    # set 'at'
+    at "$attime" <<< "$(echo "sleep $delay; DISPLAY=${DISPLAY} beepmein --reaction $alarm '${reason}'")" &>/dev/null || { superecho "at input error." ; beep "2"; exit 1; } # beep two times for error
+    
+else
+    # reaction
+    shift
+    if [ "$1" == "--alarm" ]; then
+        shift
+        notify-send "$1" &
+        blink 3 0.2 &>/dev/null &
+        playa "$alarmSample" || alarmfailsafe
+        wait
+    else
+        notify-send "$1" &
+        blink 1 0 &>/dev/null &
+        playa "$reminderSample" || beep "3"
+        wait
+    fi
+fi
