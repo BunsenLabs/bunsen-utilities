@@ -575,13 +575,15 @@ function setName(){  # set name of collection, make dir and session settings fil
 # Save user config file to corresponding directory in $CONFIGDIR/user.
 # CONFIGDIR is global set by setName()
 function saveFiles(){
-    local i
+    local i src_file target_file
     for i in "$@"
     do
-        local src_file target_file
         src_file="$HOME/$i"
         target_file="$CONFIGDIR/user/$i"
-        saveFileAbs "$src_file" "$target_file" || return 1
+        saveFileAbs "$src_file" "$target_file" || {
+            echo "$0: Failed to save $src_file" >&2
+            return 1
+        }
     done
 }
 
@@ -664,7 +666,7 @@ function getBg(){    # find if feh or nitrogen was used. Save config file(s)
 # CONFIGDIR is global set by setName()
 function getFeh(){    # get Feh saved backgrounds
     local ffile="$CONFIGDIR/user/$FEHFILE"
-    saveFiles "$FEHFILE"
+    saveFiles "$FEHFILE" || return 1
     if [[ -f $ffile ]];then
         local bg=""
         # get fields between single quotes
@@ -683,7 +685,7 @@ function getFeh(){    # get Feh saved backgrounds
 # CONFIGDIR is global set by setName()
 function getNitrogen(){  # get Nitrogen saved backgrounds
     local nfile="$CONFIGDIR/user/$NITROFILE"
-    saveFiles "$NITROFILE"
+    saveFiles "$NITROFILE" || return 1
     if [[ -f $nfile ]];then
         local bg=""
         while read -r line;do
@@ -777,13 +779,13 @@ function getConky(){
                     CONKYTXT="$CONKYTXT\n\tDesktop $i:  Default Conky"
                     debug "Found running default conky on Desktop $i"
                     debug "saving copy of default conky file"
-                    saveFiles '.config/conky/conky.conf'
+                    saveFiles '.config/conky/conky.conf' || return 1
                 else
                     CONKYTXT="$CONKYTXT\n\tDesktop $i:  $conkyfile"
                     debug "Found running conky file $conkyfile on Desktop $i"
                     conkyfile=$( userFilepath "$conkyfile" ) && {
                         debug "Saving copy of $conkyfile"
-                        saveFiles "$conkyfile"
+                        saveFiles "$conkyfile" || return 1
                     }
                 fi
                 # command to start on specified desktop with wmctrl
@@ -804,13 +806,13 @@ function getConky(){
                 CONKYTXT="$CONKYTXT\n\tDefault Conky"
                 debug "Found running default conky"
                 debug "saving copy of default conky file"
-                saveFiles '.config/conky/conky.conf'
+                saveFiles '.config/conky/conky.conf' || return 1
             else
                 CONKYTXT="$CONKYTXT\n\t$conkyfile"
                 debug "Found running conky file $conkyfile"
                 conkyfile=$( userFilepath "$conkyfile" ) && {
                     debug "Saving copy of $conkyfile"
-                    saveFiles "$conkyfile"
+                    saveFiles "$conkyfile" || return 1
                 }
             fi
             conkycmd="sleep 1 && $conkycmd &"
@@ -857,13 +859,13 @@ function getTint(){
             TINTCMDS="$TINTCMDS$tint;"
             TINT2TXT="$TINT2TXT\n\tDefault Tint2"
             debug "saving copy of default tint2 config file"
-            saveFiles '.config/tint2/tint2rc'
+            saveFiles '.config/tint2/tint2rc' || return 1
         else
             TINTCMDS="$TINTCMDS$tint;"
             TINT2TXT="$TINT2TXT\n\t$tint"
             tintfile=$( userFilepath "$tint" ) && {
                 debug "saving copy of $tintfile"
-                saveFiles "$tintfile"
+                saveFiles "$tintfile" || return 1
             }
         fi
     done
@@ -895,7 +897,7 @@ function getOBname(){    # get Openbox theme name, generate OBTHEME
 }
 
 function getGTKtheme(){
-    saveFiles "$GTK2" "$GTK2MINE" "$GTK3/settings.ini" "$GTK3/gtk.css" "$GTK3x"
+    saveFiles "$GTK2" "$GTK2MINE" "$GTK3/settings.ini" "$GTK3/gtk.css" "$GTK3x" || return 1
     getGTKname
 }
 
@@ -919,7 +921,7 @@ function getGTKname(){   # get GTK theme name and Icons name
 
 function getDmenu(){
     local txt
-    saveFiles "$DMENU"
+    saveFiles "$DMENU" || return 1
     txt="dmenu config:  $HOME/$DMENU\n"
     debug "\n  Saved $txt"
     echo "[DMENU]" >> "$SETTINGS"
@@ -935,18 +937,18 @@ function getLightdm(){
     echo "$txt" >> "$LISTMSG"
 }
 
-# passed pickterm as $1 and termfile as $2 by saveSettings()
+# passed termfile as $1 and pickterm as $2 by saveSettings()
 function getTerminal(){
     local termname termfile txt
-    termname="$1"
-    termfile="$2"
+    termfile="$1"
+    termname="$2"
     case "$termfile" in # dconf directories get prefixed with %dconf% in checkTerm()
     '%dconf%'*)
         saveDconf "${termfile#'%dconf%'}" "$termname"
         txt="$termname dconf config: ${termfile#'%dconf%'}\n"
         ;;
     *)
-        saveFiles "$termfile"
+        saveFiles "$termfile" || return 1
         txt="$termname config:  ~/$termfile\n"
         ;;
     esac
@@ -1776,7 +1778,10 @@ restoreSettings() {
                                 restoreOBrc
                                 ;;
             "$PICKGTK"      )   [[ -n $VAL ]] && checkGTK "$VAL"
-                                [[ -n ${values[$PICKICONS]} ]] && checkICONS "${values[$PICKICONS]}"
+                                [[ -n ${values[$PICKICONS]} ]] && {
+                                    debug "\n Restoring $PICKICONS with ${values[$PICKICONS]}"
+                                    checkICONS "${values[$PICKICONS]}"
+                                }
                                 restoreGTK
                                 # reloadGTK now called in restoreGTK
                                 ;;
