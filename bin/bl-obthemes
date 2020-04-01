@@ -254,6 +254,7 @@ PICKLDM="Lightdm Login theme"
 #PICKEXIT="Exit dialog theme"
 #PICKTERM='' # now not global, pickterm is from checkTerm(), local in saveSettings()
 PICKX="X configs"
+PICKBASHRC="Bash configs"
 
 ### END DIALOG VARIABLES
 
@@ -415,9 +416,18 @@ function upgradeBlobs(){
                                     ;;
                 "[EXITRC]"      )   printf '%s %s\n' "$TAG" "$VAL" >> "$i/newsettings"
                                     ;;
-                "[XFILES]"      )   moveFile "$i/.Xresources" "$i/user"
-                                    moveFile "$i/.bashrc" "$i/user"
-                                    printf '%s %s\n' "$TAG" "$VAL" >> "$i/newsettings"
+                "[XFILES]"      )   moveFile "$i/.Xresources" "$i/user" && {
+                                        printf '%s\n' "$TAG" >> "$i/newsettings"
+                                    }
+                                    moveFile "$i/.bashrc" "$i/user" && {
+                                        grep -q '\[BASHRC\]' "$i/newsettings" || {
+                                            printf '%s\n' '[BASHRC]' >> "$i/newsettings"
+                                        }
+                                    }
+                                    ;;
+                "[BASHRC]"      )   grep -q '\[BASHRC\]' "$i/newsettings" || {
+                                        printf '%s\n' '[BASHRC]' >> "$i/newsettings"
+                                    }
                                     ;;
                 "[TERMINATOR]"  )   moveFile "$i/config" "$i/user/.config/terminator"
                                     printf '%s %s\n' '[Terminator]' '.config/terminator/config' >> "$i/newsettings"
@@ -947,10 +957,19 @@ function getTerminal(){
 
 function getXconfig(){
     local txt
-    saveFiles "$XFILE" "$BASHFILE"
-    txt="X config:  ~/.Xresources; ~/.bashrc; (~/.bashrc will not be auto-restored)\n"
+    saveFiles "$XFILE" || return 1
+    txt="X config:  ~/.Xresources\n"
     debug "\n  Saved $txt"
     echo "[XFILES]" >> "$SETTINGS"
+    echo "$txt" >> "$LISTMSG"
+}
+
+function getBashRC(){
+    local txt
+    saveFiles "$BASHFILE" || return 1
+    txt="Bash config:  ~/.bashrc\n"
+    debug "\n  Saved $txt"
+    echo "[BASHRC]" >> "$SETTINGS"
     echo "$txt" >> "$LISTMSG"
 }
 
@@ -1142,6 +1161,7 @@ function saveSettings(){
         "$PICKDMENU"
         "$PICKLDM"
         "$PICKX"
+        "$PICKBASHRC"
     )
     checkTerm # sets termfile and pickterm
     # add terminal to array if one with a config file is in use
@@ -1166,7 +1186,9 @@ function saveSettings(){
                             ;;
             "$PICKX"    )   getXconfig
                             ;;
-            "$pickterm" )   getTerminal "$pickterm" "$termfile"
+            "$PICKBASHRC"    )   getBashRC
+                            ;;
+            "$pickterm" )   getTerminal "$termfile" "$pickterm"
                             ;;
             *           )   echo "$0:  Unknown config value in saveSettings function" >&2
                             exit 1
@@ -1692,6 +1714,9 @@ restoreSettings() {
             "[XFILES]"      )   labels+=("$PICKX")
                                 values["$PICKX"]="$VAL"
                                 ;;
+            "[BASHRC]"      )   labels+=("$PICKBASHRC")
+                                values["$PICKBASHRC"]="$VAL"
+                                ;;
             '['*']'         )   TAG="${TAG#[}" # strip outside brackets
                                 TAG="${TAG%]}"
                                 labels+=("$TAG")
@@ -1773,9 +1798,10 @@ restoreSettings() {
                                 ;;
             "$PICKLDM"      )   restoreLightdm
                                 ;;
-            "$PICKX"        )   debug ".bashrc will not be overwritten: a copy is in $THEMEPATH/.bashrc"
-                                restoreFiles "$XFILE" #"$BASHFILE" # do not restore .bashrc for now
+            "$PICKX"        )   restoreFiles "$XFILE"
                                 xrdb ~/.Xresources
+                                ;;
+            "$PICKBASHRC"   )   restoreFiles "$BASHFILE"
                                 ;;
             *               )   if [[ $VAL = '%dconf%'* ]] # dconf directories come prefixed with %dconf% in checkTerm (and others in future?)
                                 then
