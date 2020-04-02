@@ -14,5 +14,5 @@ Running Tint2s:
 
 dmenu config:  ~/.config/dmenu/dmenu-bind.sh\n
 Lightdm config:  /etc/lightdm/lightdm-gtk-greeter.conf\n(password will be needed to restore)\n
-X config:  ~/.Xresources; ~/.bashrc; (~/.bashrc will not be auto-restored)\n
+X config:  ~/.Xresources\n
 Lxterminal config:  ~/.config/lxterminal/lxterminal.conf\n
