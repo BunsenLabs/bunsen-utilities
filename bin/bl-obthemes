@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 #    bl-obthemes: script to save or restore openbox gui configurations
-#    Copyright (C) 2015-2017 damo    <damo@bunsenlabs.org>
+#    Copyright (C) 2015-2020 damo    <damo@bunsenlabs.org>
 #                  2018-2020 John Crawley <john@bunsenlabs.org>
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -1576,12 +1576,11 @@ function restoreFileAbs(){
 needBackup(){
     local file bkp_file path dir homefile_content blobfile_content
     file=$1
-    shopt -s nullglob
     for bkp_file in ${file}*~
     do
+        [[ -f $bkp_file ]] || continue
         cmp "$file" "$bkp_file" >/dev/null 2>&1 && {
             debug "$file already has identical copy ${bkp_file}, no need to backup"
-            shopt -u nullglob
             return 1
         }
     done
@@ -1593,11 +1592,9 @@ needBackup(){
         blobfile_content=$(< "$dir/$path" )
         [[ "$homefile_content" = "${blobfile_content//$HOME_MARKER/$HOME}" ]]  && {
             debug "$file has identical copy $dir/${path}, no need to backup"
-            shopt -u nullglob
             return 1
         }
     done
-    shopt -u nullglob
     return 0
 }
     
