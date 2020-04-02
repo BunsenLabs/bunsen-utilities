@@ -165,7 +165,7 @@ FEHFILE=".fehbg"
 NITROFILE=".config/nitrogen/bg-saved.cfg"
 DMENU=".config/dmenu/dmenu-bind.sh"
 XFILE=".Xresources"
-BASHFILE=".bashrc"
+BASHRC=".bashrc"
 #TERMFILE='' # now termfile is set dynamically by checkTerm() in saveSettings()
 
 # These will not be saved as-is,
@@ -254,7 +254,7 @@ PICKLDM="Lightdm Login theme"
 #PICKEXIT="Exit dialog theme"
 #PICKTERM='' # now not global, pickterm is from checkTerm(), local in saveSettings()
 PICKX="X configs"
-PICKBASHRC="Bash configs"
+PICKBASH="Bash configs"
 
 ### END DIALOG VARIABLES
 
@@ -409,28 +409,25 @@ function upgradeBlobs(){
                                     fi
                                     printf '%s %s\n' "$TAG" "$VAL" >> "$i/newsettings"
                                     ;;
-                "[DMENU]"       )   moveFile "$i/dmenu-bind.sh" "$i/user/.config/dmenu"
-                                    printf '%s %s\n' "$TAG" "$VAL" >> "$i/newsettings"
+                "[DMENU]"       )   moveFile "$i/dmenu-bind.sh" "$i/user/.config/dmenu" && {
+                                        printf '%s %s\n' "$TAG" "$VAL" >> "$i/newsettings"
+                                    }
                                     ;;
                 "[LIGHTDM]"     )   printf '%s %s\n' "$TAG" "$VAL" >> "$i/newsettings"
                                     ;;
                 "[EXITRC]"      )   printf '%s %s\n' "$TAG" "$VAL" >> "$i/newsettings"
                                     ;;
-                "[XFILES]"      )   moveFile "$i/.Xresources" "$i/user" && {
-                                        printf '%s\n' "$TAG" >> "$i/newsettings"
+                                    # split [XFILES] into two tags
+                "[XFILES]"      )   moveFile "$i/$XFILE" "$i/user" && {
+                                        printf '%s\n' '[XFILE]' >> "$i/newsettings"
                                     }
-                                    moveFile "$i/.bashrc" "$i/user" && {
-                                        grep -q '\[BASHRC\]' "$i/newsettings" || {
-                                            printf '%s\n' '[BASHRC]' >> "$i/newsettings"
-                                        }
-                                    }
-                                    ;;
-                "[BASHRC]"      )   grep -q '\[BASHRC\]' "$i/newsettings" || {
+                                    moveFile "$i/$BASHRC" "$i/user" && {
                                         printf '%s\n' '[BASHRC]' >> "$i/newsettings"
                                     }
                                     ;;
-                "[TERMINATOR]"  )   moveFile "$i/config" "$i/user/.config/terminator"
-                                    printf '%s %s\n' '[Terminator]' '.config/terminator/config' >> "$i/newsettings"
+                "[TERMINATOR]"  )   moveFile "$i/config" "$i/user/.config/terminator" && {
+                                        printf '%s %s\n' '[Terminator]' '.config/terminator/config' >> "$i/newsettings"
+                                    }
                                     ;;
                 '['*']'         )   printf '%s %s\n' "$TAG" "$VAL" >> "$i/newsettings"
                                     ;;
@@ -960,16 +957,16 @@ function getTerminal(){
 function getXconfig(){
     local txt
     saveFiles "$XFILE" || return 1
-    txt="X config:  ~/.Xresources\n"
+    txt="X config:  ~/$XFILE\n"
     debug "\n  Saved $txt"
-    echo "[XFILES]" >> "$SETTINGS"
+    echo "[XFILE]" >> "$SETTINGS"
     echo "$txt" >> "$LISTMSG"
 }
 
 function getBashRC(){
     local txt
-    saveFiles "$BASHFILE" || return 1
-    txt="Bash config:  ~/.bashrc\n"
+    saveFiles "$BASHRC" || return 1
+    txt="Bash config:  ~/$BASHRC\n"
     debug "\n  Saved $txt"
     echo "[BASHRC]" >> "$SETTINGS"
     echo "$txt" >> "$LISTMSG"
@@ -1163,7 +1160,7 @@ function saveSettings(){
         "$PICKDMENU"
         "$PICKLDM"
         "$PICKX"
-        "$PICKBASHRC"
+        "$PICKBASH"
     )
     checkTerm # sets termfile and pickterm
     # add terminal to array if one with a config file is in use
@@ -1188,7 +1185,7 @@ function saveSettings(){
                             ;;
             "$PICKX"    )   getXconfig
                             ;;
-            "$PICKBASHRC"    )   getBashRC
+            "$PICKBASH"    )   getBashRC
                             ;;
             "$pickterm" )   getTerminal "$termfile" "$pickterm"
                             ;;
@@ -1710,11 +1707,11 @@ restoreSettings() {
                                 ;;
             "[EXITRC]"      )   : # do nothing
                                 ;;
-            "[XFILES]"      )   labels+=("$PICKX")
+            "[XFILE]"      )   labels+=("$PICKX")
                                 values["$PICKX"]="$VAL"
                                 ;;
-            "[BASHRC]"      )   labels+=("$PICKBASHRC")
-                                values["$PICKBASHRC"]="$VAL"
+            "[BASHRC]"      )   labels+=("$PICKBASH")
+                                values["$PICKBASH"]="$VAL"
                                 ;;
             '['*']'         )   TAG="${TAG#[}" # strip outside brackets
                                 TAG="${TAG%]}"
@@ -1803,7 +1800,7 @@ restoreSettings() {
             "$PICKX"        )   restoreFiles "$XFILE"
                                 xrdb ~/.Xresources
                                 ;;
-            "$PICKBASHRC"   )   restoreFiles "$BASHFILE"
+            "$PICKBASH"     )   restoreFiles "$BASHRC"
                                 ;;
             *               )   if [[ $VAL = '%dconf%'* ]] # dconf directories come prefixed with %dconf% in checkTerm (and others in future?)
                                 then
