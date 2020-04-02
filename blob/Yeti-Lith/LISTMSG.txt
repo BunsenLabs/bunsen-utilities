@@ -1,0 +1,18 @@
+<b>Configuration name: Yeti-Lith</b>
+Released with BunsenLabs Lithium
+
+Openbox theme:  Yeti-Lith\n
+GTK theme:  Yeti-Lith;  Icon Theme: Papirus-Bunsen-Dark-bluegrey\n (When restoring, Thunar will be restarted to use new theme.)\n
+Background set with nitrogen:
+	~/Pictures/wallpapers/bunsen/default/Before-Sunrise.jpg;
+	
+Running Conkys:
+	~/.config/conky/BL-Yeti-conky.conf
+
+Running Tint2s:
+	~/.config/tint2/tint2rc-yeti
+
+dmenu config:  ~/.config/dmenu/dmenu-bind.sh\n
+Lightdm config:  /etc/lightdm/lightdm-gtk-greeter.conf\n(password will be needed to restore)\n
+X config:  ~/.Xresources\n
+Lxterminal config:  ~/.config/lxterminal/lxterminal.conf\n
