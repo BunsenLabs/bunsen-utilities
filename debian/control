@@ -37,21 +37,25 @@ Description: Small scripts to use with BunsenLabs.
  A collection of small scripts to provide various functions
  which might be useful to BunsenLinux users and system administrators.
  .
+  - beepmein: Alarm clock script based on 'at'.
   - bl-conky-session: Script to handle multiple conky sessions.
   - bl-conkyedit: Script to find and edit conky config files.
   - bl-conkymove: Script to assist the relocation of conky windows.
   - bl-conky-manager: Yad-based conky manager.
+  - bl-image-upload: Generic image upload utility.
+  - bl-imgbb-upload: Screenshot and image upload utility for imgbb.
+  - bl-imgur-upload: Screenshot and image upload utility for imgur.
   - bl-kb: Script to manage openbox keyboard shortcuts.
   - bl-lock: Script to lock the display.
+  - bl-notify-broadcast: Script to send user notifications from root processes.
   - bl-obthemes: Script to save or restore openbox gui configurations.
-  - bl-package-versions: Utility to display the versions of BunsenLabs packages.
+  - bl-pkg-versions: Utility to display the versions of BunsenLabs packages.
   - bl-setlocale: Yad-based script to set user's locale.
   - bl-tint2-session: Script to handle multiple tint2 sessions.
   - bl-tint2edit: Script to find and edit tint2 config files.
   - bl-tint2restart: Script to restart all running tint2 processes.
   - bl-tint2-manager: Yad-based tint2 manager.
-  - bl-xinerama-prop: Script to get xinerama properties in a shell script.
+  - bl-urxlx: Script to convert Xresources colours to rgb for lxterminal configuration.
   - bl-xbk: Script to manage xbindkeys keyboard shortcuts.
-  - bl-notify-broadcast: Script to send user notifications from root processes.
-  - bl-urlx: Script to convert Xresources colours to rgb for lxterminal configuration.
+  - bl-xinerama-prop: Script to get xinerama properties in a shell script.
   

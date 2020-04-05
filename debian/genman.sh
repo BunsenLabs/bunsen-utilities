@@ -4,7 +4,7 @@
 # to generate man files from executables' --help options,
 # using help2man.
 # Tested on Dash, should work with other POSIX shells.
-# Version 20180531
+# Version 20190629
 
 # Put this script in the package source debian/ directory
 # (or some other location, to taste),
@@ -119,7 +119,6 @@ Also add help2man to Build-Depends in debian/control.
 
 ### it may not be necessary to edit below this line ###
 
-manpg_dir=debian/genman-pages
 include_file=debian/genman.include
 
 ### functions ###
@@ -148,6 +147,7 @@ mk_man() {
     local cmd=${1##*/}
     local manfile="${manpg_dir}/${cmd}.${section}"
     local execflag=false
+    mkdir -p "$manpg_dir"
     grep "${cmd}\(.[1-8]\)\? *\$" "${manpages_file}" >/dev/null 2>&1 && {
         echo "$0: ${cmd} already in ${manpages_file}, skipping"
         return 0
@@ -181,7 +181,7 @@ test_man() {
 
 case $1 in
 --clean)
-    rm -rf "$manpg_dir"
+    rm -rf debian/*genman-pages
     # avoid cleaning existing files
     [ -f "$include_file" ] && rm -f debian/*manpages
     rm -f "$include_file"
@@ -208,9 +208,6 @@ EOF
     exit 0
     ;;
 esac
-
-
-mkdir -p "$manpg_dir"
 
 # avoid multiple runs
 [ -f "$include_file" ] && {
@@ -247,6 +244,7 @@ do
         ;;
     esac
     manpages_file=debian/${pkg_name}.manpages
+    manpg_dir=debian/${pkg_name}.genman-pages
     build_mans "$list"
 done
 
@@ -255,5 +253,6 @@ if [ "$found_list" != true ] && [ -f debian/genman-list ]
 then
     section="$default_section"
     manpages_file=debian/manpages
+    manpg_dir=debian/genman-pages
     build_mans debian/genman-list
 fi
