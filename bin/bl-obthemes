@@ -63,7 +63,7 @@
 
 HELP="bl-obthemes is a script to save or restore openbox gui configurations
 
-Usage:  $0 [-h|--help][-v|--verbose]
+Usage:  bl-obthemes [-h|--help][-v|--verbose]
 Options:
         -h, --help      show this message
         -v, --verbose   describe actions being performed
