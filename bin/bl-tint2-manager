@@ -37,7 +37,7 @@
 ########################################################################
 
 TINT2PATH="$HOME/.config/tint2"
-DEFTINT="$TINT2PATH/tint2rc" # tint2 will create this if it doesn't exist
+TINT2DEFAULT="$TINT2PATH/tint2rc" # tint2 will create this if it doesn't exist
 SESSIONFILE="$TINT2PATH/tint2-sessionfile"
 USAGE='
     USAGE:  bl-tint2-manager [-h|--help]
@@ -81,7 +81,7 @@ getRunning(){
     while read -r pid cmd args; do
         TPATH=${args#-c } # tint2 will start even without -c before filepath
         if [[ -z $TPATH ]]; then
-            TPATH=$DEFTINT
+            TPATH=$TINT2DEFAULT
         elif [[ $TPATH != "$HOME"/* ]]; then
             TPATH="$HOME/$TPATH"
         fi
@@ -145,40 +145,39 @@ loadDialog() {
     retval=$?
     if (( retval == 1 )); then # close button pressed
         exit 0
-    else
-        :> "$SESSIONFILE"    # Create new session file
+    fi
+    :> "$SESSIONFILE"    # Create new session file
 
-        # loop through returned choices, add to array
-        i=0
-        OIFS=$IFS   # copy original IFS
-        IFS=":"     # separator is ":" in returned choices
-        for name in $RET; do
-            retTint[$i]=$name
-            i=$((i+1))
-        done
-        IFS=$OIFS    # reset IFS
+    # loop through returned choices, add to array
+    i=0
+    OIFS=$IFS   # copy original IFS
+    IFS=":"     # separator is ":" in returned choices
+    for name in $RET; do
+        retTint[$i]=$name
+        i=$((i+1))
+    done
+    IFS=$OIFS    # reset IFS
 
-        # kill all tint2s
-        pgrep -a tint2 | while read -r pid cmd; do
-            if [[ ${cmd%% *} = tint2 ]]; then
-                kill "$pid"
+    # kill all tint2s
+    pgrep -a tint2 | while read -r pid cmd; do
+        if [[ ${cmd%% *} = tint2 ]]; then
+            kill "$pid"
+        fi
+    done
+
+    for name in "${retTint[@]}";do       # loop through checkmarked tint2 names
+        for ((j=0; j<${#tintsPath[*]}; j++));do  # traverse through elements
+            file=${tintsPath[j]}
+            display=${tintsArr[j]}
+            # see if it matches the returned name
+            if [[ $display = "$name" ]];then
+                echo "$file" >> "$SESSIONFILE"
+                tint2 -c "$file" &  #start the tint2
+                sleep 1s
             fi
         done
-
-        for name in "${retTint[@]}";do       # loop through checkmarked tint2 names
-            for ((j=0; j<${#tintsPath[*]}; j++));do  # traverse through elements
-                file=${tintsPath[j]}
-                display=${tintsArr[j]} #$( echo "$f" | awk -F"/" '{print $(NF-1)"/"$NF}')
-                # see if it matches the returned name
-                if [[ $display = "$name" ]];then
-                    echo -e "$file" >> "$SESSIONFILE"
-                    tint2 -c "$file" &  #start the tint2
-                    sleep 1s
-                fi
-            done
-        done
+    done
     (( retval == 2 )) && exit 0
-    fi
 }
 
 # get any commandline arguments
@@ -196,17 +195,17 @@ if ! (( $# == 0 ));then
 fi
 
 while true;do
-        LISTTINT=()
-        runningTints=()
-        # get tint2 directories in .tint2, add to array
-        getRunning
-        findTint
+    runningTints=()
+    # get tint2 directories in .tint2, add to array
+    getRunning
+    findTint
 
-        # loop through arrays, and build msg text for yad dialog
-        for ((j=0; j<${#tintsArr[*]}; j++));do
-            LISTTINT+=("${checkArr[j]}" "${tintsArr[j]}")
-        done
-        loadDialog #"$LISTTINT" now a global array
+    LISTTINT=()
+    # loop through arrays, and build list text for yad dialog
+    for ((j=0; j<${#tintsArr[*]}; j++));do
+        LISTTINT+=("${checkArr[j]}" "${tintsArr[j]}")
+    done
+    loadDialog #"$LISTTINT" now a global array
 done
 
 exit 0
