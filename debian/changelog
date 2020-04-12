@@ -1,3 +1,25 @@
+bunsen-utilities (10.2-1) lithium; urgency=medium
+
+  * BLOB: various improvements:
+    - user chooses configs at restore time, not save time
+    - add "verbose" option, reduce default messages to STDOUT
+    - add dconf support for {gnome,mate}-terminal & tilix
+    - minimize the creation of unnecessary backup files
+    - save and restore used tint2 and conky config files as well as paths 
+    - detect and accommodate vanilla openbox session as well as BunsenLabs
+    - rename to "BLOB Themes Manager"
+    [ damo ]
+    - Add new collection of preset BLOB configuration sets.
+  * bl-tint2-manager: Cope with spaces in tint2 file names.
+     add "OK" button to close after applying changes.
+  * bl-conky-manager: cope with spaces in filenames, add OK button.
+  [ brontosaurusrex ]
+  * Add beepmein: alarm clock utility.
+  [ damo ]
+  * Add image upload utilities for imgur and imgbb.
+
+ -- John Crawley <john@bunsenlabs.org>  Sun, 12 Apr 2020 15:06:11 +0900
+
 bunsen-utilities (10.1.3-1) lithium; urgency=medium
 
   * BLOB: adjust preset themes to match recent config changes.
