@@ -340,8 +340,8 @@ firstChecks() {
 }
 
 # Fork a process to the background, return 1 if it exits soon.
-# $1 is time to wait before checking if process is still running.
-# Other arguments are the command to run.
+# Global $FORKWAIT is time to wait before checking if process is still running.
+# Arguments are the command to run.
 forkncheck() {
     local pid
     set -m
@@ -350,7 +350,7 @@ forkncheck() {
     set +m
     sleep "$FORKWAIT" || return 1 # check for bad sleep syntax
     kill -0 "$pid" >/dev/null 2>&1 && return 0
-    return 1 # process was not found
+    return 1 # process was not running
 }
 
 function upgradeBlobs(){
@@ -446,7 +446,7 @@ function safeKill() {
     pkill -x -u "$USER" "$1"
 }
 
-# sets globals NUMDIRS and CURRENTSESSION, inside intro() and UpdateDisplayDialog() 
+# sets globals NUMDIRS and CURRENTSESSION, inside intro() and UpdateDisplayDialog()
 function getCurrent(){      # get name of currently set BLOB config
     local dirs
     NUMDIRS=0
@@ -741,7 +741,7 @@ userFilepath(){
     fi
     printf '%s' "$file"
 }
-        
+
 function getConky(){
     local conkyfile conkycmd saved_conkysession num_desktops CONKYCMDS CONKYTXT
     local -A arrSTICKY
@@ -1037,7 +1037,7 @@ function getScrot(){
     SCROT="$USRCONFIGPATH/$NEWNAME/${NEWNAME}.jpg"
     MONS=$(xrandr -q | grep -c " connected")    # number of monitors
     debug "Taking screenshot..."
-    
+
     # set mouse position, for appearance of root-menu
     screenW=$(xrandr -q | awk '/Screen/ {print $8}')
     screenH=$(xrandr -q | awk '/Screen/ {print $10}')
@@ -1594,7 +1594,7 @@ needBackup(){
     done
     return 0
 }
-    
+
 # THEMEPATH and BKP_SFX are globals set by displayBlobs() and restoreSettings() respectively.
 # dconfdir and appname passed as $1 and $2 from restoreSettings()
 function restoreDconf(){
@@ -1625,7 +1625,7 @@ function restoreDconf(){
         dconf load "$dconfdir" < "$src_file" || return 1
     }
 }
-    
+
 # This function is run in displayBlobs() below
 # CURRENTSESSION and NUMDIRS from getCurrent()
 # DLGARR and CURRENTSESSDIR are local to displayBlobs()
@@ -1936,7 +1936,7 @@ Do you want to save your current session before restoring <b>${themename}</b>?"
                             saveNewBlob || debug "Current settings were not saved."
                         ;;
                     esac
-                }   
+                }
                 SAVED="$THEMEPATH/LISTMSG.txt"
                 TEXT="These configs saved as $CONFIG can be restored:\n\n"
                 TEXT="$TEXT$(< "$SAVED")"

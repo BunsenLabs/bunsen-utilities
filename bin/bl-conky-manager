@@ -235,8 +235,11 @@ loadDialog() {
             # compare with choice from dialog
             if [[ $display = "$name" ]];then
                 echo "conky -c '$file' & sleep 1s" >> "$SESSIONFILE"
+                set -m # enable job control so forked conky is immune to signals
                 #start the conky (adjust the sleep time if required)
-                conky -c "$file" &
+                conky -c "$file" >/dev/null 2>&1 &
+                disown
+                set +m
                 sleep 1s
             fi
         done

@@ -172,7 +172,11 @@ loadDialog() {
             # see if it matches the returned name
             if [[ $display = "$name" ]];then
                 echo "$file" >> "$SESSIONFILE"
-                tint2 -c "$file" &  #start the tint2
+                set -m # enable job control so forked tint2 is immune to signals
+                # start the tint2 (adjust the sleep time if required)
+                tint2 -c "$file" >/dev/null 2>&1 &
+                disown
+                set +m
                 sleep 1s
             fi
         done
