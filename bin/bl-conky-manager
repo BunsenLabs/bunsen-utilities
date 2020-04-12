@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 #    bl-conky-manager: BunsenLabs Conky selection and switcher script
-#    Copyright (C) 2015-2019 damo    <damo@bunsenlabs.org>
+#    Copyright (C) 2015-2019  damo    <damo@bunsenlabs.org>
 #                  2019-2020  John Crawley <john@bunsenlabs.org>
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -130,7 +130,7 @@ isRunning(){
 }
 
 fillArrays(){
-    local num cPATH cARR
+    local num
     num="$1"    # 1st arg: array index
     conkysPath[$num]="$2" # full filepath
     conkysArr[$num]="$3"  # displayed name
@@ -248,7 +248,7 @@ loadDialog() {
 
 # get args passed to script (session can be saved to a different file)
 while [[ -n $1 ]];do
-    case "$arg" in
+    case "$1" in
         -h|--help   ) echo -e "$USAGE2"
                       echo
                       exit 0
