@@ -22,7 +22,7 @@ bl-tint2-session:		Handle multiple tint2 sessions.
 
 bl-kb:				    Read openbox keyboard shortcuts and write them to a text file.
 bl-xbk:				    Parse xbindkeys configs and write them to the same text file as bl-kb.
-bl-obthemes:			Save or restore openbox and other desktop gui configurations.
+bl-obthemes:			Save or restore various desktop gui theme configurations.
 bl-lock:			    Lock the display.
 bl-setlocale:			Yad-based script to allow users to choose their locale.
 

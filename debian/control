@@ -48,7 +48,7 @@ Description: Small scripts to use with BunsenLabs.
   - bl-kb: Script to manage openbox keyboard shortcuts.
   - bl-lock: Script to lock the display.
   - bl-notify-broadcast: Script to send user notifications from root processes.
-  - bl-obthemes: Script to save or restore openbox gui configurations.
+  - bl-obthemes: Script to save or restore various desktop gui theme configurations.
   - bl-pkg-versions: Utility to display the versions of BunsenLabs packages.
   - bl-setlocale: Yad-based script to set user's locale.
   - bl-tint2-session: Script to handle multiple tint2 sessions.

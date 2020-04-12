@@ -1,8 +1,8 @@
-BLOB - a BunsenLabs Openbox Configuration Manager
+BLOB - a BunsenLabs GUI Themes Manager
 
 README
 
-bl-obthemes: script to save or restore openbox gui configurations
+bl-obthemes: script to save or restore various GUI theme settings
 
 Save options are for  Conky(s)
                       Tint2(s)
@@ -13,7 +13,7 @@ Save options are for  Conky(s)
                       Alt Menu (dmenu)
                       Lightdm login gtk greeter
                       X configs (.bashrc, .Xresources)
-                      Terminal config
+                      Terminal emulator config
 
 Paths are assumed to be BunsenLabs defaults.
 
