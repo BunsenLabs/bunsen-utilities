@@ -1,12 +1,22 @@
 #!/bin/bash
-
-# beepmein
+#    beepmein - a simple alarm clock based on 'at'
+#    Copyright (C) 2019-2020 brontosaurusrex
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # A little wrapper around linux 'at' command, that will beep you at specific time, see --help.
 # On Debian systems make sure 'at' is installed with --no-install-recommends.
-
-# Copyright (C) 2019/2020 brontosaurusrex
-# License: GPLv3 or later.
 
 # superecho
 superecho () {
@@ -38,7 +48,7 @@ command -v speaker-test >/dev/null 2>&1 || { >&2 echo "I need speaker-test from 
 command -v notify-send >/dev/null 2>&1 || { >&2 echo "I need notify-send." ; exit 1; }
 
 # help
-help () { 
+help () {
 cat << EOF
 beepmein help
 
@@ -49,7 +59,7 @@ beepmein help
         beepmein 3               # reminder (in 3 minutes, beepmein shortcut),
         beepmein 8:00 --alarm    # alarm (must be last parameter)
         beepmein --nr 5          # with no reason (must be first parameter)
-           
+
     Set sounds: (playback depends on mpv or vlc)
 
         beepmein --set-alarm <path/to/alarm.sound>
@@ -60,14 +70,14 @@ beepmein help
         beepmein --reaction reminder_text
         beepmein --reaction --alarm alarm_text
         beepmein --test # test everything
-        
+
     List jobs
-    
+
         beepmein --list # or -l
 
     Kill all running playback/beeping:
 
-        killall beepmein 
+        killall beepmein
 
     Notes:
 
@@ -94,25 +104,25 @@ blink () {
     monitor="$(xrandr -q | grep -w "connected" | grep "primary" | cut -f1 -d ' ')"
     if [[ -z "$monitor" ]]; then # no primary AND connected found, lets try 1st connected
         monitor="$(xrandr -q | grep -w "connected" | cut -f1 -d ' ')"
-    fi 
+    fi
     [[ -z "$monitor" ]] && { >&2 echo "No monitors found error" ; exit 1; }
-    
+
     # find current brightness of that monitor
     now="$(xrandr --verbose | grep -A 15 "$monitor" | grep -i brightness | cut -f2 -d ' ')"
     [[ -z "$now" ]] && { >&2 echo "Could not get current brightness error" ;  exit 1; }
-    
+
     local blinks="$1"
     [[ -z "$blinks" ]] && blinks="1"
     for ((c=1; c<=blinks; c++))
     do
         # blink up
-        for i in $(seq "$now" 0.2 3.0); do     
+        for i in $(seq "$now" 0.2 3.0); do
             xrandr --output "$monitor" --brightness "$i"
             sleep 0.01
         done
-        
+
         # blink down
-        for i in $(seq 3.0 -0.2 "$now"); do     
+        for i in $(seq 3.0 -0.2 "$now"); do
             xrandr --output "$monitor" --brightness "$i"
             sleep 0.01
         done
@@ -248,23 +258,23 @@ if [[ "$1" != "--reaction" ]] ; then
         # making this shortcut the only to seconds precise format.
         setdelay="1"
     fi
-    
+
     # validate at time format, exit if fails
     validate "$attime" || { >&2 superecho "at time format error." ; beep "2"; exit 1; } # beep two times for error
-    
+
     # user input reason
     if [[ $noreason != true ]]; then
         read -rp "reason? " reason || reason="$(yad --on-top --center --title="beepmein" --width=300 --separator="" --form --field="reason?")"
     fi
     [[ -z "$reason" ]] && reason="beep beep beep"
     echo "beepmein: $attime, reason: $reason $alarm"
-    
+
     # if custom input
     (( setdelay )) && delay="$(date +%_S.%N)"
-    
+
     # set 'at'
     at "$attime" <<< "$(echo "sleep $delay; DISPLAY=${DISPLAY} beepmein --reaction $alarm '${reason}'")" &>/dev/null || { superecho "at input error." ; beep "2"; exit 1; } # beep two times for error
-    
+
 else
     # reaction
     shift
