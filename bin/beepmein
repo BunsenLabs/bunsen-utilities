@@ -84,6 +84,9 @@ beepmein help
         at -l       # will list pending jobs (or atq)
         at -r <num> # will remove job <num>  (or atrm)
 
+See also:
+    https://brontosaurusrex.github.io/2019/11/19/beepmein/
+
 EOF
 }
 
