@@ -2,7 +2,7 @@
 Released with BunsenLabs Lithium
 
 Openbox theme:  BL-Lithium\n
-GTK theme:  BL-Lithium;  Icon Theme: Papirus-Bunsen-Dark-bluegrey\n
+GTK theme:  BL-Lithium;  Icon Theme: Papirus-Bunsen-Dark-bluegrey\n (When restoring, Thunar will be restarted to use new theme.)\n
 Background set with nitrogen:
 	/usr/share/images/bunsen/wallpapers/default/BL-Lithium-logo-only.png
 	
