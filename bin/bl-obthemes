@@ -1573,7 +1573,7 @@ function restoreFileAbs(){
 needBackup(){
     local file bkp_file path dir homefile_content blobfile_content
     file=$1
-    for bkp_file in ${file}*~
+    for bkp_file in "${file}"*~
     do
         [[ -f $bkp_file ]] || continue
         cmp "$file" "$bkp_file" >/dev/null 2>&1 && {
