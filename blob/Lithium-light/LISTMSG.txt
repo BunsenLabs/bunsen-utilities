@@ -2,15 +2,15 @@
 Released with BunsenLabs Lithium
 
 Openbox theme:  BL-Lithium-light\n
-GTK theme:  BL-Lithium-light;  Icon Theme: Papirus-Bunsen-bluegrey\n
+GTK theme:  BL-Lithium-light;  Icon Theme: Papirus-Bunsen-bluegrey\n (When restoring, Thunar will be restarted to use new theme.)\n
 Background set with nitrogen:
-	/usr/share/images/bunsen/wallpapers/default/BL-Lithium-logo-only.png
+	/usr/share/images/bunsen/wallpapers/default/BL-networks.png
 	
 Running Conkys:
-	~/.config/conky/BL-Lithium-conky.conf
+	~/.config/conky/bigClock-lithium-light-conky.conf
 
 Running Tint2s:
-	~/.config/tint2/tint2rc-lithium
+	~/.config/tint2/tint2rc-lithium-light-vertical
 
 dmenu config:  ~/.config/dmenu/dmenu-bind.sh\n
 Lightdm config:  /etc/lightdm/lightdm-gtk-greeter.conf\n(password will be needed to restore)\n

@@ -1,2 +1,2 @@
-sleep 1 && conky -c %USERHOME%/.config/conky/BL-Lithium-conky.conf &
+sleep 1 && conky -c %USERHOME%/.config/conky/bigClock-lithium-light-conky.conf &
 
