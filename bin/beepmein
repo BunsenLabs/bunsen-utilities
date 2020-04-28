@@ -18,35 +18,6 @@
 # A little wrapper around linux 'at' command, that will beep you at specific time, see --help.
 # On Debian systems make sure 'at' is installed with --no-install-recommends.
 
-# superecho
-superecho () {
-    local msg="$1"
-    if [[ -t 0 ]] ; then
-        echo "$msg"
-    else
-        notify-send -t 3500 "$msg"
-    fi
-}
-
-# prepare config dir
-config="$HOME/.cache/beepmein"
-mkdir -p "$config" || superecho "$config not found, warning."
-
-# var
-delay="0"
-
-# softlinks to audio samples
-alarmSample="$config/alarm"     # longer sample
-reminderSample="$config/remind" # shorter sample
-
-# Will kill all children with 'killall beepmein'
-trap 'kill $(jobs -p) >/dev/null 2>&1' EXIT
-
-# required
-command -v at >/dev/null 2>&1 || { >&2 echo "I need at: sudo apt install --no-install-recommends at" ; exit 1; }
-command -v speaker-test >/dev/null 2>&1 || { >&2 echo "I need speaker-test from alsa-utils (for reminder sound)." ; exit 1; }
-command -v notify-send >/dev/null 2>&1 || { >&2 echo "I need notify-send." ; exit 1; }
-
 # help
 help () {
 cat << EOF
@@ -89,6 +60,40 @@ See also:
 
 EOF
 }
+
+# help
+if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]] || [[ $# -eq 0 ]]; then
+    help; exit
+fi
+
+# superecho
+superecho () {
+    local msg="$1"
+    if [[ -t 0 ]] ; then
+        echo "$msg"
+    else
+        notify-send -t 3500 "$msg"
+    fi
+}
+
+# prepare config dir
+config="$HOME/.cache/beepmein"
+mkdir -p "$config" || superecho "$config not found, warning."
+
+# var
+delay="0"
+
+# softlinks to audio samples
+alarmSample="$config/alarm"     # longer sample
+reminderSample="$config/remind" # shorter sample
+
+# Will kill all children with 'killall beepmein'
+trap 'kill $(jobs -p) >/dev/null 2>&1' EXIT
+
+# required
+command -v at >/dev/null 2>&1 || { >&2 echo "I need at: sudo apt install --no-install-recommends at" ; exit 1; }
+command -v speaker-test >/dev/null 2>&1 || { >&2 echo "I need speaker-test from alsa-utils (for reminder sound)." ; exit 1; }
+command -v notify-send >/dev/null 2>&1 || { >&2 echo "I need notify-send." ; exit 1; }
 
 # reminder sound, needs speaker-test (alsa-utils)
 beep () {
@@ -200,10 +205,8 @@ else
 fi
 }
 
-# help or test
-if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]] || [[ $# -eq 0 ]]; then
-    help; exit
-elif [[ "$1" == "--test" ]]; then
+# test
+if [[ "$1" == "--test" ]]; then
     test; exit
 fi
 
