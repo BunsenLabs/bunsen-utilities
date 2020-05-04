@@ -63,21 +63,24 @@ USAGE1='
     -z          : Run gui filename entry dialog for new saved session
 '
 USAGE2='
-    USAGE:  bl-conky-manager [OPTION]...FILES
+bl-conky-manager: BunsenLabs Conky selection and switcher script
+
+Usage: bl-conky-manager [OPTION]...FILES
 
     With no command option the script runs the gui
 
+Optional arguments:
     -h,--help   : This USAGE help
     -f,--file   : FILEPATH : specify file to save session to
     -z          : Run gui filename entry dialog for new saved session
 
-    When the dialog opens, any running conkys will be checkmarked.
-    Click "OK" and all running conkys are stopped, and all
-    checkmarked conkys are started.
+When the dialog opens, any running conkys will be checkmarked.
+Click "OK" and all running conkys are stopped, and all
+checkmarked conkys are started.
 
-    To stop a conky just uncheck it, and click "OK"
+To stop a conky just uncheck it, and click "OK"
 
-    EXAMPLES:
+EXAMPLES:
     Save session to a new saved-session file with:
 
         bl-conky-manager -f sessionfile-name

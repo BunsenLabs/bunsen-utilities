@@ -2,7 +2,7 @@ Source: bunsen-utilities
 Section: misc
 Priority: optional
 Maintainer: John Crawley <john@bunsenlabs.org>
-Build-Depends: debhelper (>= 10), help2man, python2.7, python3 (>=3.5.3), python-xlib, python-gtk2, python3-lxml
+Build-Depends: debhelper (>= 10), help2man, python2.7, python3 (>=3.5.3), python-xlib, python-gtk2, python3-distutils, python3-lxml
 Standards-Version: 4.3.0
 Homepage: https://github.com/BunsenLabs/bunsen-utilities
 Vcs-Git: https://github.com/BunsenLabs/bunsen-utilities.git

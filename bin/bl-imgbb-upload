@@ -71,6 +71,17 @@ USAGE="bl-imgbb-upload [option]... [file]...
 
 "
 
+# if help option anywhere in args, output $USAGE and exit immediately
+for i in "$@"
+do
+    case "$i" in
+    -h|--help)
+        echo "$USAGE"
+        exit 0
+        ;;
+    esac
+done
+
 #### YAD ###
 DIALOG="yad --center --borders=20 --window-icon=distributor-logo-bunsenlabs"
 TITLE="--title=Image BBCode"

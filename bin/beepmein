@@ -21,41 +21,47 @@
 # help
 help () {
 cat << EOF
-beepmein help
+beepmein - a simple alarm clock based on 'at'
 
-    Set reminder or alarm:
+Usage: beepmein [OPTIONS]
 
-        beepmein now + 3 minutes # reminder ('at' time format)
-        beepmein 22:10           # reminder ('at' time format)
-        beepmein 3               # reminder (in 3 minutes, beepmein shortcut),
-        beepmein 8:00 --alarm    # alarm (must be last parameter)
-        beepmein --nr 5          # with no reason (must be first parameter)
+Play an alarm sound and flash the screen at a preset time.
+Two modes are available, "reminder" and "alarm".
 
-    Set sounds: (playback depends on mpv or vlc)
+Options:
 
-        beepmein --set-alarm <path/to/alarm.sound>
-        beepmein --set-remind <path/to/reminder.sound>
+beepmein now + 3 minutes # reminder ('at' time format)
 
-    Test playback, blinking and notifications:
+beepmein 22:10           # reminder ('at' time format)
 
-        beepmein --reaction reminder_text
-        beepmein --reaction --alarm alarm_text
-        beepmein --test # test everything
+beepmein 3               # reminder (in 3 minutes, beepmein shortcut),
 
-    List jobs
+beepmein 8:00 --alarm    # alarm (must be last parameter)
 
-        beepmein --list # or -l
+beepmein --nr 5          # with no reason (must be first parameter)
 
-    Kill all running playback/beeping:
+Set sounds:
+    (playback depends on mpv or vlc)
 
-        killall beepmein
+    --set-alarm <path/to/alarm.sound>
+    --set-remind <path/to/reminder.sound>
 
-    Notes:
+Test playback, blinking and notifications:
+    --reaction reminder_text
+    --reaction --alarm alarm_text
+    --test # test everything
 
-        at -l       # will list pending jobs (or atq)
-        at -r <num> # will remove job <num>  (or atrm)
+List jobs:
+    --list # or -l
 
-See also:
+Kill all running playback/beeping:
+    killall beepmein
+
+Notes:
+    at -l       # will list pending jobs (or atq)
+    at -r <num> # will remove job <num>  (or atrm)
+
+See Also:
     https://brontosaurusrex.github.io/2019/11/19/beepmein/
 
 EOF

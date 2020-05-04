@@ -19,12 +19,10 @@
 XBKPATH="$HOME/.xbindkeysrc"
 USR_CACHE_DIR="$HOME/.cache/bunsen"
 KBTEXT="$USR_CACHE_DIR/kbinds.txt"
-mkdir -p "$USR_CACHE_DIR"
 
 HELP='bl-xbk a script to parse xbindkeys keybindings
 
-Usage:
-bl-xbk [--xbindkeys-rc <file>] [--kbinds-text <file>]
+Usage: bl-xbk [--xbindkeys-rc <file>] [--kbinds-text <file>]
 
 Parse xbindkeys config file and output the formatted result to a text file.
 
@@ -53,6 +51,8 @@ do
         ;;
     esac
 done
+
+mkdir -p "$USR_CACHE_DIR"
 
 echo $'\n#### xbindkeys keybinds ####\n' >> "$KBTEXT"
 

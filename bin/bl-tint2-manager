@@ -40,12 +40,14 @@ TINT2PATH="$HOME/.config/tint2"
 TINT2DEFAULT="$TINT2PATH/tint2rc" # tint2 will create this if it doesn't exist
 SESSIONFILE="$TINT2PATH/tint2-sessionfile"
 USAGE='
-    USAGE:  bl-tint2-manager [-h|--help]
+Usage:  bl-tint2-manager [-h|--help]
 
     With no command option the script runs the gui
 
-    -h,--help   : This USAGE help
+Arguments:
+    -h,--help   : Output this USAGE help
 
+Use:
     Tint2 config files must be in HOME/.config/tint2/
 
     When the dialog opens, any running tint2s will be checkmarked.

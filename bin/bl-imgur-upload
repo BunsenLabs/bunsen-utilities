@@ -78,6 +78,17 @@ USAGE="
 
 "
 
+# if help option anywhere in args, output $USAGE and exit immediately
+for i in "$@"
+do
+    case "$i" in
+    -h|--help)
+        echo "$USAGE"
+        exit 0
+        ;;
+    esac
+done
+
 ### required commands ###
 declare -a APPS
 APPS=( "yad" "xprop" "wmctrl" "wget" "curl" "scrot" "xsel" )

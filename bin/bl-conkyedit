@@ -31,6 +31,9 @@ declare -a CONKYS_PATH
 declare -a CONKYS_ARR
 
 HELP="    bl-conkyedit a BunsenLabs Conky Editor
+
+Usage: bl-conkyedit [OPTIONS]
+
 Options:
     -h --help   show this message
 

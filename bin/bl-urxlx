@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#    bl-urxlx: is naive Xresources to Lxterminal color config converter  
+#    bl-urxlx: is naive Xresources to Lxterminal color config converter
 #    Copyright (C) 2019 brontosaurusrex
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -9,16 +9,17 @@
 #    (at your option) any later version.
 
 # help
-help () { 
+help () {
 cat << EOF
-    bl-urxlx is naive Xresources to Lxterminal color config converter
-    
+    bl-urxlx is a naive Xresources to Lxterminal color config converter
+
 Options:
     -h --help   show this message
 
 Examples:
-    .Xresources > tmp.txt
-    monokai.txt | xclip
+    urxlx .Xresources > tmp.txt
+
+    urxlx monokai.txt | xclip
 EOF
 }
 
@@ -38,7 +39,7 @@ for file in "$@" ; do
     echo # empty line
     grep -E --color=never 'color[0-9]|background:|foreground:' "$file" | while read -r color hex; do
 
-        if [[ $color =~ [!0-9] ]]; then 
+        if [[ $color =~ [!0-9] ]]; then
             #echo "$color has number"
             color="palette_color_${color//[!0-9]}"
         else
@@ -47,7 +48,7 @@ for file in "$@" ; do
         fi
 
         hex="${hex//#}" # remove #
-        
+
         echo "$color=$(2rgb "$hex")"
 
     done
