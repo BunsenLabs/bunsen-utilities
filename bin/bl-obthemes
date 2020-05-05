@@ -64,7 +64,8 @@
 HELP='bl-obthemes is a script to save or restore gui theme settings
 
 Usage:  bl-obthemes [-h|--help][-v|--verbose]
-Options:
+
+Optional arguments:
         -h, --help      show this message
         -v, --verbose   describe actions being performed
 No other CLI options are supported.

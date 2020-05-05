@@ -21,11 +21,11 @@
 # help
 help () {
 cat << EOF
-beepmein - a simple alarm clock based on 'at'
+beepmein is a simple alarm clock based on 'at'
 
 Usage: beepmein [OPTIONS]
 
-Play an alarm sound and flash the screen at a preset time.
+Play a sound and flash the screen at a preset time.
 Two modes are available, "reminder" and "alarm".
 
 Options:
@@ -57,11 +57,11 @@ List jobs:
 Kill all running playback/beeping:
     killall beepmein
 
-Notes:
+*Notes*
     at -l       # will list pending jobs (or atq)
     at -r <num> # will remove job <num>  (or atrm)
 
-See Also:
+External reference:
     https://brontosaurusrex.github.io/2019/11/19/beepmein/
 
 EOF

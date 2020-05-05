@@ -18,12 +18,13 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-HELP="    bl-conkymove: a script to set the position of a moveable Conky
+HELP="bl-conkymove is a script to set the position of a moveable Conky
 
-Options:
-    -h --help   show this message
+Usage:  bl-conkymove
+   or:  bl-conkymove -h|--help
 
-No other options are supported.
+Optional arguments:
+    -h | --help    Show this message (no other options are supported)
 
 After invoking the script, follow the displayed instructions
 to move a selected conky to a new position on the screen.

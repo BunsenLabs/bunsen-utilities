@@ -25,17 +25,19 @@
 ########################################################################
 TINT2PATH="$HOME/.config/tint2"
 SESSIONFILE="$TINT2PATH/tint2-sessionfile"
-USAGE='bl-tint2-session - a script to parse a saved Tint2 session file
+USAGE='bl-tint2-session is a script to parse a saved Tint2 session file
+and start the tint2s.
 
-Usage: bl-tint2-session [OPTION(S)]
+Usage: bl-tint2-session
+   or: bl-tint2-session --help|-h
 
 Optional arguments:
     --help | -h
         show this message (no other options are supported at this time)
 
-With no command argument, the script uses the default
-tint2 session file ~/.config/tint2/tint2-sessionfile
-if it exists, otherwise the default tint2rc is used.
+The script uses the default tint2 session file
+~/.config/tint2/tint2-sessionfile if it exists,
+otherwise the default tint2rc is used.
 
 To start the tint2 session at login,
 add the following line to autostart:

@@ -58,16 +58,16 @@ USAGE1='
 
     With no command option the script runs the gui
 
-    -h,--help   : This USAGE help
+    -h,--help   : The full USAGE help
     -f,--file   : FILEPATH : specify file to save session to
     -z          : Run gui filename entry dialog for new saved session
 '
-USAGE2='
-bl-conky-manager: BunsenLabs Conky selection and switcher script
+USAGE2='bl-conky-manager is a Conky selection and switcher script
+which uses yad to generate a graphical user interface.
 
 Usage: bl-conky-manager [OPTION]...FILES
 
-    With no command option the script runs the gui
+With no command option the script runs the gui
 
 Optional arguments:
     -h,--help   : This USAGE help
@@ -80,7 +80,7 @@ checkmarked conkys are started.
 
 To stop a conky just uncheck it, and click "OK"
 
-EXAMPLES:
+Examples:
     Save session to a new saved-session file with:
 
         bl-conky-manager -f sessionfile-name

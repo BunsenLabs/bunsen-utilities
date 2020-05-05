@@ -43,12 +43,15 @@ CREDENTIALS_FILE="${USR_CFG_DIR}/credentials.conf"
 SETTINGS_FILE="${USR_CFG_DIR}/imgur.conf"
 SCRIPT=$(basename "$0")
 
-USAGE="
-  bl-imgur-upload [option]... [file]...
+USAGE="bl-imgur-upload is a script to take screenshots and upload them to Imgur
+this can be to an existing account, or anonymously.
 
-  With no script args, ${SCRIPT} will upload a screenshot of
-  the full desktop, as anonymous user.
+Usage:    bl-imgur-upload [option]... [file]...
 
+With no script args, ${SCRIPT} will upload a screenshot of
+the full desktop, as anonymous user.
+
+Arguments:
   -h, --help                   Show this help, exit
   -l, --login                  Upload to Imgur account
   -c, --connect                Show connected Imgur account, exit
@@ -64,17 +67,17 @@ USAGE="
   --test-account               For use by external command, to see if user
                                has an Imgur account already
 
-  The final dialog displays forum BB-Code for both the direct image link and
-  the linked image thumbnail. These can be copy/pasted as desired.
+The final dialog displays forum BB-Code for both the direct image link and
+the linked image thumbnail. These can be copy/pasted as desired.
 
-  If more than one of '-f','-w', or '-s' are passed to the script, the LAST
-  one will be used.
+If more than one of '-f','-w', or '-s' are passed to the script, the LAST
+one will be used.
 
-  There is an option to delete uploaded and/or local screenshot images
-  before exiting the script. This doesn't apply if using '--auto-upload'.
+There is an option to delete uploaded and/or local screenshot images
+before exiting the script. This doesn't apply if using '--auto-upload'.
 
-  'imgur.conf' settings, such as filepaths and image format, can be changed
-  by editing the file directly.
+'imgur.conf' settings, such as filepaths and image format, can be changed
+by editing the file directly.
 
 "
 

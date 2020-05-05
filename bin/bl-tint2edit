@@ -27,12 +27,14 @@
 
 TINT2PATH="$HOME/.config/tint2"
 
-HELP="    bl-tint2edit a script to edit selected tint2 config files
+HELP="bl-tint2edit is a script to edit selected tint2 config files
+which are displayed in a yad window with checkboxes.
 
-Options:
-    -h --help   show this message
+Usage:  bl-tint2edit
+   or:  bl-tint2edit -h|--help
 
-No other options are supported.
+Optional arguments:
+    -h | --help    Show this message (no other options are supported at this time)
 
 Tint2 files must be in $TINT2PATH
 Checkmarked tint2s will be opened in the text editor.

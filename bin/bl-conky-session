@@ -26,10 +26,12 @@
 CONKYPATH="$HOME/.config/conky"
 CONKYDEFAULT="$CONKYPATH/conky.conf"
 SESSIONFILE="$CONKYPATH/conky-sessionfile"
-USAGE='
+USAGE='bl-conky-session is a script to parse saved BunsenLabs Conky session file(s)
+and start the conkys
+
 Usage: bl-conky-session [OPTION(S)]...FILES
 
-    With no command argument, the script uses the default "$CONKYPATH/conky-sessionfile" sessionfile.
+With no command argument, the script uses the default "$CONKYPATH/conky-sessionfile" sessionfile.
 
 Options:
         --default       : specify default sessionfile

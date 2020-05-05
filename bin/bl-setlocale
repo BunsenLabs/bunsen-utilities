@@ -25,13 +25,13 @@
 # BunsenLabs ships a fix for this when LightDM is being used,
 # but something more generic would be nice.
 
-HELP='    bl-setlocale: a GUI (yad) script to set a user locale.
+HELP='bl-setlocale is a GUI (yad) script to set a user locale
 
-Usage: bl-setlocale [OPTION]
+Usage:  bl-setlocale
+   or:  bl-setlocale -h|--help
 
-Options: [ --help | -h ]
-        show this message
-        (no other command line options are supported)
+Optional arguments:
+    -h | --help    Show this message (no other options are supported at this time)
 
 Without options, the user will be shown a list of locales installed
 on the system and asked to choose which one to use.

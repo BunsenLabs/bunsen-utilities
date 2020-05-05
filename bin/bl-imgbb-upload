@@ -43,31 +43,39 @@ SCRIPT=$(basename "$0")
 THUMB_SIZE=250                      # Thumbnail to be 250px wide
 KEEP_BB=1                           # Flag to keep BBCode on clipboard
 TEST=0                              # Flag for '--test-account' parameter
-USAGE="bl-imgbb-upload [option]... [file]...
+USAGE="bl-imgbb-upload is a script to take screenshots and upload them to imgbb
 
-  With no script args, ${SCRIPT} will upload a screenshot of
-  the full desktop.
+Credentials for an account can be set up.
+A settings file (imgbb.conf) is created in $HOME/.config/image-upload/imgbb
+The script returns BB-Code for the direct image link, and a linked thumbnail.
+YAD dialogs are used for user interaction.
 
-  The first use will ask for a client API key, by logging in or registering
-  for a new account.
+Usage:    bl-imgbb-upload [option]... [file]...
 
-  -h, --help                   Show this help, exit
-  -s, --select                 Take screenshot in select mode
-  -w, --window                 Take screenshot in active window mode
-  -f, --full                   Take screenshot in full desktop mode
-  -d, --delay <seconds>        Delay in integer seconds, before taking screenshot
-  --file  <filepath/filename>  Upload specified image. Overrides scrot options
-  --test-account               For use by external script to see if user
+With no script args, ${SCRIPT} will upload a screenshot of
+the full desktop.
+
+The first use will ask for a client API key, by logging in or registering
+for a new account.
+
+Arguments:
+    -h, --help                   Show this help, exit
+    -s, --select                 Take screenshot in select mode
+    -w, --window                 Take screenshot in active window mode
+    -f, --full                   Take screenshot in full desktop mode
+    -d, --delay <seconds>        Delay in integer seconds, before taking screenshot
+    --file  <filepath/filename>  Upload specified image. Overrides scrot options
+    --test-account               For use by external script to see if user
                                has an imgbb Client ID configured
 
-  The final dialog displays forum BB-Code for both the direct image link and
-  the linked image thumbnail. These can be copy/pasted as desired.
+The final dialog displays forum BB-Code for both the direct image link and
+the linked image thumbnail. These can be copy/pasted as desired.
 
-  There are options to delete uploaded and/or local screenshot images
-  before exiting the script.
+There are options to delete uploaded and/or local screenshot images
+before exiting the script.
 
-  If more than one of '-f','-w', or '-s' are passed to the script, the LAST
-  one will be used.
+If more than one of '-f','-w', or '-s' are passed to the script, the LAST
+one will be used.
 
 "
 

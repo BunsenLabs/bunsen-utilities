@@ -21,12 +21,13 @@
 
 LOCK_COMMAND=(light-locker-command -l)
 
-HELP="    bl-lock a wrapper for the 'light-locker-command -l' command
+HELP="bl-lock is a wrapper for the configured screenlock command
 
-Options:
-    -h --help   show this message
+Usage:  bl-lock
+   or:  bl-lock -h|--help
 
-No other options are supported.
+Optional arguments:
+    -h | --help    Show this message (no other options are supported)
 
 If running in live mode, offer up a prompt detailing the live session password.
 Else, run '${LOCK_COMMAND[*]}'

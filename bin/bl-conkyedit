@@ -30,20 +30,20 @@ declare CONKYPATH="$HOME/.config/conky"
 declare -a CONKYS_PATH
 declare -a CONKYS_ARR
 
-HELP="    bl-conkyedit a BunsenLabs Conky Editor
+HELP="bl-conkyedit is a script to edit selected Conky config files
+which are displayed in a yad window with checkboxes.
 
-Usage: bl-conkyedit [OPTIONS]
+Usage: bl-conkyedit
+   or: bl-conkyedit -h|--help
 
-Options:
-    -h --help   show this message
+Optional arguments:
+    -h | --help    Show this message (no other options are supported)
 
-No other options are supported.
+Conkys must be in $CONKYPATH
+The name must end with 'conkyrc', 'conky' or 'conky.conf'
 
-   Conkys must be in $CONKYPATH
-   The name must end with 'conky' or -conky.conf'
-
-   Checkmarked conkys will be opened in the text editor.
-   Multiple conkys can be chosen.
+Checkmarked conkys will be opened in the text editor.
+Multiple conkys can be chosen.
 "
 
 ### DIALOG VARIABLES
