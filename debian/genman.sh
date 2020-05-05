@@ -4,7 +4,7 @@
 # to generate man files from executables' --help options,
 # using help2man.
 # Tested on Dash, should work with other POSIX shells.
-# Version 20200503
+# Version 20200505
 
 #    Copyright (C) 2018-2020  John Crawley <john@bunsenlabs.org>
 #
@@ -65,7 +65,7 @@ default_section=1
 
 # BunsenLabs generic content
 # Other vendors, please edit to taste.
-includes="[author]
+includes="[authors]
 Written by the BunsenLabs team.
 
 [reporting bugs]
@@ -78,38 +78,55 @@ The BunsenLabs forums may be able to answer your questions:
 https://forums.bunsenlabs.org
 "
 
-HELP="    genman.sh: generate man pages from executables \"--help\" options
-Options:
+HELP="genman.sh is a wrapper script round 'help2man'
+to generate man pages for debian packages.
+
+Usage: genman.sh [OPTIONS] [file]
+
+This is a script for debian packagers, which automates the generation
+of simple man pages from the output of executables' \"--help\" options,
+along with information from dpkg, and configuration files
+in the package source debian/ directory.
+
+Arguments:
     <no arguments>
-                Generate the necessary files in the source directory.
+            Generate the necessary files in the source directory.
+
     --clean
-                Return everything in the package debian/ directory
-                to the state it was in before running the script.
-    --test <file>
-                Display the manpage that would be generated for this file.
-                Nothing is changed in the source directory.
+            Return everything in the package debian/ directory
+            to the state it was in before running the script.
+
+    --test <executable>
+            Display the manpage that would be generated for this file.
+            Nothing is changed in the source directory.
+
+    --makeone <executable>
+            Generate a single man file for this one executable and
+            place it in the working directory (package source root).
+            (You will still need to add it to debian/<package>.manpages.)
+
     -h --help
-                Show this message.
+            Show this message.
 
-This is a wrapper script around help2man for debian packagers,
-which automates the generation of simple man pages
-from the output of executables' \"--help\" option,
-along with information from dpkg,
-and configuration files in the package source debian/ directory.
 
-CONFIGURATION:
+Configuration:
+    The script will look for files in debian/
 
- The script will look for files in debian/:
- <packagename>.<section>.genman-list
- <packagename>.genman-list
- genman-list
- If <section> ([1-8]) is missing, assume 1.
- If <packagename> is also missing, get from dpkg.
- The file should have a list of the executables
- (paths relative to the package root) whose manpages are to be built.
- Shell globs may be used.
- Multiple genman-list files can be used, for source building
- multiple packages, or for different manual sections.
+        <packagename>.<section>.genman-list
+
+        <packagename>.genman-list
+
+        genman-list
+
+    If <section> ([1-8]) is missing, assume 1.
+
+    If <packagename> is also missing, get from dpkg.
+
+    The genman-list file should have a list of the executables
+    (paths relative to the package root) whose manpages are to be built.
+    Shell globs may be used.
+    Multiple genman-list files can be used, for source building
+    multiple packages, or for different manual sections.
 
 Built manpages will be put in debian/genman-pages/, and
 their paths will be appended to an existing debian/*manpages file,
@@ -122,12 +139,16 @@ or to auto-run, add this to debian/rules:
 (adjust the path to genman.sh if necessary)
 
 override_dh_installman:
-	debian/genman.sh
-	dh_installman
+
+<tab>debian/genman.sh
+
+<tab>dh_installman
 
 override_dh_clean:
-	dh_clean
-	debian/genman.sh --clean
+
+<tab>dh_clean
+
+<tab>debian/genman.sh --clean
 
 Also add help2man to Build-Depends in debian/control.
 "
