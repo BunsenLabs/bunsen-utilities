@@ -29,7 +29,7 @@ Each running tint2 process is stopped with SIGTERM, any left running
 are then stopped with SIGKILL. (This second kill may no longer be
 necessary with the current tint2.)
 
-All previously running tint2 commands are then re-run,
+All previously running tint2 commands are then re-run, forked and disowned,
 with any duplicates removed.
 '
 # look for a help option somewhere
@@ -68,11 +68,15 @@ while read pid cmd; do
 done <<< "$(pgrep -ax tint2)"
 
 sleep 1
+
+set -m # enable job control so forked tint2 is immune to signals from script
 for i in "${!commands[@]}" # go through the indexes
 do
-    (setsid $i >/dev/null 2>&1 &)
-    sleep 0.1
+    $i >/dev/null 2>&1 &
+    disown
+    sleep 0.2
 done
+set +m
 
 #sleep 1
 #bl-compositor --restart  # restart compositor
