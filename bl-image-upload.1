@@ -2,15 +2,17 @@
 .\" Nevertheless subsequently modified.
 .TH BL-IMAGE-UPLOAD "1" "May 2020" "bl-image-upload 10.2-1" "User Commands"
 .SH NAME
-bl-image-upload \- a generic image upload script
+bl-image-upload \- a generic BunsenLabs image upload script
+.SH SYNOPSIS
+.B bl-image-upload
+[\fI\,option\/\fR]... [\fI\,file\/\fR]...
 .SH DESCRIPTION
-.IP
-At present, this script invokes the BunsenLabs Imgur upload utility.
-.IP
-bl\-imgur\-upload [option]... [file]...
-.IP
+At present, this script invokes \fBbl\-imgur\-upload\fR,
+and accepts the same arguments.
+.PP
 With no script args, bl\-imgur\-upload will upload a screenshot of
 the full desktop, as anonymous user.
+.SS "Arguments:"
 .TP
 \fB\-h\fR, \fB\-\-help\fR
 Show this help, exit
@@ -51,16 +53,16 @@ Upload image from filemanager, put BBCode on clipboard
 \fB\-\-test\-account\fR
 For use by external command, to see if user
 has an Imgur account already
-.IP
+.PP
 The final dialog displays forum BB\-Code for both the direct image link and
 the linked image thumbnail. These can be copy/pasted as desired.
-.IP
+.PP
 If more than one of '\-f','\-w', or '\-s' are passed to the script, the LAST
 one will be used.
-.IP
+.PP
 There is an option to delete uploaded and/or local screenshot images
 before exiting the script. This doesn't apply if using '\-\-auto\-upload'.
-.IP
+.PP
 \&'imgur.conf' settings, such as filepaths and image format, can be changed
 by editing the file directly.
 .SH AUTHORS
@@ -69,6 +71,8 @@ Written by the BunsenLabs team.
 Please report bugs at
 https://github.com/BunsenLabs/bunsen-utilities/issues
 .SH "SEE ALSO"
+bl-imgur-upload(1)
+.PP
 The BunsenLabs forums may be able to answer your questions:
-
+.IP
 https://forums.bunsenlabs.org
