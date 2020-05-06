@@ -41,7 +41,8 @@ def getopts() -> Namespace:
 def main() -> int:
     getopts()
 
-    if display := os.getenv("DISPLAY", None):
+    display = os.getenv("DISPLAY", None)
+    if display:
         dsp = Gdk.Display.open(display)
         assert dsp is not None, f"Failed to open display {display} - does it exist?"
         if dsp is None:
