@@ -1,8 +1,8 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 #
-
 #    bl-xinerama-prop: script to get xinerama properties in a shell script
 #    Copyright (C) 2016 xaos52 <xaos52@bunsenlabs.org>
+#    Copyright (C) 2020 2ion <twoion@bunsenlabs.org>
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -17,31 +17,56 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import print_function
-import pygtk
-pygtk.require('2.0')
-import gtk
+from argparse import ArgumentParser, Namespace
+import logging
+import os
 import sys
-import argparse
 
+import gi # type: ignore
+gi.require_version("Gdk", "3.0")
+from gi.repository import Gdk # type: ignore
 
-ap = argparse.ArgumentParser(description="""Helper python script.
-Using the current cursor position, this script prints the dimensions 
-of the monitor that the cursor is on.
-""")
-opts = ap.parse_args(sys.argv[1:])
+DESCRIPTION = """Using the current cursor position, print the dimensions of the monitor the cursor is on."""
 
-def main():
-    try:
-        display = gtk.gdk.Display(gtk.gdk.get_display())
-        screen, x, y, flags = display.get_pointer()
-        curmon = screen.get_monitor_at_point(x, y)
-        _, _, width, height = screen.get_monitor_geometry(curmon)
-        print("{} {}".format(width, height))
-        return 0
-    except:
-        print("Not running under X.", file=sys.stderr)
-        return 1
+def getopts() -> Namespace:
+    ap = ArgumentParser(description=DESCRIPTION)
+    ap.add_argument("-d", "--debug", action="store_true", default=False, help="Print debug information")
+    opts = ap.parse_args()
+    if opts.debug:
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.WARN)
+    return opts
+
+def main() -> int:
+    getopts()
+
+    if display := os.getenv("DISPLAY", None):
+        dsp = Gdk.Display.open(display)
+        assert dsp is not None, f"Failed to open display {display} - does it exist?"
+        if dsp is None:
+            logging.error("Failed to open display %s - does it exist?", display)
+        else:
+            logging.debug("Using X11 display: %s", dsp.get_name())
+
+        seat = dsp.get_default_seat()
+        ptr_device = seat.get_pointer()
+        if ptr_device is None:
+            logging.error("No pointer device associated with display - none connected?")
+            return os.EX_UNAVAILABLE
+        else:
+            logging.debug("Using pointer device is: %s", ptr_device.get_name())
+
+        _, x, y = ptr_device.get_position()
+        mon = dsp.get_monitor_at_point(x, y)
+        rect = mon.get_geometry()
+        logging.debug("Using monitor: %s (%s)", mon.get_model(), mon.get_manufacturer())
+
+        print(f"{rect.width} {rect.height}")
+        return os.EX_OK
+    else:
+        logging.error("DISPLAY environment variable not set - not running under X11?")
+        return os.EX_DATAERR
 
 if __name__ == "__main__":
     sys.exit(main())
