@@ -81,7 +81,7 @@ def sync_gtk2() -> None:
                "W" if not not wm_state else " ",
                "S" if sent else " ",
                name[:24] if name else "",
-               ",".join(map(lambda s: hex(s), parents)))
+               ",".join(map(hex, parents)))
 
          return sent
       recurse_windows(screen.root, [])
