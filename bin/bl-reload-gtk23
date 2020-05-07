@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+#
+#    bl-reload-gtk23: Make GTK2/3 reload settings file changes
+#    Copyright (C) 2020 2ion <twoion@bunsenlabs.org>
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+from argparse import ArgumentParser, Namespace
+import Xlib.display
+import Xlib.protocol
+import logging
+import os
+import sys
+
+DESCRIPTION = ("""After changing GTK2 and GTK3 configuration files, notify running GTK2 and GTK3 clients to apply those changes."""
+"""The notification mechanism used by GTK3 requires that xsettingsd, gnome-settings-daemon or a similar settings daemon are running.""")
+
+def getopts() -> Namespace:
+    ap = ArgumentParser(description=DESCRIPTION)
+    ap.add_argument("-d", "--debug", action="store_true", default=False, help="Print debug information")
+    opts = ap.parse_args()
+    if opts.debug:
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.WARN)
+    return opts
+
+def sync_gtk2() -> None:
+   """ Tell GTK2 X11 clients to reload the GTK RC files and update their
+   appearance/settings if required. This implements this process without GTK/GDK
+   in order to be able to drop the dependency on the obsolete pygtk library.
+   GTK3/pygobject does not support GTK2.
+
+   This implementation is based on the following resources:
+      * From libgtk2 2.24.18:
+         * gdk_event_send_client_message_to_all_recurse()
+         * gdk_screen_broadcast_client_message()
+      * From kde-gtk-config https://github.com/KDE/kde-gtk-config/blob/a5d4ddb3b1a27ec2ee4e1b6957a98a57ad56d39c/gtkproxies/reload.c
+   """
+   display = Xlib.display.Display(display=os.getenv("DISPLAY"))
+   wm_state_atom = display.intern_atom("WM_STATE", False)
+   gtkrc_atom = display.intern_atom("_GTK_READ_RCFILES", False)
+   for sno in range(0, display.screen_count()):
+      screen = display.screen(sno)
+      xev = Xlib.protocol.event.ClientMessage(
+            window = screen.root,
+            client_type = gtkrc_atom,
+            data = (8, b"\0" * 20)
+      )
+      def recurse_windows(window, level):
+         tree = window.query_tree()
+         wm_state = window.get_property(wm_state_atom, wm_state_atom, 0, 0)
+         logging.debug("%s0x%x(%d)[%s]", "┣" + level * "━━━", window.id, not not wm_state, window.get_wm_name())
+         window.send_event(xev, propagate=0, event_mask=0)
+         for child in tree.children:
+            recurse_windows(child, level+1)
+      recurse_windows(screen.root, 0)
+
+def main() -> int:
+   opts = getopts()
+   try:
+      sync_gtk2()
+   except Exception as err:
+      logging.error("Failed to reload GTK2 settings: %s", err)
+      return 1
+   return 0
+
+if __name__ == "__main__":
+    sys.exit(main())
