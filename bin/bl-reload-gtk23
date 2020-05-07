@@ -53,16 +53,22 @@ def sync_gtk2() -> None:
    gtkrc_atom = display.intern_atom("_GTK_READ_RCFILES", False)
    for sno in range(0, display.screen_count()):
       screen = display.screen(sno)
-      xev = Xlib.protocol.event.ClientMessage(
-            window = screen.root,
-            client_type = gtkrc_atom,
-            data = (8, b"\0" * 20)
-      )
       def recurse_windows(window, level):
          tree = window.query_tree()
          wm_state = window.get_property(wm_state_atom, wm_state_atom, 0, 0)
          logging.debug("%s0x%x(%d)[%s]", "┣" + level * "━━━", window.id, not not wm_state, window.get_wm_name())
-         window.send_event(xev, propagate=0, event_mask=0)
+         xev = Xlib.protocol.event.ClientMessage(
+               window      = window,
+               client_type = gtkrc_atom,
+               data        = (8, b"\0" * 20),
+         )
+         window.send_event(
+               xev,
+               propagate  = 0,
+               event_mask = 0,
+         )
+         if wm_state is not None:
+            return
          for child in tree.children:
             recurse_windows(child, level+1)
       recurse_windows(screen.root, 0)
