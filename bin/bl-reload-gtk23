@@ -17,8 +17,8 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from argparse import ArgumentParser, Namespace
-import Xlib.display
-import Xlib.protocol
+import Xlib.display # type: ignore
+import Xlib.protocol # type: ignore
 import logging
 import os
 import sys
@@ -26,14 +26,16 @@ import sys
 DESCRIPTION = ("""After changing GTK2 and GTK3 configuration files, notify running GTK2 and GTK3 clients to apply those changes."""
 """The notification mechanism used by GTK3 requires that xsettingsd, gnome-settings-daemon or a similar settings daemon are running.""")
 
+LOG_FORMAT = "%(asctime)s %(levelname)s %(module)s %(funcName)s() : %(message)s"
+
 def getopts() -> Namespace:
     ap = ArgumentParser(description=DESCRIPTION)
     ap.add_argument("-d", "--debug", action="store_true", default=False, help="Print debug information")
     opts = ap.parse_args()
     if opts.debug:
-        logging.basicConfig(level=logging.DEBUG)
+        logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT)
     else:
-        logging.basicConfig(level=logging.WARN)
+        logging.basicConfig(level=logging.WARN, format=LOG_FORMAT)
     return opts
 
 def sync_gtk2() -> None:
@@ -51,48 +53,56 @@ def sync_gtk2() -> None:
    display = Xlib.display.Display(display=os.getenv("DISPLAY"))
    wm_state_atom = display.intern_atom("WM_STATE", False)
    gtkrc_atom = display.intern_atom("_GTK_READ_RCFILES", False)
+
+   def send_event(window) -> bool:
+      """ Send a _GTK_READ_RCFILES client message to the given X window.
+      Returns true unless an exception occurs. """
+      window.send_event(
+         Xlib.protocol.event.ClientMessage(
+            window      = window,
+            client_type = gtkrc_atom,
+            data        = (8, b"\0" * 20),
+         ),
+         propagate = 0,
+         event_mask = 0
+      )
+      return True
+
+   def recurse_windows(window, parents) -> bool:
+      """ Given a X window, recurse over all its children and selectively
+      apply the send_event function to them. Returns true if an event got sent
+      to at least one window equal or below the given one. """
+      sent = False
+      wm_state = window.get_property(wm_state_atom, wm_state_atom, 0, 0)
+      name = window.get_wm_name()
+      level = len(parents)
+      if wm_state is not None:
+         sent = send_event(window)
+      else:
+         tree = window.query_tree()
+         for child in tree.children:
+            if not recurse_windows(child, parents + [window.id]) and level == 1:
+               sent = send_event(window)
+      logging.debug("%10s %s %s [%24s] [%s]",
+            hex(window.id),
+            "W" if not not wm_state else " ",
+            "S" if sent else " ",
+            name[:24] if name else "",
+            ",".join(map(hex, parents)))
+      return sent
+
    for sno in range(0, display.screen_count()):
       screen = display.screen(sno)
-      def send_event(window) -> bool:
-         window.send_event(
-            Xlib.protocol.event.ClientMessage(
-               window      = window,
-               client_type = gtkrc_atom,
-               data        = (8, b"\0" * 20),
-            ),
-            propagate = 0,
-            event_mask = 0
-         )
-         return True
-      def recurse_windows(window, parents) -> bool:
-         sent = False
-         wm_state = window.get_property(wm_state_atom, wm_state_atom, 0, 0)
-         name = window.get_wm_name()
-         level = len(parents)
-         if wm_state is not None:
-            sent = send_event(window)
-         else:
-            tree = window.query_tree()
-            for child in tree.children:
-               if not recurse_windows(child, parents + [window.id]) and level == 1:
-                  sent = send_event(window)
-         logging.debug("%10s %s %s [%24s] [%s]",
-               hex(window.id),
-               "W" if not not wm_state else " ",
-               "S" if sent else " ",
-               name[:24] if name else "",
-               ",".join(map(hex, parents)))
-
-         return sent
       recurse_windows(screen.root, [])
 
 def main() -> int:
    opts = getopts()
+   ret = 0
    try:
       sync_gtk2()
    except Exception as err:
       logging.error("Failed to reload GTK2 settings: %s", err)
-      return 1
+      ret = max(ret, 1)
    return 0
 
 if __name__ == "__main__":
