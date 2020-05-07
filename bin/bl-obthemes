@@ -1292,17 +1292,7 @@ function restoreGTK(){
 
 function reloadGTK(){ # reload gtk theme after restoring saved config
     debug "\nReloading GTK theme"
-python - <<END
-import gtk
-
-events=gtk.gdk.Event(gtk.gdk.CLIENT_EVENT)
-data=gtk.gdk.atom_intern("_GTK_READ_RCFILES", False)
-events.data_format=8
-events.send_event=True
-events.message_type=data
-events.send_clientmessage_toall()
-
-END
+    bl-reload-gtk23
     hash jgmenu_run 2>/dev/null && jgmenu_run init --apply-gtktheme && debug "\n jgmenu reconfigured"
 }
 
