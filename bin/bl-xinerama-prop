@@ -27,29 +27,28 @@ gi.require_version("Gdk", "3.0")
 from gi.repository import Gdk # type: ignore
 
 DESCRIPTION = """Using the current cursor position, print the dimensions of the monitor the cursor is on."""
+LOG_FORMAT = "%(asctime)s %(levelname)s %(module)s %(funcName)s() : %(message)s"
 
 def getopts() -> Namespace:
     ap = ArgumentParser(description=DESCRIPTION)
     ap.add_argument("-d", "--debug", action="store_true", default=False, help="Print debug information")
     opts = ap.parse_args()
     if opts.debug:
-        logging.basicConfig(level=logging.DEBUG)
+        logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT)
     else:
-        logging.basicConfig(level=logging.WARN)
+        logging.basicConfig(level=logging.WARN, format=LOG_FORMAT)
     return opts
 
 def main() -> int:
     getopts()
 
     display = os.getenv("DISPLAY", None)
-
     if display:
         dsp = Gdk.Display.open(display)
         assert dsp is not None, f"Failed to open X11 display {display} - does it exist?"
     else:
         dsp = Gdk.Display.get_default()
         assert dsp is not None, f"Failed to open GDK default display"
-
     logging.debug("Using display: %s", dsp.get_name())
 
     # NOTE: This won't work correctly in multiseat environments.
