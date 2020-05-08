@@ -57,7 +57,7 @@ def main() -> int:
     ptr_device = seat.get_pointer()
     if ptr_device is None:
         logging.error("No pointer device associated with display - none connected?")
-        return os.EX_UNAVAILABLE
+        return 1
     else:
         logging.debug("Using pointer device is: %s", ptr_device.get_name())
 
@@ -68,7 +68,7 @@ def main() -> int:
     rect = mon.get_geometry()
     print(f"{rect.width} {rect.height}")
 
-    return os.EX_OK
+    return 0
 
 if __name__ == "__main__":
     sys.exit(main())
