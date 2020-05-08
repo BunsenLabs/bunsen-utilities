@@ -27,14 +27,18 @@ import signal
 import subprocess
 import sys
 
-DESCRIPTION = ("""After changing GTK2 and GTK3 configuration files, notify running GTK2 and GTK3 clients to apply those changes."""
-"""The notification mechanism used by GTK3 requires that xsettingsd, gnome-settings-daemon or a similar settings daemon are running.""")
+DESCRIPTION = ("""
+After changing GTK2 and GTK3 configuration files, notify running GTK2 and GTK3
+clients to apply those changes. The notification mechanism used by GTK3 requires
+that xsettingsd is running. If it is installed and not running, the program will
+launch it. Note that xsettingsd does not read settings from GTK3's settings.ini
+- if information is changed, it must be changed in xsettingsd config files as well.""")
 
 LOG_FORMAT = "%(asctime)s %(levelname)s %(module)s %(funcName)s() : %(message)s"
 
 def getopts() -> Namespace:
     ap = ArgumentParser(description=DESCRIPTION)
-    ap.add_argument("-d", "--debug", action="store_true", default=False, help="Print debug information")
+    ap.add_argument("-d", "--debug", action="store_true", default=False, help="print debug information")
     opts = ap.parse_args()
     if opts.debug:
         logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT)
