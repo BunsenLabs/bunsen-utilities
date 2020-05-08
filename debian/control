@@ -60,4 +60,4 @@ Description: Small scripts to use with BunsenLabs.
   - bl-urxlx: Script to convert Xresources colours to rgb for lxterminal.
   - bl-xbk: Script to manage xbindkeys keyboard shortcuts.
   - bl-xinerama-prop: Script to get xinerama properties in a shell script.
-  
+
