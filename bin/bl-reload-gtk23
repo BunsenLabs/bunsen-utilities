@@ -117,10 +117,10 @@ def sync_gtk3():
          logging.debug("Found xsettingsd process and sent SIGHUP: PID %d", proc.pid())
          break
    if not found:
-      xsettingsd_binary = shutil.which("xsettingds")
+      xsettingsd_binary = shutil.which("xsettingsd")
       if xsettingsd_binary is not None:
-         logging.debug("xsettingsd not running; starting from %s", xsettingsd_binary)
          proc = subprocess.Popen([xsettingsd_binary], cwd="/", start_new_session=True)
+         logging.debug("xsettingsd not running; started from %s; PID: %d", xsettingsd_binary, proc.pid)
       else:
          logging.debug("xsettingsd not running and not in PATH, no settings changes propagated")
 
