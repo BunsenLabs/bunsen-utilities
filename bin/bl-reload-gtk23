@@ -21,6 +21,10 @@ import Xlib.display # type: ignore
 import Xlib.protocol # type: ignore
 import logging
 import os
+import psutil
+import shutil
+import signal
+import subprocess
 import sys
 
 DESCRIPTION = ("""After changing GTK2 and GTK3 configuration files, notify running GTK2 and GTK3 clients to apply those changes."""
@@ -95,6 +99,31 @@ def sync_gtk2() -> None:
       screen = display.screen(sno)
       recurse_windows(screen.root, [])
 
+def sync_gtk3():
+   """ GTK3 applications can be notified of changes to their theming via
+   xsettingsd. This requires that the GTK3 theming information has been updated
+   in settings.ini as well as the gsettings schema, managed either by a
+   standalone xettingsd implementation or the gnome-settings-daemon. As for now,
+   we only support reloading `xsettingsd`: Send SIGHUP if we find it running, or
+   start it if it is installed and not running.
+      * https://github.com/swaywm/sway/wiki/GTK-3-settings-on-Wayland
+      * https://github.com/KDE/kde-gtk-config/blob/a5d4ddb3b1a27ec2ee4e1b6957a98a57ad56d39c/kded/configeditor.cpp#L285
+   """
+   found = False
+   for proc in psutil.process_iter():
+      if proc.name() == "xsettingsd":
+         proc.send_signal(signal.SIGHUP)
+         found = True
+         logging.debug("Found xsettingsd process and sent SIGHUP: PID %d", proc.pid())
+         break
+   if not found:
+      xsettingsd_binary = shutil.which("xsettingds")
+      if xsettingsd_binary is not None:
+         logging.debug("xsettingsd not running; starting from %s", xsettingsd_binary)
+         proc = subprocess.Popen([xsettingsd_binary], cwd="/", start_new_session=True)
+      else:
+         logging.debug("xsettingsd not running and not in PATH, no settings changes propagated")
+
 def main() -> int:
    opts = getopts()
    ret = 0
@@ -103,7 +132,12 @@ def main() -> int:
    except Exception as err:
       logging.error("Failed to reload GTK2 settings: %s", err)
       ret = max(ret, 1)
-   return 0
+   try:
+      sync_gtk3()
+   except Exception as err:
+      logging.error("Failed to reload GTK3 settings: %s", err)
+      ret = max(ret, 2)
+   return ret
 
 if __name__ == "__main__":
     sys.exit(main())
