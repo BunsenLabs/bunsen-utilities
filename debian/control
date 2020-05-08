@@ -39,10 +39,10 @@ Description: Small scripts to use with BunsenLabs.
  which might be useful to BunsenLinux users and system administrators.
  .
   - beepmein: Alarm clock script based on 'at'.
+  - bl-conky-manager: Yad-based conky manager.
   - bl-conky-session: Script to handle multiple conky sessions.
   - bl-conkyedit: Script to find and edit conky config files.
   - bl-conkymove: Script to assist the relocation of conky windows.
-  - bl-conky-manager: Yad-based conky manager.
   - bl-image-upload: Generic image upload utility.
   - bl-imgbb-upload: Screenshot and image upload utility for imgbb.
   - bl-imgur-upload: Screenshot and image upload utility for imgur.
@@ -51,11 +51,12 @@ Description: Small scripts to use with BunsenLabs.
   - bl-notify-broadcast: Script to send user notifications from root processes.
   - bl-obthemes: Script to save or restore desktop gui theme configurations.
   - bl-pkg-versions: Utility to display the versions of BunsenLabs packages.
+  - bl-reload-gtk23: Script to notify GTK2/3 clients of GTK2/3 app configuration changes such as theming.
   - bl-setlocale: Yad-based script to set user's locale.
+  - bl-tint2-manager: Yad-based tint2 manager.
   - bl-tint2-session: Script to handle multiple tint2 sessions.
   - bl-tint2edit: Script to find and edit tint2 config files.
   - bl-tint2restart: Script to restart all running tint2 processes.
-  - bl-tint2-manager: Yad-based tint2 manager.
   - bl-urxlx: Script to convert Xresources colours to rgb for lxterminal.
   - bl-xbk: Script to manage xbindkeys keyboard shortcuts.
   - bl-xinerama-prop: Script to get xinerama properties in a shell script.
