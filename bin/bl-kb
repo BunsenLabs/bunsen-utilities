@@ -46,8 +46,8 @@
 ########################################################################
 
 from collections import OrderedDict
-from distutils.spawn import find_executable
 from lxml import etree
+from shutil import which
 from typing import List
 import argparse
 import os
@@ -123,7 +123,7 @@ def emit_stdout(bindings: dict) -> None:
             print(line)
 
 def emit_gui(kbinds_path: str, bindings: dict) -> None:
-    yad_binary = find_executable("yad")
+    yad_binary = which("yad")
     if yad_binary is None:
         raise Exception("Could not find 'yad' in $PATH.")
     subprocess.run([
