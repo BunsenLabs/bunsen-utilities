@@ -32,7 +32,15 @@ After changing GTK2 and GTK3 configuration files, notify running GTK2 and GTK3
 clients to apply those changes. The notification mechanism used by GTK3 requires
 that xsettingsd is running. If it is installed and not running, the program will
 launch it. Note that xsettingsd does not read settings from GTK3's settings.ini
-- if information is changed, it must be changed in xsettingsd config files as well.""")
+- if information is changed, it must be changed in xsettingsd config files as well.
+
+EXIT CODES:
+   0 - both gtk2 and gtk3 clients notified successfully
+   1 - failed to notify gtk2 clients
+   2 - failed to notify gtk3 clients
+   3 - failed to notify gtk2 and gtk3 clients
+
+""")
 
 LOG_FORMAT = "%(asctime)s %(levelname)s %(module)s %(funcName)s() : %(message)s"
 
@@ -61,12 +69,7 @@ def sync_gtk2() -> None:
          * gdk_screen_broadcast_client_message()
       * From kde-gtk-config https://github.com/KDE/kde-gtk-config/blob/a5d4ddb3b1a27ec2ee4e1b6957a98a57ad56d39c/gtkproxies/reload.c
    """
-   try:
-      display = Xlib.display.Display(display=os.getenv("DISPLAY"))
-   except Exception as err:
-      logging.warning("Failed to open X11 display - unable to notify GTK2 clients.") 
-      return
-
+   display = Xlib.display.Display(display=os.getenv("DISPLAY"))
    wm_state_atom = display.intern_atom("WM_STATE", False)
    gtkrc_atom = display.intern_atom("_GTK_READ_RCFILES", False)
 
@@ -134,7 +137,7 @@ def sync_gtk3():
          proc = subprocess.Popen([xsettingsd_binary], cwd="/", start_new_session=True)
          logging.debug("xsettingsd not running; started from %s; PID: %d", xsettingsd_binary, proc.pid)
       else:
-         logging.debug("xsettingsd not running and not in PATH, no settings changes propagated")
+         raise RuntimeError("xsettingsd not running and not in PATH, no settings changes propagated")
 
 def main() -> int:
    opts = getopts()
@@ -142,13 +145,13 @@ def main() -> int:
    try:
       sync_gtk2()
    except Exception as err:
-      logging.error("Failed to reload GTK2 settings: %s", err)
-      ret = max(ret, 1)
+      logging.warning("Failed to reload GTK2 settings: %s", err)
+      ret |= 1<<0
    try:
       sync_gtk3()
    except Exception as err:
-      logging.error("Failed to reload GTK3 settings: %s", err)
-      ret = max(ret, 2)
+      logging.warning("Failed to reload GTK3 settings: %s", err)
+      ret |= 1<<1
    return ret
 
 if __name__ == "__main__":
