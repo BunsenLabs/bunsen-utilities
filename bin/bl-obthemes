@@ -1291,8 +1291,9 @@ function restoreGTK(){
 }
 
 function reloadGTK(){ # reload gtk theme after restoring saved config
+    local cap
     debug "\nReloading GTK theme"
-    bl-reload-gtk23 || true
+    cap=$(bl-reload-gtk23 --force 2>&1) ; debug "\nbl-reload-gtk23: $cap"
     hash jgmenu_run 2>/dev/null && jgmenu_run init --apply-gtktheme && debug "\n jgmenu reconfigured"
 }
 
