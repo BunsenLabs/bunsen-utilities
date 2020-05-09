@@ -1292,7 +1292,7 @@ function restoreGTK(){
 
 function reloadGTK(){ # reload gtk theme after restoring saved config
     debug "\nReloading GTK theme"
-    bl-reload-gtk23
+    bl-reload-gtk23 || true
     hash jgmenu_run 2>/dev/null && jgmenu_run init --apply-gtktheme && debug "\n jgmenu reconfigured"
 }
 
