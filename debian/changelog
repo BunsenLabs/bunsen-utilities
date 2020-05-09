@@ -1,3 +1,12 @@
+bunsen-utilities (10.2.2-1) lithium; urgency=medium
+
+  * Port bl-xinerama-prop to py3 and pygobject - now X11 and Wayland
+    compatible.
+  * Split inline Python from bl-obtheme into bl-reload-gtk23, reimplement
+    using pure Xlib and py3, and add GTK3 support via xsettingsd.
+
+ -- Jens John <twoion@bunsenlabs.org>  Sat, 09 May 2020 20:45:42 +0200
+
 bunsen-utilities (10.2.1-1) lithium; urgency=medium
 
   * Improve formatting of all man pages.
