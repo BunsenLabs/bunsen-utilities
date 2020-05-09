@@ -52,13 +52,21 @@ def sync_gtk2() -> None:
    in order to be able to drop the dependency on the obsolete pygtk library.
    GTK3/pygobject does not support GTK2.
 
+   This function will always fail on non-X11 platforms as the GTK2 client
+   notification mechanism is based on X.
+
    This implementation is based on the following resources:
       * From libgtk2 2.24.18:
          * gdk_event_send_client_message_to_all_recurse()
          * gdk_screen_broadcast_client_message()
       * From kde-gtk-config https://github.com/KDE/kde-gtk-config/blob/a5d4ddb3b1a27ec2ee4e1b6957a98a57ad56d39c/gtkproxies/reload.c
    """
-   display = Xlib.display.Display(display=os.getenv("DISPLAY"))
+   try:
+      display = Xlib.display.Display(display=os.getenv("DISPLAY"))
+   except Exception as err:
+      logging.warning("Failed to open X11 display - unable to notify GTK2 clients.") 
+      return
+
    wm_state_atom = display.intern_atom("WM_STATE", False)
    gtkrc_atom = display.intern_atom("_GTK_READ_RCFILES", False)
 
