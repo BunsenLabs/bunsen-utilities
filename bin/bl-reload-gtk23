@@ -21,7 +21,7 @@ import Xlib.display # type: ignore
 import Xlib.protocol # type: ignore
 import logging
 import os
-import psutil
+import psutil # type: ignore
 import shutil
 import signal
 import subprocess
