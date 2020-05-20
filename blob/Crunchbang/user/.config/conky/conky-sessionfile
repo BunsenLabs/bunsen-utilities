@@ -1,2 +1,2 @@
-sleep 1 && conky -c %USERHOME%/.config/conky/Classic-conky.conf &
+conky -c %USERHOME%/.config/conky/Classic-conky.conf & sleep 1
 
