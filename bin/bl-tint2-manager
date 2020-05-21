@@ -145,8 +145,11 @@ loadDialog() {
         --text="Select Tint2s from the list:" \
         --checklist --width=400 --height=500 \
         --column="Select" --column="tint2 Name" "${LISTTINT[@]}" --separator=":" \
-        $APPLY $OK $CLOSE \
+        $APPLY $CLOSE \
         )
+# For OK button, add to last line of yad command:
+#       $APPLY $OK $CLOSE \
+
     retval=$?
     if (( retval == 1 )); then # close button pressed
         exit 0
@@ -186,6 +189,7 @@ loadDialog() {
             fi
         done
     done
+#   if there is an $OK button that returns 2, it will apply changes and exit
     (( retval == 2 )) && exit 0
 }
 
