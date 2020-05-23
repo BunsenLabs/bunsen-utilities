@@ -1,3 +1,11 @@
+bunsen-utilities (10.2.3-1) lithium; urgency=medium
+
+  * BLOB: adjust some files to match equivalent in BunsenLabs' skel.
+     This is to reduce false file change warnings when restoring a theme.
+  * bl-conky-manager, bl-tint2-manager: remove unnecessary "OK" button.
+
+ -- John Crawley <john@bunsenlabs.org>  Sat, 23 May 2020 16:20:13 +0900
+
 bunsen-utilities (10.2.2-1~jr1) lithium; urgency=medium
 
   * Release for experimental repo.
