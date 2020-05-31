@@ -1,4 +1,4 @@
-<b>Configuration name: Lithium-light</b>
+<b>Configuration name: Lithium_Light_Vertical</b>
 Released with BunsenLabs Lithium
 
 Openbox theme:  BL-Lithium-light\n
