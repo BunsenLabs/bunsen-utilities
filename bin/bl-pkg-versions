@@ -23,13 +23,13 @@ Usage:
 
 Options:
         -h, --help      Show this message.
-        <empty>|lithium Display the Lithium packages.
-        lithium-dev     Display the packages on the lithium-dev server.
-        helium          Display the Helium packages.
-        hydrogen        Display the Hydrogen packages.
+        <empty>|lithium Check the Lithium packages.
+        lithium-dev     Check the packages on the lithium-dev server.
+        helium          Check the Helium packages.
+        hydrogen        Check the Hydrogen packages.
 
 It will display the versions of bunsen packages
-on the BunsenLabs package and GitHub repositories.
+on the BunsenLabs package and GitHub source repositories.
 "
 
 required_commands='curl awk sed tput printf'
@@ -69,7 +69,7 @@ hydrogen)
     ;;
 esac
 
-readonly BUNSEN_PACKAGE_LIST="${SERVER}/debian/dists/${RELEASE}/main/binary-i386/Packages"
+readonly BUNSEN_PACKAGE_LIST="${SERVER}/debian/dists/${RELEASE}/main/binary-amd64/Packages"
 
 missing_commands=
 for i in $required_commands
@@ -80,7 +80,7 @@ done
 Please install the packages containing the missing commands
 and rerun the script."
 
-# get version of GitHub repo from packagename
+# get version of GitHub repo from sourcename
 lookup_github() {
     reponame="$1"
     chlog="${GITHUB_CONTENT_ROOT}/${reponame}/${GITHUB_BRANCH}/debian/changelog"
@@ -90,24 +90,29 @@ lookup_github() {
 
 repo_list=$( curl -sL "$BUNSEN_PACKAGE_LIST" | awk '
 BEGIN{RS="";FS="\n"}
-/\n[ \t]*Source:/ {next}
 /Package:[ \t]*bunsen-/ {
+    delete A
     for(i=1;i<=NF;i++) {
         split($i,F,":")
         A[F[1]] = F[2]
     }
-    print A["Package"], A["Version"]
+    if ( A["Source"]=="" )
+        A["Source"]=A["Package"];
+    if (B[A["Source"]]=="1")
+        next;
+    print A["Source"], A["Version"]
+    B[A["Source"]]="1"
 }
 ')
 
 tput bold
-printf '%-30s %-12s %-12s\n\n' 'Package' 'apt version' 'git version'
+printf '%-30s %-20s %-20s\n\n' 'Source Repo' 'apt version' 'git version'
 tput sgr0
-while read -r pkgname apt_version
+while read -r srcname apt_version
 do
-    git_version=$(lookup_github "$pkgname")
+    git_version=$(lookup_github "$srcname")
     [[ $git_version != "$apt_version" ]] && tput bold
-    printf '%-30s %-12s %-12s\n' "$pkgname" "$apt_version" "$git_version"
+    printf '%-30s %-20s %-20s\n' "$srcname" "$apt_version" "$git_version"
     tput sgr0
 done <<<"$repo_list"
 
