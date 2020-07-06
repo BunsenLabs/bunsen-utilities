@@ -9,6 +9,7 @@ Build-Depends: debhelper (>= 10),
   python3-gi (>= 3.30.4),
   python3-lxml,
   python3-psutil (>= 5.5.1),
+  python3-xdg (>= 0.25),
   python3-xlib
 Standards-Version: 4.3.0
 Homepage: https://github.com/BunsenLabs/bunsen-utilities
@@ -25,6 +26,7 @@ Depends: ${misc:Depends},
   python3-gi (>= 3.30.4),
   python3-lxml,
   python3-psutil (>= 5.5.1),
+  python3-xdg (>= 0.25),
   python3-xlib,
   wmctrl,
   xdotool (>=1:2.20110530.1-3),
