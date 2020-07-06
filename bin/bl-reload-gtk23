@@ -17,9 +17,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, Namespace
-from contextlib import suppress
 from pathlib import Path
-import json
 import logging
 import os
 import shutil
