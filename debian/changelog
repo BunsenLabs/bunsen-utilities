@@ -1,3 +1,10 @@
+bunsen-utilities (10.2.5-1) lithium; urgency=medium
+
+  * BLOB: refresh tint2 files.
+  * bl-reload-gtk23, bl-pkg-versions: small bugfixes.
+
+ -- John Crawley <john@bunsenlabs.org>  Sat, 11 Jul 2020 14:52:51 +0900
+
 bunsen-utilities (10.2.4-1) lithium; urgency=medium
 
   * BLOB: rename Lithium-light to Lithium_Light_Vertical.
