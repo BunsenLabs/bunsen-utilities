@@ -77,7 +77,7 @@ border_color = #888888 20
 
 #-------------------------------------
 # Panel
-panel_items = PTSCP
+panel_items = LTSCP
 panel_size = 99% 30
 panel_margin = 0 1
 panel_padding = 0 0 0
@@ -148,7 +148,7 @@ systray_icon_size = 24
 systray_icon_asb = 100 0 0
 
 #-------------------------------------
-# Launcher  - Panel item = L
+# Launcher - Panel item = L
 launcher_padding = 8 4 4
 launcher_background_id = 0
 launcher_icon_size = 0
@@ -157,7 +157,8 @@ launcher_icon_size = 0
 launcher_tooltip = 1
 # Specify icon theme names with launcher_icon_theme.
 # if you have an XSETTINGS manager running (like xfsettingsd), tint2 will follow your current theme.
-launcher_icon_theme = Papirus-Bunsen-Dark-bluegrey
+launcher_icon_theme = Paper-Bunsen
+launcher_icon_theme_override = 0
 
 # Each launcher_item_app must be a full path to a .desktop file
 # this will have to be made:
@@ -166,6 +167,7 @@ launcher_item_app = /usr/share/applications/bl-file-manager.desktop
 launcher_item_app = /usr/share/applications/bl-text-editor.desktop
 launcher_item_app = /usr/share/applications/bl-terminal-emulator.desktop
 
+#-------------------------------------
 
 # Clock - Panel item = C
 time1_format = %H:%M
@@ -225,12 +227,13 @@ separator_padding = 0 8
 #-------------------------------------
 # Buttons - Panel item = P
 
-# Show Root Menu
+# Exit dialog
 button = new
-button_icon = start-here
+button_icon = /usr/share/images/bunsen/exit/light/poweroff.png
+#button_icon = system-shutdown
 button_text =
-button_tooltip = Main Menu
-button_lclick_command = jgmenu_run
+button_tooltip = Logout/Shutdown...
+button_lclick_command = bl-exit
 button_rclick_command =
 button_mclick_command =
 button_uwheel_command =
@@ -241,13 +244,12 @@ button_background_id = 0
 button_centered = 1
 button_max_icon_size = 28
 
-# Exit dialog
+# Show Root Menu
 button = new
-button_icon = /usr/share/images/bunsen/exit/light/poweroff.png
-#button_icon = system-shutdown
+button_icon = start-here-bunsenlabs
 button_text =
-button_tooltip = Logout/Shutdown...
-button_lclick_command = bl-exit
+button_tooltip = Main Menu
+button_lclick_command = jgmenu_run
 button_rclick_command =
 button_mclick_command =
 button_uwheel_command =
