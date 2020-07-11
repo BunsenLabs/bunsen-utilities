@@ -130,7 +130,7 @@ def sync_gtk3():
       if proc.name() == "xsettingsd":
          proc.send_signal(signal.SIGHUP)
          found = True
-         logging.debug("Found xsettingsd process and sent SIGHUP: PID %d", proc.pid())
+         logging.debug("Found xsettingsd process and sent SIGHUP: PID %d", proc.pid)
          break
    if not found:
       xsettingsd_binary = shutil.which("xsettingsd")
