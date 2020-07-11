@@ -17,7 +17,9 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, Namespace
+from configparser import ConfigParser
 from pathlib import Path
+from typing import Any
 import logging
 import os
 import shutil
@@ -54,13 +56,13 @@ def getopts() -> Namespace:
     ap = ArgumentParser(description=DESCRIPTION, formatter_class=ArgumentDefaultsHelpFormatter)
     ap.add_argument("-d", "--debug", action="store_true", default=False, help="print debug information")
     ap.add_argument("-f", "--force", action="store_true", default=False, help="ignore all errors")
-    ap.add_argument("-s", "--sync-xsettingsd", action="store_true", default=False,
-          help="sync GTK3 settings.ini settings to xsettingsd config file before reloading GTK3 theming")
+    ap.add_argument("-s", "--sync-xsettingsd-from", type=Path, default=Path(xdg.BaseDirectory.save_config_path("gtk-3.0")) / "settings.ini",
+          help="Path GTK3 settings.ini file to sync settings for xsettingsd from", metavar="FILE")
     opts = ap.parse_args()
     if opts.debug:
         logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT)
     else:
-        logging.basicConfig(level=logging.WARN, format=LOG_FORMAT)
+        logging.basicConfig(level=logging.WARNING, format=LOG_FORMAT)
     return opts
 
 def sync_gtk2() -> None:
@@ -123,7 +125,7 @@ def sync_gtk2() -> None:
       screen = display.screen(sno)
       recurse_windows(screen.root, [])
 
-def sync_gtk3(opts: Namespace):
+def sync_gtk3(opts: Namespace) -> None:
    """ GTK3 applications can be notified of changes to their theming via
    xsettingsd. This requires that the GTK3 theming information has been updated
    in settings.ini as well as the gsettings schema, managed either by a
@@ -133,12 +135,14 @@ def sync_gtk3(opts: Namespace):
       * https://github.com/swaywm/sway/wiki/GTK-3-settings-on-Wayland
       * https://github.com/KDE/kde-gtk-config/blob/a5d4ddb3b1a27ec2ee4e1b6957a98a57ad56d39c/kded/configeditor.cpp#L285
    """
-   found = False
+   xsettingsd_process_found = False
+
    xsettingsd_config_dir = Path(xdg.BaseDirectory.save_config_path("xsettingsd"))
    xsettingsd_config_file = xsettingsd_config_dir / "xsettingsd.conf"
+
+   # Be careful when adding new mappings, we do not yet implement all possible GTK3 property types,
+   # for example RGB tuples.
    xsettingsd_properties_mapping = {
-      # Be careful when adding new mappings, we do not yet implement all possible GTK3 property
-      # types, for example RGB tuples.
       "gtk-enable-event-sounds"          : "Net/EnableEventSounds",
       "gtk-enable-input-feedback-sounds" : "Net/EnableInputFeedbackSounds",
       "gtk-icon-theme-name"              : "Net/IconThemeName",
@@ -151,34 +155,51 @@ def sync_gtk3(opts: Namespace):
       "gtk-xft-rgba"                     : "Xft/RGBA",
    }
 
-   if opts.sync_xsettingsd:
-      logging.debug("Preparing to effective sync GTK3 settings to xsettingds config file: %s", xsettingsd_config_file)
+   if opts.sync_xsettingsd_from.is_file() and os.access(opts.sync_xsettingsd_from, os.F_OK | os.R_OK):
+      logging.debug("Loading GTK3 settings from: %s", opts.sync_xsettingsd_from)
       xsettingsd_config_dir.mkdir(0o700, parents=True, exist_ok=True)
       settings = Gtk.Settings.get_default()
+      ini = ConfigParser()
       lines = [
          "# This configuration file is managed by bl-reload-gtk23",
          "# Any changes made to this file may be overwritten",
       ]
-      for source, target in xsettingsd_properties_mapping.items():
-         value = settings.get_property(source)
-         output_value = value
-         if isinstance(value, str):
-            output_value = '"' + output_value.replace('"', '\\"') + '"'
-         if isinstance(value, bool):
-            output_value = 1 if value else 0
-         lines.append(f"{target} {output_value}")
-         logging.debug("Mapping : %s = %s (%s)", source, value, type(value))
-         logging.debug("        : %s %s (%s)", target, output_value, type(output_value))
-      with xsettingsd_config_file.open("w") as HANDLE:
-         HANDLE.write("\n".join(lines + [""]))
+      with opts.sync_xsettingsd_from.open("r") as IN:
+         ini.read_file(IN)
+         if "Settings" in ini:
+            for key, value in ini["Settings"].items():
+               # Use PyGObject as a reference for the property type. This allows us to not have to
+               # infer types by ourselves.
+               target_key = xsettingsd_properties_mapping.get(key, None)
+               if target_key:
+                  value_type = type(settings.get_property(key))
+                  target_value: Any = None
+                  if value_type is bool:
+                     target_value = 1 if value == "true" else 0
+                  elif value_type is str:
+                     target_value = '"' + value.replace('"', '\\"') + '"'
+                  else:
+                     logging.warning("Ignoring source key of unhandled type: %s (%s)", value, value_type)
+                     continue
+                  lines.append(f"{target_key} {target_value}")
+                  logging.debug("Mapping FROM %s = %s (%s)", key, value, value_type)
+                  logging.debug("        TO   %s %s (%s)", target_key, target_value, type(target_value))
+               else:
+                  logging.debug("Ignoring key without defined mapping: %s", key)
+            with xsettingsd_config_file.open("w") as OUT:
+               OUT.write("\n".join(lines + [""]))
+         else:
+            logging.warning("GTK3 config without [Settings] section, ignoring file")
+   else:
+      logging.warning("Argument to -s is not a file or inaccessible, ignoring: %s", opts.sync_xsettingsd_from)
 
    for proc in psutil.process_iter():
       if proc.name() == "xsettingsd":
          proc.send_signal(signal.SIGHUP)
-         found = True
+         xsettingsd_process_found = True
          logging.debug("Found xsettingsd process and sent SIGHUP: PID %d", proc.pid)
          break
-   if not found:
+   if not xsettingsd_process_found:
       xsettingsd_binary = shutil.which("xsettingsd")
       if xsettingsd_binary is not None:
          proc = subprocess.Popen([xsettingsd_binary], cwd="/", start_new_session=True)
@@ -193,12 +214,12 @@ def main() -> int:
       sync_gtk2()
    except Exception as err:
       logging.warning("Failed to reload GTK2 settings: %s", err)
-      ret |= 1<<0
+      ret |= 1 << 0
    try:
       sync_gtk3(opts)
    except Exception as err:
       logging.warning("Failed to reload GTK3 settings: %s", err)
-      ret |= 1<<1
+      ret |= 1 << 1
    return 0 if opts.force else ret
 
 if __name__ == "__main__":
