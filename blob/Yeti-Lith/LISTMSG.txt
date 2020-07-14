@@ -10,7 +10,7 @@ Running Conkys:
 	~/.config/conky/BL-Yeti-conky.conf
 
 Running Tint2s:
-	~/.config/tint2/tint2rc-yeti
+	~/.config/tint2/yeti.tint2rc
 
 dmenu config:  ~/.config/dmenu/dmenu-bind.sh\n
 Lightdm config:  /etc/lightdm/lightdm-gtk-greeter.conf\n(password will be needed to restore)\n

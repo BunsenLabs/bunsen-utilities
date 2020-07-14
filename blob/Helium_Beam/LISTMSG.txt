@@ -5,7 +5,7 @@ Openbox theme:  Beam\n
 GTK theme:  Beam;  Icon Theme: Paper-Bunsen\n
 Background set with nitrogen:\n/usr/share/images/bunsen/wallpapers/default/BL-beam.png;\n
 Running Conkys:\t\n\t~/.config/conky/BL-Helium-conky.conf;\n
-Running Tint2s:\t\n\t~/.config/tint2/tint2rc-helium\n
+Running Tint2s:\t\n\t~/.config/tint2/helium.tint2rc\n
 dmenu config:  ~/.config/dmenu/dmenu-bind.sh\n
 Lightdm config:  /etc/lightdm/lightdm-gtk-greeter.conf\n(password will be needed to restore)\n
 X config:  ~/.Xresources\n
