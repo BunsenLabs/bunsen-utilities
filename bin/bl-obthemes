@@ -67,7 +67,7 @@ Usage:  bl-obthemes [-h|--help][-v|--verbose]
 
 Optional arguments:
         -h, --help      show this message
-        -v, --verbose   describe actions being performed
+        -v, -d, --verbose, --debug   describe actions being performed
 No other CLI options are supported.
 
 Save options:
@@ -132,7 +132,7 @@ do
         echo "$HELP"
         exit 0
         ;;
-    -v|--verbose)
+    -v|-d|--verbose|--debug)
         debug() {
             echo -e "$*"
         }
@@ -155,7 +155,6 @@ CURSESSFILE="$USRCONFIGPATH/current"
 OBPATH="$HOME/.config/openbox"
 RCFILE="$OBPATH/bl-rc.xml" # NB now using the new BunsenLabs file name
 OLDRCFILE="$OBPATH/rc.xml"
-#CONKYPATH="$HOME/.config/conky"
 
 ### USER CONFIG VARIABLES TO BE SAVED AND RESTORED
 GTK2=".gtkrc-2.0"
@@ -169,11 +168,13 @@ XFILE=".Xresources"
 BASHRC=".bashrc"
 #TERMFILE='' # now termfile is set dynamically by checkTerm() in saveSettings()
 
+CONKYPATH=".config/conky"
+TINTPATH=".config/tint2"
 # These will not be saved as-is,
 # but generated from the running conky/tint2 processes.
 # Saved files will be restored.
-CONKYSESSION=".config/conky/conky-sessionfile"
-TINTSESSION=".config/tint2/tint2-sessionfile"
+CONKYSESSION="$CONKYPATH/conky-sessionfile"
+TINTSESSION="$TINTPATH/tint2-sessionfile"
 
 ### SYSTEM CONFIG VARIABLES TO BE SAVED AND RESTORED
 LDMDIR="/etc/lightdm"
@@ -244,6 +245,7 @@ CANCEL="--button=gtk-cancel:1"
 EXIT="--button=gtk-quit:1"
 CLOSE="--button=gtk-close:1"
 
+## USER READABLE LABELS
 PICKOB="OB theme"
 PICKGTK="GTK theme and Icons"
 PICKICONS="Icon theme"
@@ -373,6 +375,53 @@ function upgradeBlobs(){
         mkdir -p "$2"
         mv "$1" "$2" || exit
     }
+    # checks tint sessionfile, updates filenames to new format
+    # tint2 config files will have been renamed from tint2rc-something to something.tint2rc
+    # variable VAL is rewritten
+    check_tintsess() {
+        debug "Checking ${i}/user/$TINTPATH for tint2 file names..."
+        local t2file t2name newt2name
+        local -a tintsession
+        VAL=''
+        mapfile -t tintsession < "$i/user/$TINTSESSION"
+        for t2file in "${tintsession[@]}"
+        do
+            [[ -n $t2file ]] || continue
+            t2name=${t2file##*/}
+            [[ $t2name = *'.tint2rc' ]] && {
+                VAL+=${t2file};
+                continue # already using new name style
+            }
+            newt2name=${t2name#tint2rc-}.tint2rc
+            if [[ -f $i/user/$TINTPATH/$t2name ]] # have local copy, rename
+            then
+                debug "Renaming $t2name to $newt2name in ${i}/user/$TINTPATH"
+                mv "${i}/user/$TINTPATH/$t2name" "${i}/user/$TINTPATH/$newt2name" || {
+                    echo "$0: Upgrading ${i}: WARNING Cannot rename $i/user/$TINTPATH/$t2name" >&2
+                    VAL+=${t2file};
+                }
+                VAL+=$HOME/$TINTPATH/${newt2name};
+            else
+                [[ -f $HOME/$TINTPATH/$newt2name ]] && { # user file already exists with new name, copy it locally
+                    debug "Copying $HOME/$TINTPATH/$newt2name to ${i}/user/$TINTPATH/"
+                    cp "$HOME/$TINTPATH/${newt2name}" "${i}/user/$TINTPATH/" || echo "$0: Upgrading ${i}: WARNING Cannot copy $HOME/$TINTPATH/$newt2name to $i/user/$TINTPATH/" >&2
+                    VAL+=$HOME/$TINTPATH/${newt2name};
+                    continue
+                }
+                [[ -f $t2file ]] && { # user file with current oldstyle name exists, copy it locally with new name
+                    debug "Copying $t2file to ${i}/user/$TINTPATH as $newt2name"
+                    cp "$t2file" "${i}/user/$TINTPATH/$newt2name" || {
+                        echo "$0: Upgrading ${i}: WARNING Cannot copy $t2file to $i/user/$TINTPATH/" >&2
+                        VAL+=${t2file};
+                    }
+                    VAL+=$HOME/$TINTPATH/${newt2name};
+                    continue
+                }
+                echo "$0: Upgrading ${i}: WARNING Cannot find tint2 config file $t2file referred to in $i/user/$TINTSESSION" >&2
+                VAL+=${t2file};
+            fi
+        done
+    }
     for i in "$USRCONFIGPATH"/*; do
         [[ -d $i ]] || continue
         mkdir -p "$i/user"
@@ -385,6 +434,8 @@ function upgradeBlobs(){
                                         mkdir -p "$i/user/${TINTSESSION%/*}"
                                         printf '%s\n' "${VAL//;/$'\n'}" > "$i/user/$TINTSESSION"
                                     }
+                                    check_tintsess # VAL is rewritten
+                                    printf '%s\n' "${VAL//;/$'\n'}" > "$i/user/$TINTSESSION" # rewrite session file with new filenames
                                     printf '%s %s\n' "$TAG" "$VAL" >> "$i/newsettings"
                                     ;;
                 "[CONKY]"       )   [[ -f "$i/user/$CONKYSESSION" ]] || {
