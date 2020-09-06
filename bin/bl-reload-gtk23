@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #
 #    bl-reload-gtk23: Make GTK2/3 reload settings file changes
-#    Copyright (C) 2020 2ion <twoion@bunsenlabs.org>
+#    Copyright (C) 2020 2ion <dev@2ion.de>
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -25,7 +25,6 @@ import os
 import shutil
 import signal
 import subprocess
-import sys
 
 import Xlib.display # type: ignore
 import Xlib.protocol # type: ignore
@@ -168,8 +167,7 @@ def sync_gtk3(opts: Namespace) -> None:
          ini.read_file(IN)
          if "Settings" in ini:
             for key, value in ini["Settings"].items():
-               # Use PyGObject as a reference for the property type. This allows us to not have to
-               # infer types by ourselves.
+               # Use PyGObject as a reference for the property type.
                target_key = xsettingsd_properties_mapping.get(key, None)
                if target_key:
                   value_type = type(settings.get_property(key))
@@ -223,4 +221,4 @@ def main() -> int:
    return 0 if opts.force else ret
 
 if __name__ == "__main__":
-    sys.exit(main())
+   raise SystemExit(main())
