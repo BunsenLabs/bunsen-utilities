@@ -124,7 +124,7 @@ def getopts() -> Namespace:
          help="Path GTK3 settings.ini file to sync settings for xsettingsd from", metavar="FILE")
    ap.add_argument("-n", "--no-sync", action="store_true", default=False,
          help="Do not modify xsettingsd config based on current GTK3 settings but still send SIGHUP to xsettingsd")
-   ap.add_argument("-S", "--sync-no-signal", action="store_true", default=False,
+   ap.add_argument("-S", "--no-signal", action="store_true", default=False,
          help="Do not signal xsettingsd SIGHUP after rewriting its config file on --sync-xsettingsd-from")
    opts = ap.parse_args()
    if opts.debug:
@@ -271,7 +271,7 @@ def sync_gtk3(opts: Namespace) -> None:
    else:
       logging.debug("Skipping syncing of xsettingsd config as requested")
 
-   if not opts.sync_no_signal:
+   if not opts.no_signal:
       for proc in psutil.process_iter():
          if proc.name() == "xsettingsd":
             proc.send_signal(signal.SIGHUP)
