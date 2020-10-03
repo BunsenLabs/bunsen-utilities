@@ -127,7 +127,7 @@ def getopts() -> Namespace:
    ap.add_argument("-S", "--no-signal", action="store_true", default=False,
          help="Do not signal xsettingsd SIGHUP after rewriting its config file on --sync-xsettingsd-from")
    opts = ap.parse_args()
-   if opts.debug:
+   if opts.debug or opts.debug_gtk_mappings:
        logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT)
    else:
        logging.basicConfig(level=logging.WARNING, format=LOG_FORMAT)
@@ -140,8 +140,6 @@ def debug_gtk_mappings() -> None:
       try:
          gtk_value = settings.get_property(gtk_property)
          logging.info(f"%-{align}s = %s (%s)", gtk_property, gtk_value, type(gtk_value))
-         if type(gtk_value) is Gtk.IMPreeditStyle:
-            print(gtk_value.real)
       except TypeError:
          logging.info(f"%-{align}s = ****************** does not exist **************************", gtk_property)
 
