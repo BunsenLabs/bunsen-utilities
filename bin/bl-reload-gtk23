@@ -122,6 +122,8 @@ def getopts() -> Namespace:
    ap.add_argument("-f", "--force", action="store_true", default=False, help="ignore all errors")
    ap.add_argument("-s", "--sync-xsettingsd-from", type=Path, default=Path(xdg.BaseDirectory.save_config_path("gtk-3.0")) / "settings.ini",
          help="Path GTK3 settings.ini file to sync settings for xsettingsd from", metavar="FILE")
+   ap.add_argument("-n", "--no-sync", action="store_true", default=False,
+         help="Do not modify xsettingsd config based on current GTK3 settings but still send SIGHUP to xsettingsd")
    ap.add_argument("-S", "--sync-no-signal", action="store_true", default=False,
          help="Do not signal xsettingsd SIGHUP after rewriting its config file on --sync-xsettingsd-from")
    opts = ap.parse_args()
@@ -218,53 +220,56 @@ def sync_gtk3(opts: Namespace) -> None:
    xsettingsd_config_dir = Path(xdg.BaseDirectory.save_config_path("xsettingsd"))
    xsettingsd_config_file = xsettingsd_config_dir / "xsettingsd.conf"
 
-   if opts.sync_xsettingsd_from.is_file() and os.access(opts.sync_xsettingsd_from, os.F_OK | os.R_OK):
-      logging.debug("Loading GTK3 settings from: %s", opts.sync_xsettingsd_from)
-      xsettingsd_config_dir.mkdir(0o700, parents=True, exist_ok=True)
-      settings = Gtk.Settings.get_default()
-      ini = ConfigParser()
-      lines = [
-         "# This configuration file is managed by bl-reload-gtk23",
-         "# Any changes made to this file may be overwritten",
-      ]
-      with opts.sync_xsettingsd_from.open("r") as IN:
-         ini.read_file(IN)
-         if "Settings" in ini:
-            for key, value in ini["Settings"].items():
-               # Use PyGObject as a reference for the property type.
-               target_key = XSETTINGSD_MAPPINGS.get(key, None)
-               if target_key:
-                  value_type = type(settings.get_property(key))
-                  target_value: Any = None
-                  if value_type is bool:
-                     target_value = 1 if value == "true" else 0
-                  elif value_type is str:
-                     target_value = '"' + value.replace('"', '\\"') + '"'
-                  elif value_type is int:
-                     target_value = int(value)
-                  # Enum types, see --debug-gtk-mappings output for reference
-                  elif (
-                        (value_type is gi.repository.Gtk.ToolbarStyle) or
-                        (value_type is gi.repository.Gtk.IconSize) or
-                        (value_type is gi.repository.Gtk.CornerType) or
-                        (value_type is gi.repository.Gtk.IMStatusStyle) or
-                        (value_type is gi.repository.Gtk.IMPreeditStyle)
-                  ):
-                     target_value = int(value)
+   if not opts.no_sync:
+      if opts.sync_xsettingsd_from.is_file() and os.access(opts.sync_xsettingsd_from, os.F_OK | os.R_OK):
+         logging.debug("Loading GTK3 settings from: %s", opts.sync_xsettingsd_from)
+         xsettingsd_config_dir.mkdir(0o700, parents=True, exist_ok=True)
+         settings = Gtk.Settings.get_default()
+         ini = ConfigParser()
+         lines = [
+            "# This configuration file is managed by bl-reload-gtk23",
+            "# Any changes made to this file may be overwritten",
+         ]
+         with opts.sync_xsettingsd_from.open("r") as IN:
+            ini.read_file(IN)
+            if "Settings" in ini:
+               for key, value in ini["Settings"].items():
+                  # Use PyGObject as a reference for the property type.
+                  target_key = XSETTINGSD_MAPPINGS.get(key, None)
+                  if target_key:
+                     value_type = type(settings.get_property(key))
+                     target_value: Any = None
+                     if value_type is bool:
+                        target_value = 1 if value == "true" else 0
+                     elif value_type is str:
+                        target_value = '"' + value.replace('"', '\\"') + '"'
+                     elif value_type is int:
+                        target_value = int(value)
+                     # Enum types, see --debug-gtk-mappings output for reference
+                     elif (
+                           (value_type is gi.repository.Gtk.ToolbarStyle) or
+                           (value_type is gi.repository.Gtk.IconSize) or
+                           (value_type is gi.repository.Gtk.CornerType) or
+                           (value_type is gi.repository.Gtk.IMStatusStyle) or
+                           (value_type is gi.repository.Gtk.IMPreeditStyle)
+                     ):
+                        target_value = int(value)
+                     else:
+                        logging.warning("Ignoring source key of unhandled type: %s (%s)", value, value_type)
+                        continue
+                     lines.append(f"{target_key} {target_value}")
+                     logging.debug("Mapping FROM %s = %s (%s)", key, value, value_type)
+                     logging.debug("        TO   %s %s (%s)", target_key, target_value, type(target_value))
                   else:
-                     logging.warning("Ignoring source key of unhandled type: %s (%s)", value, value_type)
-                     continue
-                  lines.append(f"{target_key} {target_value}")
-                  logging.debug("Mapping FROM %s = %s (%s)", key, value, value_type)
-                  logging.debug("        TO   %s %s (%s)", target_key, target_value, type(target_value))
-               else:
-                  logging.debug("Ignoring key without defined mapping: %s", key)
-            with xsettingsd_config_file.open("w") as OUT:
-               OUT.write("\n".join(lines + [""]))
-         else:
-            logging.warning("GTK3 config without [Settings] section, ignoring file")
+                     logging.debug("Ignoring key without defined mapping: %s", key)
+               with xsettingsd_config_file.open("w") as OUT:
+                  OUT.write("\n".join(lines + [""]))
+            else:
+               logging.warning("GTK3 config without [Settings] section, ignoring file")
+      else:
+         logging.warning("Argument to -s is not a file or inaccessible, ignoring: %s", opts.sync_xsettingsd_from)
    else:
-      logging.warning("Argument to -s is not a file or inaccessible, ignoring: %s", opts.sync_xsettingsd_from)
+      logging.debug("Skipping syncing of xsettingsd config as requested")
 
    if not opts.sync_no_signal:
       for proc in psutil.process_iter():
@@ -281,7 +286,7 @@ def sync_gtk3(opts: Namespace) -> None:
          else:
             raise RuntimeError("xsettingsd not running and not in PATH, no settings changes propagated")
    else:
-      logging.info("Skipping sending of SIGHUP to xsettingsd as requested")
+      logging.debug("Skipping sending of SIGHUP to xsettingsd as requested")
 
 def main() -> int:
    opts = getopts()
