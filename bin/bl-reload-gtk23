@@ -51,18 +51,97 @@ EXIT CODES:
 
 LOG_FORMAT = "%(asctime)s %(levelname)s %(module)s %(funcName)s() : %(message)s"
 
+# This set of supported xettingsd keys is lifted from the source code of gtk 2.24.23 file
+# gdk/x11/gdksettings.c. See:
+#
+#   * https://www.freedesktop.org/wiki/Specifications/XSettingsRegistry/
+#   * https://developer.gnome.org/gtk3/stable/GtkSettings.html
+#
+# NOTE: There *are* GTK properties that are NOT part of the xsettings client in gtk and have no
+# place (yet) xsettingsd, for example gtk-application-prefer-dark-theme.
+XSETTINGSD_MAPPINGS = {
+   "gtk-button-images"                : "Gtk/ButtonImages",
+   "gtk-can-change-accels"            : "Gtk/CanChangeAccels",
+   "gtk-color-palette"                : "Gtk/ColorPalette",
+   "gtk-color-scheme"                 : "Gtk/ColorScheme",
+   "gtk-cursor-blink"                 : "Net/CursorBlink",
+   "gtk-cursor-blink-time"            : "Net/CursorBlinkTime",
+   "gtk-cursor-blink-timeout"         : "Gtk/CursorBlinkTimeout",
+   "gtk-cursor-theme-name"            : "Gtk/CursorThemeName",
+   "gtk-cursor-theme-size"            : "Gtk/CursorThemeSize",
+   "gtk-decoration-layout"            : "Gtk/DecorationLayout",
+   "gtk-dialogs-use-header"           : "Gtk/DialogsUseHeader",
+   "gtk-dnd-drag-threshold"           : "Net/DndDragThreshold",
+   "gtk-double-click-distance"        : "Net/DoubleClickDistance",
+   "gtk-double-click-time"            : "Net/DoubleClickTime",
+   "gtk-enable-accels"                : "Gtk/EnableAccels",
+   "gtk-enable-animations"            : "Gtk/EnableAnimations",
+   "gtk-enable-event-sounds"          : "Net/EnableEventSounds",
+   "gtk-enable-input-feedback-sounds" : "Net/EnableInputFeedbackSounds",
+   "gtk-enable-primary-paste"         : "Gtk/EnablePrimaryPaste",
+   "gtk-font-name"                    : "Gtk/FontName",
+   "gtk-fontconfig-timestamp"         : "Fontconfig/Timestamp",
+   "gtk-icon-sizes"                   : "Gtk/IconSizes",
+   "gtk-icon-theme-name"              : "Net/IconThemeName",
+   "gtk-im-module"                    : "Gtk/IMModule",
+   "gtk-im-preedit-style"             : "Gtk/IMPreeditStyle",
+   "gtk-im-status-style"              : "Gtk/IMStatusStyle",
+   "gtk-key-theme-name"               : "Gtk/KeyThemeName",
+   "gtk-keynav-use-caret"             : "Gtk/KeynavUseCaret",
+   "gtk-menu-bar-accel"               : "Gtk/MenuBarAccel",
+   "gtk-menu-images"                  : "Gtk/MenuImages",
+   "gtk-modules"                      : "Gtk/Modules",
+   "gtk-overlay-scrolling"            : "Gtk/OverlayScrolling",
+   "gtk-primary-button-warps-slider"  : "Gtk/PrimaryButtonWarpsSlider",
+   "gtk-recent-files-enabled"         : "Gtk/RecentFilesEnabled",
+   "gtk-recent-files-max-age"         : "Gtk/RecentFilesMaxAge",
+   "gtk-scrolled-window-placement"    : "Gtk/ScrolledWindowPlacement",
+   "gtk-session-bus-id"               : "Gtk/SessionBusId",
+   "gtk-shell-shows-app-menu"         : "Gtk/ShellShowsAppMenu",
+   "gtk-shell-shows-desktop"          : "Gtk/ShellShowsDesktop",
+   "gtk-shell-shows-menubar"          : "Gtk/ShellShowsMenubar",
+   "gtk-sound-theme-name"             : "Net/SoundThemeName",
+   "gtk-theme-name"                   : "Net/ThemeName",
+   "gtk-titlebar-double-click"        : "Gtk/TitlebarDoubleClick",
+   "gtk-titlebar-middle-click"        : "Gtk/TitlebarMiddleClick",
+   "gtk-titlebar-right-click"         : "Gtk/TitlebarRightClick",
+   "gtk-toolbar-icon-size"            : "Gtk/ToolbarIconSize",
+   "gtk-toolbar-style"                : "Gtk/ToolbarStyle",
+   "gtk-xft-antialias"                : "Xft/Antialias",
+   "gtk-xft-dpi"                      : "Xft/DPI",
+   "gtk-xft-hinting"                  : "Xft/Hinting",
+   "gtk-xft-hintstyle"                : "Xft/HintStyle",
+   "gtk-xft-rgba"                     : "Xft/RGBA",
+}
+
 def getopts() -> Namespace:
-    ap = ArgumentParser(description=DESCRIPTION, formatter_class=ArgumentDefaultsHelpFormatter)
-    ap.add_argument("-d", "--debug", action="store_true", default=False, help="print debug information")
-    ap.add_argument("-f", "--force", action="store_true", default=False, help="ignore all errors")
-    ap.add_argument("-s", "--sync-xsettingsd-from", type=Path, default=Path(xdg.BaseDirectory.save_config_path("gtk-3.0")) / "settings.ini",
-          help="Path GTK3 settings.ini file to sync settings for xsettingsd from", metavar="FILE")
-    opts = ap.parse_args()
-    if opts.debug:
-        logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT)
-    else:
-        logging.basicConfig(level=logging.WARNING, format=LOG_FORMAT)
-    return opts
+   ap = ArgumentParser(description=DESCRIPTION, formatter_class=ArgumentDefaultsHelpFormatter)
+   ap.add_argument("-d", "--debug", action="store_true", default=False, help="print debug information")
+   ap.add_argument("--debug-gtk-mappings", action="store_true", default=False,
+         help="Pure debug action: dump the would-be GTK property type mappings and exit")
+   ap.add_argument("-f", "--force", action="store_true", default=False, help="ignore all errors")
+   ap.add_argument("-s", "--sync-xsettingsd-from", type=Path, default=Path(xdg.BaseDirectory.save_config_path("gtk-3.0")) / "settings.ini",
+         help="Path GTK3 settings.ini file to sync settings for xsettingsd from", metavar="FILE")
+   ap.add_argument("-S", "--sync-no-signal", action="store_true", default=False,
+         help="Do not signal xsettingsd SIGHUP after rewriting its config file on --sync-xsettingsd-from")
+   opts = ap.parse_args()
+   if opts.debug:
+       logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT)
+   else:
+       logging.basicConfig(level=logging.WARNING, format=LOG_FORMAT)
+   return opts
+
+def debug_gtk_mappings() -> None:
+   settings = Gtk.Settings.get_default()
+   align = max(len(k) for k in XSETTINGSD_MAPPINGS) + 1
+   for gtk_property in XSETTINGSD_MAPPINGS:
+      try:
+         gtk_value = settings.get_property(gtk_property)
+         logging.info(f"%-{align}s = %s (%s)", gtk_property, gtk_value, type(gtk_value))
+         if type(gtk_value) is Gtk.IMPreeditStyle:
+            print(gtk_value.real)
+      except TypeError:
+         logging.info(f"%-{align}s = ****************** does not exist **************************", gtk_property)
 
 def sync_gtk2() -> None:
    """ Tell GTK2 X11 clients to reload the GTK RC files and update their
@@ -139,21 +218,6 @@ def sync_gtk3(opts: Namespace) -> None:
    xsettingsd_config_dir = Path(xdg.BaseDirectory.save_config_path("xsettingsd"))
    xsettingsd_config_file = xsettingsd_config_dir / "xsettingsd.conf"
 
-   # Be careful when adding new mappings, we do not yet implement all possible GTK3 property types,
-   # for example RGB tuples.
-   xsettingsd_properties_mapping = {
-      "gtk-enable-event-sounds"          : "Net/EnableEventSounds",
-      "gtk-enable-input-feedback-sounds" : "Net/EnableInputFeedbackSounds",
-      "gtk-icon-theme-name"              : "Net/IconThemeName",
-      "gtk-sound-theme-name"             : "Net/SoundThemeName",
-      "gtk-theme-name"                   : "Net/ThemeName",
-      "gtk-xft-antialias"                : "Xft/Antialias",
-      "gtk-xft-dpi"                      : "Xft/DPI",
-      "gtk-xft-hinting"                  : "Xft/Hinting",
-      "gtk-xft-hintstyle"                : "Xft/HintStyle",
-      "gtk-xft-rgba"                     : "Xft/RGBA",
-   }
-
    if opts.sync_xsettingsd_from.is_file() and os.access(opts.sync_xsettingsd_from, os.F_OK | os.R_OK):
       logging.debug("Loading GTK3 settings from: %s", opts.sync_xsettingsd_from)
       xsettingsd_config_dir.mkdir(0o700, parents=True, exist_ok=True)
@@ -168,7 +232,7 @@ def sync_gtk3(opts: Namespace) -> None:
          if "Settings" in ini:
             for key, value in ini["Settings"].items():
                # Use PyGObject as a reference for the property type.
-               target_key = xsettingsd_properties_mapping.get(key, None)
+               target_key = XSETTINGSD_MAPPINGS.get(key, None)
                if target_key:
                   value_type = type(settings.get_property(key))
                   target_value: Any = None
@@ -176,6 +240,17 @@ def sync_gtk3(opts: Namespace) -> None:
                      target_value = 1 if value == "true" else 0
                   elif value_type is str:
                      target_value = '"' + value.replace('"', '\\"') + '"'
+                  elif value_type is int:
+                     target_value = int(value)
+                  # Enum types, see --debug-gtk-mappings output for reference
+                  elif (
+                        (value_type is gi.repository.Gtk.ToolbarStyle) or
+                        (value_type is gi.repository.Gtk.IconSize) or
+                        (value_type is gi.repository.Gtk.CornerType) or
+                        (value_type is gi.repository.Gtk.IMStatusStyle) or
+                        (value_type is gi.repository.Gtk.IMPreeditStyle)
+                  ):
+                     target_value = int(value)
                   else:
                      logging.warning("Ignoring source key of unhandled type: %s (%s)", value, value_type)
                      continue
@@ -191,23 +266,35 @@ def sync_gtk3(opts: Namespace) -> None:
    else:
       logging.warning("Argument to -s is not a file or inaccessible, ignoring: %s", opts.sync_xsettingsd_from)
 
-   for proc in psutil.process_iter():
-      if proc.name() == "xsettingsd":
-         proc.send_signal(signal.SIGHUP)
-         xsettingsd_process_found = True
-         logging.debug("Found xsettingsd process and sent SIGHUP: PID %d", proc.pid)
-         break
-   if not xsettingsd_process_found:
-      xsettingsd_binary = shutil.which("xsettingsd")
-      if xsettingsd_binary is not None:
-         proc = subprocess.Popen([xsettingsd_binary], cwd="/", start_new_session=True)
-         logging.debug("xsettingsd not running; started from %s; PID: %d", xsettingsd_binary, proc.pid)
-      else:
-         raise RuntimeError("xsettingsd not running and not in PATH, no settings changes propagated")
+   if not opts.sync_no_signal:
+      for proc in psutil.process_iter():
+         if proc.name() == "xsettingsd":
+            proc.send_signal(signal.SIGHUP)
+            xsettingsd_process_found = True
+            logging.debug("Found xsettingsd process and sent SIGHUP: PID %d", proc.pid)
+            break
+      if not xsettingsd_process_found:
+         xsettingsd_binary = shutil.which("xsettingsd")
+         if xsettingsd_binary is not None:
+            proc = subprocess.Popen([xsettingsd_binary], cwd="/", start_new_session=True)
+            logging.debug("xsettingsd not running; started from %s; PID: %d", xsettingsd_binary, proc.pid)
+         else:
+            raise RuntimeError("xsettingsd not running and not in PATH, no settings changes propagated")
+   else:
+      logging.info("Skipping sending of SIGHUP to xsettingsd as requested")
 
 def main() -> int:
    opts = getopts()
    ret = 0
+
+   if opts.debug_gtk_mappings:
+      try:
+         debug_gtk_mappings()
+      except Exception as err:
+         logging.warning("debug_gtk_mappings() failed: %s", err)
+         ret |= 1 << 2
+      return 0 if opts.force else ret
+
    try:
       sync_gtk2()
    except Exception as err:
