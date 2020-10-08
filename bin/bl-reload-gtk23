@@ -105,8 +105,6 @@ XSETTINGSD_MAPPINGS = {
    "gtk-titlebar-double-click"        : "Gtk/TitlebarDoubleClick",
    "gtk-titlebar-middle-click"        : "Gtk/TitlebarMiddleClick",
    "gtk-titlebar-right-click"         : "Gtk/TitlebarRightClick",
-   "gtk-toolbar-icon-size"            : "Gtk/ToolbarIconSize",
-   "gtk-toolbar-style"                : "Gtk/ToolbarStyle",
    "gtk-xft-antialias"                : "Xft/Antialias",
    "gtk-xft-dpi"                      : "Xft/DPI",
    "gtk-xft-hinting"                  : "Xft/Hinting",
