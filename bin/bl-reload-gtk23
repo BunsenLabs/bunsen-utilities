@@ -228,7 +228,11 @@ def sync_gtk3(opts: Namespace) -> None:
                   # Use PyGObject as a reference for the property type.
                   target_key = XSETTINGSD_MAPPINGS.get(key, None)
                   if target_key:
-                     value_type = type(settings.get_property(key))
+                     try:
+                        value_type = type(settings.get_property(key))
+                     except TypeError:
+                        logging.warning("Found setting %s in settings which is not known to the currently installed GTK3 version, ignoring.", key)
+                        continue
                      target_value: Any = None
                      if value_type is bool:
                         target_value = 1 if value in TRUTHY else 0
