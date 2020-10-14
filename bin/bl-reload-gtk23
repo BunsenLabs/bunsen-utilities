@@ -112,7 +112,8 @@ XSETTINGSD_MAPPINGS = {
    "gtk-xft-rgba"                     : "Xft/RGBA",
 }
 
-TRUTHY = { "1", "true" }
+# It is unknown if this list is complete.
+TRUTHY = { "1", "true", "TRUE" }
 
 def getopts() -> Namespace:
    ap = ArgumentParser(description=DESCRIPTION, formatter_class=ArgumentDefaultsHelpFormatter)
