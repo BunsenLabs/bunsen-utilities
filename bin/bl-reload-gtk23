@@ -40,6 +40,7 @@ those changes. The notification mechanism used by GTK3 requires that xsettingsd 
 installed and not running, the program will launch it.
 
 EXIT CODES:
+
    0 - both gtk2 and gtk3 clients notified successfully
    1 - failed to notify gtk2 clients
    2 - failed to notify gtk3 clients
@@ -213,6 +214,7 @@ def sync_gtk3(opts: Namespace) -> None:
    standalone xettingsd implementation or the gnome-settings-daemon. As for now,
    we only support reloading `xsettingsd`: Send SIGHUP if we find it running, or
    start it if it is installed and not running.
+      * https://www.freedesktop.org/wiki/Specifications/XSettingsRegistry/
       * https://github.com/swaywm/sway/wiki/GTK-3-settings-on-Wayland
       * https://github.com/KDE/kde-gtk-config/blob/a5d4ddb3b1a27ec2ee4e1b6957a98a57ad56d39c/kded/configeditor.cpp#L285
    """
