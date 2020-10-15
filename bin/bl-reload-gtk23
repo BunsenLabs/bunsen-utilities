@@ -35,11 +35,9 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk # type: ignore
 
 DESCRIPTION = ("""
-After changing GTK2 and GTK3 configuration files, notify running GTK2 and GTK3
-clients to apply those changes. The notification mechanism used by GTK3 requires
-that xsettingsd is running. If it is installed and not running, the program will
-launch it. Note that xsettingsd does not read settings from GTK3's settings.ini
-- if information is changed, it must be changed in xsettingsd config files as well.
+After changing GTK2 and GTK3 configuration files, notify running GTK2 and GTK3 clients to apply
+those changes. The notification mechanism used by GTK3 requires that xsettingsd is running. If it is
+installed and not running, the program will launch it.
 
 EXIT CODES:
    0 - both gtk2 and gtk3 clients notified successfully
@@ -123,10 +121,10 @@ def getopts() -> Namespace:
    ap = ArgumentParser(description=DESCRIPTION, formatter_class=ArgumentDefaultsHelpFormatter)
    ap.add_argument("-d", "--debug", action="store_true", default=False, help="print debug information")
    ap.add_argument("--debug-gtk-mappings", action="store_true", default=False,
-         help="Pure debug action: dump the would-be GTK property type mappings and exit")
+         help="debug action without side effects: dump the would-be GTK property type mappings and exit")
    ap.add_argument("-f", "--force", action="store_true", default=False, help="ignore all errors")
    ap.add_argument("-s", "--sync-xsettingsd-from", type=Path, default=Path(xdg.BaseDirectory.save_config_path("gtk-3.0")) / "settings.ini",
-         help="Path GTK3 settings.ini file to sync settings for xsettingsd from", metavar="FILE")
+         help="Path of GTK3 settings.ini file to sync settings for xsettingsd from", metavar="FILE")
    ap.add_argument("-n", "--no-sync", action="store_true", default=False,
          help="Do not modify xsettingsd config based on current GTK3 settings but still send SIGHUP to xsettingsd")
    ap.add_argument("-S", "--no-signal", action="store_true", default=False,
