@@ -230,7 +230,6 @@ def sync_gtk3(opts: Namespace) -> None:
    if not opts.no_sync:
       if opts.sync_xsettingsd_from.is_file() and os.access(opts.sync_xsettingsd_from, os.F_OK | os.R_OK):
          logging.debug("Loading GTK3 settings from: %s", opts.sync_xsettingsd_from)
-         xsettingsd_config_dir.mkdir(0o700, parents=True, exist_ok=True)
          settings = Gtk.Settings.get_default()
          ini = ConfigParser()
          lines = [
