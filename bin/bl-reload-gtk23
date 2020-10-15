@@ -219,8 +219,13 @@ def sync_gtk3(opts: Namespace) -> None:
       * https://github.com/KDE/kde-gtk-config/blob/a5d4ddb3b1a27ec2ee4e1b6957a98a57ad56d39c/kded/configeditor.cpp#L285
    """
    xsettingsd_process_found = False
-   xsettingsd_config_dir = Path(xdg.BaseDirectory.save_config_path("xsettingsd"))
-   xsettingsd_config_file = xsettingsd_config_dir / "xsettingsd.conf"
+   try:
+      # save_config_path() has the side effect of creating the path if it does not already exist.
+      # This can of course fail.
+      xsettingsd_config_dir = Path(xdg.BaseDirectory.save_config_path("xsettingsd"))
+      xsettingsd_config_file = xsettingsd_config_dir / "xsettingsd.conf"
+   except Exception as err:
+      raise RuntimeError("XDG failed to create the current user's xsettingsd directory")
 
    if not opts.no_sync:
       if opts.sync_xsettingsd_from.is_file() and os.access(opts.sync_xsettingsd_from, os.F_OK | os.R_OK):
