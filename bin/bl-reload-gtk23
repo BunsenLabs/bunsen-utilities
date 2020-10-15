@@ -19,7 +19,7 @@
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, Namespace
 from configparser import ConfigParser
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator, Tuple, AbstractSet
 import logging
 import os
 import shutil
@@ -218,6 +218,39 @@ def sync_gtk3(opts: Namespace) -> None:
       * https://github.com/swaywm/sway/wiki/GTK-3-settings-on-Wayland
       * https://github.com/KDE/kde-gtk-config/blob/a5d4ddb3b1a27ec2ee4e1b6957a98a57ad56d39c/kded/configeditor.cpp#L285
    """
+
+   def map_gtk_to_xsettingsd(pairs: AbstractSet[Tuple[str, str]]) -> Iterator[str]:
+      """ Takes a key-value pair from settings.ini, and generates a line for xsettingsd.conf if
+      there is a valid mapping. """
+      settings = Gtk.Settings.get_default()
+      for key, value in pairs:
+         # Use PyGObject as a reference for the property type.
+         target_key = XSETTINGSD_MAPPINGS.get(key, None)
+         if target_key:
+            try:
+               value_type = type(settings.get_property(key))
+            except TypeError:
+               logging.warning("Found setting %s in settings which is not known to the currently installed GTK3 version, ignoring.", key)
+               continue
+            target_value: Any = None
+            if value_type is bool:
+               target_value = 1 if value in TRUTHY else 0
+            elif value_type is str:
+               target_value = '"' + value.replace('"', '\\"') + '"'
+            elif value_type is int:
+               target_value = int(value)
+            # Enum types, see --debug-gtk-mappings output for reference
+            elif value_type in GTK_ENUMS:
+               target_value = int(value)
+            else:
+               logging.warning("Ignoring source key of unhandled type: %s (%s)", value, value_type)
+               continue
+            logging.debug("Mapping FROM %s = %s (%s)", key, value, value_type)
+            logging.debug("        TO   %s %s (%s)", target_key, target_value, type(target_value))
+            yield f"{target_key} {target_value}"
+         else:
+            logging.debug("Ignoring key without defined mapping: %s", key)
+
    xsettingsd_process_found = False
    try:
       # save_config_path() has the side effect of creating the path if it does not already exist.
@@ -230,7 +263,6 @@ def sync_gtk3(opts: Namespace) -> None:
    if not opts.no_sync:
       if opts.sync_xsettingsd_from.is_file() and os.access(opts.sync_xsettingsd_from, os.F_OK | os.R_OK):
          logging.debug("Loading GTK3 settings from: %s", opts.sync_xsettingsd_from)
-         settings = Gtk.Settings.get_default()
          ini = ConfigParser()
          lines = [
             "# This configuration file is managed by bl-reload-gtk23",
@@ -239,33 +271,7 @@ def sync_gtk3(opts: Namespace) -> None:
          with opts.sync_xsettingsd_from.open("r") as IN:
             ini.read_file(IN)
             if "Settings" in ini:
-               for key, value in ini["Settings"].items():
-                  # Use PyGObject as a reference for the property type.
-                  target_key = XSETTINGSD_MAPPINGS.get(key, None)
-                  if target_key:
-                     try:
-                        value_type = type(settings.get_property(key))
-                     except TypeError:
-                        logging.warning("Found setting %s in settings which is not known to the currently installed GTK3 version, ignoring.", key)
-                        continue
-                     target_value: Any = None
-                     if value_type is bool:
-                        target_value = 1 if value in TRUTHY else 0
-                     elif value_type is str:
-                        target_value = '"' + value.replace('"', '\\"') + '"'
-                     elif value_type is int:
-                        target_value = int(value)
-                     # Enum types, see --debug-gtk-mappings output for reference
-                     elif value_type in GTK_ENUMS:
-                        target_value = int(value)
-                     else:
-                        logging.warning("Ignoring source key of unhandled type: %s (%s)", value, value_type)
-                        continue
-                     lines.append(f"{target_key} {target_value}")
-                     logging.debug("Mapping FROM %s = %s (%s)", key, value, value_type)
-                     logging.debug("        TO   %s %s (%s)", target_key, target_value, type(target_value))
-                  else:
-                     logging.debug("Ignoring key without defined mapping: %s", key)
+               lines.extend(map_gtk_to_xsettingsd(ini["Settings"].items()))
                with xsettingsd_config_file.open("w") as OUT:
                   OUT.write("\n".join(lines + [""]))
             else:
