@@ -1357,7 +1357,8 @@ function reloadGTK(){ # reload gtk theme after restoring saved config
     local cap
     debug "\nReloading GTK theme"
     cap=$(bl-reload-gtk23 --force 2>&1) ; debug "\nbl-reload-gtk23: $cap"
-    hash jgmenu_run 2>/dev/null && jgmenu_run gtktheme && debug "\n jgmenu reconfigured"
+    # jgmenu now has a hook on ~/.config/gtk-3.0/settings.ini
+    #hash jgmenu_run 2>/dev/null && jgmenu_run init --apply-gtktheme && debug "\n jgmenu reconfigured"
 }
 
 # next time xfce4-notifyd is called it will restart the two daemons, with latest config
@@ -1747,7 +1748,7 @@ restoreSettings() {
     while read -r TAG VAL; do
         case "$TAG" in
             "[OBTHEME]"     )   labels+=("$PICKOB")       # Order of associative array values is not defined,
-                                values["$PICKOB"]="$VAL"  # but indexed array labels preserves order of settings.cfg.
+                                values["$PICKOB"]="$VAL"  # but indexed array "labels" preserves order of settings.cfg.
                                 ;;
             "[GTK]"         )   labels+=("$PICKGTK")
                                 values["$PICKGTK"]="$VAL"
