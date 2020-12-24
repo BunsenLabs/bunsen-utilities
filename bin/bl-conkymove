@@ -319,6 +319,11 @@ unset CONKYPATH config posX_1 posY_1 posX_2 posY_2 OFFSET_X OFFSET_Y gapX gapY
 
 trap restore_wintype EXIT
 
+# reload conky config to work around a bug
+# where conky seems to be part of root desktop window
+# https://forums.bunsenlabs.org/viewtopic.php?id=7111
+pkill -HUP -x conky
+
 yad_question "Click 'Select Conky' to pick a conky.\n\nThen use the 'xwininfo' cursor on the chosen conky\nto record its position." \
      --button="Select Conky:0" --button="gtk-cancel:1"
 
