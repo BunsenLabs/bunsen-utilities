@@ -118,10 +118,11 @@ WARNING:
  can be saved, but will not be seen when running the bl conky chooser.
 
 KNOWN ISSUES:
- Virtualbox does not allow the guest to move the host mouse cursor, using xdotool,
- so the screenshot may produce an incorrect theme displayed and/or poor positioning.
- A workaround is to move the cursor to some free space, and use the "Enter" key in the
- "Configurations to be saved:" dialog.
+ Virtualbox does not allow the guest to move the host mouse cursor,
+ using xdotool, so the screenshot may produce an incorrect theme displayed
+ and/or poor positioning.
+ A workaround is to move the cursor to some free space, and use
+ the "Enter" key in the "Configurations to be saved:" dialog.
 '
 
 debug() { : ;}
@@ -286,6 +287,11 @@ yad_warning() {
     --image="dialog-warning" --width=300 "$CLOSE"
 }
 
+yad_warning_option() {
+    yad "${popup_args[@]}" --text="$1" \
+    --image="dialog-warning" --width=300 --button="Continue anyway:0" "$EXIT"
+}
+
 yad_fatal_error() {
     yad "${popup_args[@]}" --text="$1" \
     --image="dialog-error" --width=300 "$EXIT"
@@ -293,13 +299,18 @@ yad_fatal_error() {
 
 ### END DIALOG FUNCTIONS
 
-# Trap will pass the line number where the error ocurred as $1
+# Trap will pass the line number where the error ocurred as $1,
+# and the command run on that line as $2.
 # This should not be needed once error handling is all done separately.
-trap_error_exit(){
-    local msg="An error ocurred on line ${1}.\nPlease report this to the developers!"
+trap_error(){
+    local msg="An error ocurred on line ${1}, running command '${2}'.\nPlease consider reporting this to the developers."
     echo -e "$0: $msg" >&2
-    yad_fatal_error "$msg"
-    exit 1
+    if yad_warning_option "$msg"
+    then
+        debug "Continuing despite restore error."
+    else
+        exit 1
+    fi
 }
 
 # This is run at the start.
@@ -1811,9 +1822,9 @@ restoreSettings() {
         break
     done
 
-    # exit if any restore function fails
+    # Offer to exit if any restore function fails.
     # TODO: add 'return 1' to functions as needed
-    trap 'trap_error_exit $LINENO' ERR
+    trap 'trap_error $LINENO "$BASH_COMMAND"' ERR
 
     # Go through user's selected choices.
     while read -r label
