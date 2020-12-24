@@ -1338,16 +1338,25 @@ function checkGTK(){    # check if gtk theme is still present
 function restoreGTK(){
     restoreFiles "$GTK2" "$GTK2MINE" "$GTK3" "$GTK3x"
     reloadGTK
-    restartThunar
+    reloadXfceNotifyd
+    # restartThunar # not needed now that bl-reloadgtk23 updates xsettings
 }
 
 function reloadGTK(){ # reload gtk theme after restoring saved config
     local cap
     debug "\nReloading GTK theme"
     cap=$(bl-reload-gtk23 --force 2>&1) ; debug "\nbl-reload-gtk23: $cap"
-    hash jgmenu_run 2>/dev/null && jgmenu_run init --apply-gtktheme && debug "\n jgmenu reconfigured"
+    hash jgmenu_run 2>/dev/null && jgmenu_run gtktheme && debug "\n jgmenu reconfigured"
 }
 
+# next time xfce4-notifyd is called it will restart the two daemons, with latest config
+function reloadXfceNotifyd(){
+    debug "Stopping xfconf and xfce4-notify daemons."
+    pkill -x xfconfd || debug "WARNING: cannot kill xfconfd"
+    pkill -x xfce4-notifyd || debug "WARNING: cannot kill xfce4-notifyd"
+}
+
+# this function is not used now that bl-reloadgtk23 updates xsettingsd
 function restartThunar(){
     pkill -fx 'thunar[[:blank:]]+--daemon' || return 0
     debug "Stopped Thunar daemon, now restarting..."
