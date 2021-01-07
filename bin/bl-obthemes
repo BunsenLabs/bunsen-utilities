@@ -1359,7 +1359,12 @@ function checkGTK(){    # check if gtk theme is still present
 
 # THEMEPATH is global set by displayBlobs()
 function restoreGTK(){
+    safeKill jgmenu # If jgmenu is not running, GTK3 file edit will not trigger hook.
     restoreFiles "$GTK2" "$GTK2MINE" "$GTK3" "$GTK3x"
+    # If jgmenu cache is set, restart will not trigger GTK sync.
+    # This means GTK sync will have to be done in this script, if wanted.
+    # Currently done in restoreSettings().
+    jgmenu_write_gtkcache "$THEMEPATH/user/$GTK3/settings.ini"
     reloadGTK
     reloadXfceNotifyd
     # restartThunar # not needed now that bl-reload-gtk23 updates xsettings
@@ -1371,6 +1376,41 @@ function reloadGTK(){ # reload gtk theme after restoring saved config
     cap=$(bl-reload-gtk23 --force 2>&1) ; debug "bl-reload-gtk23: ${cap:-done}\n"
     # jgmenu now has a hook on ~/.config/gtk-3.0/settings.ini
     #hash jgmenu_run 2>/dev/null && jgmenu_run init --apply-gtktheme && debug "\n jgmenu reconfigured"
+}
+
+# get gtk theme name from keyfile
+parse_gtktheme (){
+    local keyfile key value
+    [[ -r "$1" ]] || {
+        echo "Cannot read GTK keyfile $1" >&2
+        return 1
+    }
+    keyfile="$1"
+    while IFS='=' read -r key value; do
+        key=${key#"${key%%[![:blank:]]*}"} # strip any leading spaces
+        key=${key%"${key##*[![:blank:]]}"} # " " trailing " "
+        if [[ "${key}" = 'gtk-theme-name' ]]; then
+            value=${value%%#*} # strip trailing comments
+            value=${value#"${value%%[![:blank:]]*}"}
+            value=${value%"${value##*[![:blank:]]}"}
+            printf '%s' "${value}"
+            return 0
+        fi
+    done < "$keyfile"
+}
+
+# pass gtk keyfile as $1
+function jgmenu_write_gtkcache(){
+    local gtktheme keyfile jgmenu_cachedir
+    jgmenu_cachedir="$HOME/.cache/jgmenu"
+    mkdir -p "$jgmenu_cachedir"
+    keyfile="$1" # parse GTK theme from settings.ini instead of accepting name in settings.cfg
+    gtktheme=$(parse_gtktheme "$keyfile") || {
+        yad_warning "Failed to identify GTK theme."
+        return 1
+    }
+    debug "Setting $gtktheme as GTK theme in jgmenu cache."
+    printf '%s' "$gtktheme" > "$jgmenu_cachedir/.last-gtktheme"
 }
 
 # next time xfce4-notifyd is called it will restart the two daemons, with latest config
@@ -1755,7 +1795,7 @@ restoreSettings() {
     # get chosen saved configs and restore them
     # Conky and Tint2 will be killed by their restore functions, if called.
     BKP_SFX=".$(date +"%Y%m%d-%H%M%S").blob~" # global: unified backup suffix that restore functions will use
-    local TAG VAL labels label columns select ret CHOICE
+    local TAG VAL labels label columns select ret CHOICE jgmenu_sync_ob jgmenu_sync_gtk
     declare -A values
     while read -r TAG VAL; do
         case "$TAG" in
@@ -1839,6 +1879,8 @@ restoreSettings() {
     # TODO: add 'return 1' to functions as needed
     trap 'trap_error $LINENO "$BASH_COMMAND"' ERR
 
+    jgmenu_sync_ob=false
+    jgmenu_sync_gtk=false
     # Go through user's selected choices.
     while read -r label
     do
@@ -1848,6 +1890,7 @@ restoreSettings() {
         case "$label" in
             "$PICKOB"       )   [[ -n $VAL ]] && checkOBTHEME "$VAL"
                                 restoreOBrc
+                                jgmenu_sync_ob=true
                                 ;;
             "$PICKGTK"      )   [[ -n $VAL ]] && checkGTK "$VAL"
                                 [[ -n ${values[$PICKICONS]} ]] && {
@@ -1855,7 +1898,9 @@ restoreSettings() {
                                     checkICONS "${values[$PICKICONS]}"
                                 }
                                 restoreGTK
+                                jgmenu_sync_gtk=true
                                 # reloadGTK now called in restoreGTK
+                                # jgmenu GTK syncing will be inhibited unless OB is not restored
                                 ;;
 #            "$PICKICONS"    )   [[ -n $VAL ]] && checkICONS "$VAL"
 #                                ;;
@@ -1889,6 +1934,17 @@ restoreSettings() {
                                 ;;
         esac
     done <<< "$CHOICE"
+    hash jgmenu_run 2>/dev/null && {
+        if [[ $jgmenu_sync_ob = true ]]
+        then
+            jgmenu_run init --apply-obtheme && debug "\n jgmenu synced with openbox theme"
+        elif [[ $jgmenu_sync_gtk = true ]]
+        then
+            jgmenu_run init --apply-gtktheme && debug "\n jgmenu synced with gtk theme"
+        else
+            debug "\n jgmenu theme not changed"
+        fi
+    }
     trap - ERR # remove trap for normal error handling
     echo "$themename" > "$CURSESSFILE"
 }
