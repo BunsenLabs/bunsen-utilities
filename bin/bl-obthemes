@@ -1643,7 +1643,7 @@ needBackup(){
     do
         [[ -f $bkp_file ]] || continue
         cmp "$file" "$bkp_file" >/dev/null 2>&1 && {
-            debug "$file already has identical copy ${bkp_file}, no need to backup"
+            debug "$file already has identical backup ${bkp_file}, no need to backup again"
             return 1
         }
     done
@@ -2089,8 +2089,8 @@ function cleanup(){
 
 ###################### END FUNCTIONS ###################################
 
-# add this where an error should trigger exit:
-#trap 'trap_error_exit $LINENO' ERR
+# add this where an error should trigger a warning, optional exit:
+#trap 'trap_error $LINENO "$BASH_COMMAND"' ERR
 # to remove trap:
 #trap - ERR
 
