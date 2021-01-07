@@ -504,9 +504,20 @@ function upgradeBlobs(){
 }
 
 # Kill only with exact match, and only if process belongs to executor.
+# Returns success even if process is not running.
 # Usage: safeKill <processname>
 function safeKill() {
-    pkill -x -u "$USER" "$1"
+    local procname
+    procname=$1
+    debug "killing $procname"
+    pgrep -x -u "$USER" "$procname" >/dev/null || {
+        debug "${procname}: no process running"
+        return 0
+    }
+    pkill -x -u "$USER" "$procname" || {
+        debug "WARNING failed to kill $procname"
+        return 1
+    }
 }
 
 # sets globals NUMDIRS and CURRENTSESSION, inside intro() and UpdateDisplayDialog()
