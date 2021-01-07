@@ -974,7 +974,7 @@ function getGTKtheme(){
     getGTKname
 }
 
-function getGTKname(){   # get GTK theme name and Icons name
+function getGTKname(){   # get saved GTK theme name and Icons name
     local txt
     GTKFILE="$CONFIGDIR/user/$GTK2"
     while read -r line;do
@@ -1357,11 +1357,12 @@ function checkGTK(){    # check if gtk theme is still present
     return 1
 }
 
+# THEMEPATH is global set by displayBlobs()
 function restoreGTK(){
     restoreFiles "$GTK2" "$GTK2MINE" "$GTK3" "$GTK3x"
     reloadGTK
     reloadXfceNotifyd
-    # restartThunar # not needed now that bl-reloadgtk23 updates xsettings
+    # restartThunar # not needed now that bl-reload-gtk23 updates xsettings
 }
 
 function reloadGTK(){ # reload gtk theme after restoring saved config
@@ -1375,8 +1376,8 @@ function reloadGTK(){ # reload gtk theme after restoring saved config
 # next time xfce4-notifyd is called it will restart the two daemons, with latest config
 function reloadXfceNotifyd(){
     debug "Stopping xfconf and xfce4-notify daemons."
-    pkill -x xfconfd || debug "WARNING: cannot kill xfconfd"
-    pkill -x xfce4-notifyd || debug "WARNING: cannot kill xfce4-notifyd"
+    safeKill xfconfd
+    safeKill xfce4-notifyd
 }
 
 # this function is not used now that bl-reloadgtk23 updates xsettingsd
