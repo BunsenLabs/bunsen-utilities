@@ -1,3 +1,13 @@
+bunsen-utilities (10.3-1) lithium; urgency=medium
+
+  * bl-obthemes: Various improvements, better handling of jgmenu theming.
+  * bl-conkymove: Work around conky desktop layering bug.
+     See: https://forums.bunsenlabs.org/viewtopic.php?id=7111
+  [ Jens John ]
+  * bl-reload-gtk23: Major improvements (see git log for details).
+
+ -- John Crawley <john@bunsenlabs.org>  Wed, 13 Jan 2021 20:14:49 +0900
+
 bunsen-utilities (10.2.6-1) lithium; urgency=medium
 
   * Rename tint2 config files from tint2rc-<name> to <name>.tint2rc
