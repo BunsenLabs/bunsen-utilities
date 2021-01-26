@@ -291,7 +291,7 @@ def sync_gtk3(opts: Namespace) -> None:
       if not xsettingsd_process_found:
          xsettingsd_binary = shutil.which("xsettingsd")
          if xsettingsd_binary is not None:
-            proc = subprocess.Popen([xsettingsd_binary], cwd="/", start_new_session=True)
+            proc = subprocess.Popen([xsettingsd_binary], cwd="/", start_new_session=True, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             logging.debug("xsettingsd not running; started from %s; PID: %d", xsettingsd_binary, proc.pid)
          else:
             raise RuntimeError("xsettingsd not running and not in PATH, no settings changes propagated")
