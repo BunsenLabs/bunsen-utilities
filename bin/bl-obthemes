@@ -126,6 +126,7 @@ KNOWN ISSUES:
 '
 
 debug() { : ;}
+DEBUG_FLAG=false
 for i in "$@"
 do
     case "$i" in
@@ -137,6 +138,7 @@ do
         debug() {
             echo -e "$*"
         }
+        DEBUG_FLAG=true
         ;;
     esac
 done
@@ -1371,11 +1373,12 @@ function restoreGTK(){
 }
 
 function reloadGTK(){ # reload gtk theme after restoring saved config
-    local cap
-    debug "\nReloading GTK theme"
-    cap=$(bl-reload-gtk23 --force 2>&1) ; debug "bl-reload-gtk23: ${cap:-done}\n"
-    # jgmenu now has a hook on ~/.config/gtk-3.0/settings.ini
-    #hash jgmenu_run 2>/dev/null && jgmenu_run init --apply-gtktheme && debug "\n jgmenu reconfigured"
+    debug "\nReloading GTK theme..."
+    if [[ $DEBUG_FLAG = true ]]; then
+        bl-reload-gtk23 --force && debug "\nbl-reload-gtk23: done\n" || echo "bl-reload-gtk23 failed" >&2
+    else
+        bl-reload-gtk23 --force >/dev/null 2>&1 || echo "bl-reload-gtk23 failed" >&2
+    fi
 }
 
 # get gtk theme name from keyfile
