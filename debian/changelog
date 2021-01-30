@@ -1,3 +1,11 @@
+bunsen-utilities (10.3.1-1) lithium; urgency=medium
+
+  * bl-obthemes:
+    - change call to bl-reload-gtk23 to fix hang when restoring.
+    - tweak blob/Lithium to match default user config.
+
+ -- John Crawley <john@bunsenlabs.org>  Sat, 30 Jan 2021 11:28:47 +0900
+
 bunsen-utilities (10.3-1) lithium; urgency=medium
 
   * bl-obthemes: Various improvements, better handling of jgmenu theming.
