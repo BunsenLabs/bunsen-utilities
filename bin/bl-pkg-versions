@@ -24,6 +24,7 @@ Usage:
 Options:
         -h, --help      Show this message.
         <empty>|lithium Check the Lithium packages.
+        beryllium-dev   Check the packages on the beryllium-dev server.
         lithium-dev     Check the packages on the lithium-dev server.
         helium          Check the Helium packages.
         hydrogen        Check the Hydrogen packages.
@@ -52,6 +53,11 @@ lithium-dev)
     readonly GITHUB_BRANCH=lithium
     readonly SERVER=https://kelaino.bunsenlabs.org/~johnraff
     readonly RELEASE=lithium
+    ;;
+beryllium-dev)
+    readonly GITHUB_BRANCH=beryllium
+    readonly SERVER=https://kelaino.bunsenlabs.org/~johnraff
+    readonly RELEASE=beryllium
     ;;
 helium)
     readonly GITHUB_BRANCH=helium
@@ -106,13 +112,13 @@ BEGIN{RS="";FS="\n"}
 ')
 
 tput bold
-printf '%-30s %-20s %-20s\n\n' 'Source Repo' 'apt version' 'git version'
+printf '%-30s %-22s %-22s\n\n' 'Source Repo' 'apt version' 'git version'
 tput sgr0
 while read -r srcname apt_version
 do
     git_version=$(lookup_github "$srcname")
     [[ $git_version != "$apt_version" ]] && tput bold
-    printf '%-30s %-20s %-20s\n' "$srcname" "$apt_version" "$git_version"
+    printf '%-30s %-22s %-22s\n' "$srcname" "$apt_version" "$git_version"
     tput sgr0
 done <<<"$repo_list"
 
