@@ -87,7 +87,7 @@ bunsen-utilities (10.2-1) lithium; urgency=medium
     - add "verbose" option, reduce default messages to STDOUT
     - add dconf support for {gnome,mate}-terminal & tilix
     - minimize the creation of unnecessary backup files
-    - save and restore used tint2 and conky config files as well as paths 
+    - save and restore used tint2 and conky config files as well as paths
     - detect and accommodate vanilla openbox session as well as BunsenLabs
     - rename to "BLOB Themes Manager"
     [ damo ]
@@ -129,7 +129,7 @@ bunsen-utilities (10.1.1-1) lithium; urgency=medium
 
 bunsen-utilities (10.1-1) lithium; urgency=medium
 
-  * bl-obthemes: 
+  * bl-obthemes:
      - Store saved config files in subdirectory user/,
         which mirrors $HOME, adjust preset themes to match.
      - Store screenshot images inside theme directory.
@@ -398,9 +398,9 @@ bunsen-utilities (8.6.7-1) bunsen-hydrogen; urgency=medium
 bunsen-utilities (8.6.6-1) bunsen-hydrogen; urgency=low
 
   * bl-exit: Restore acceleration
-  * Use Alt+b for reboot 
+  * Use Alt+b for reboot
 
- -- xaos52 <me@medion.localdomain>  Thu, 07 Apr 2016 16:44:46 +0200
+ -- xaos52  Thu, 07 Apr 2016 16:44:46 +0200
 
 bunsen-utilities (8.6.5-1) bunsen-hydrogen; urgency=low
 

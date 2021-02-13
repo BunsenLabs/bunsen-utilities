@@ -61,7 +61,7 @@ Description: Small scripts to use with BunsenLabs.
   - bl-notify-broadcast: Script to send user notifications from root processes.
   - bl-obthemes: Script to save or restore desktop gui theme configurations.
   - bl-pkg-versions: Utility to display the versions of BunsenLabs packages.
-  - bl-reload-gtk23: Script to notify GTK2/3 clients of GTK2/3 app configuration changes such as theming.
+  - bl-reload-gtk23: Script to notify clients of GTK2/3 configuration changes.
   - bl-setlocale: Yad-based script to set user's locale.
   - bl-tint2-manager: Yad-based tint2 manager.
   - bl-tint2-session: Script to handle multiple tint2 sessions.
