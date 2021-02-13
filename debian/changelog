@@ -406,7 +406,7 @@ bunsen-utilities (8.6.6-1) bunsen-hydrogen; urgency=low
   * bl-exit: Restore acceleration
   * Use Alt+b for reboot
 
- -- xaos52  Thu, 07 Apr 2016 16:44:46 +0200
+ -- xaos52 <me@medion.localdomain.org>  Thu, 07 Apr 2016 16:44:46 +0200
 
 bunsen-utilities (8.6.5-1) bunsen-hydrogen; urgency=low
 
