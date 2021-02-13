@@ -2,7 +2,7 @@ Source: bunsen-utilities
 Section: misc
 Priority: optional
 Maintainer: John Crawley <john@bunsenlabs.org>
-Build-Depends: debhelper (>= 10),
+Build-Depends: debhelper-compat (= 12),
   help2man,
   gir1.2-gtk-3.0,
   python3 (>= 3.7),
@@ -11,7 +11,7 @@ Build-Depends: debhelper (>= 10),
   python3-psutil (>= 5.5.1),
   python3-xdg (>= 0.25),
   python3-xlib
-Standards-Version: 4.3.0
+Standards-Version: 4.5.1
 Homepage: https://github.com/BunsenLabs/bunsen-utilities
 Vcs-Git: https://github.com/BunsenLabs/bunsen-utilities.git
 Vcs-Browser: https://github.com/BunsenLabs/bunsen-utilities
