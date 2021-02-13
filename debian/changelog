@@ -1,3 +1,9 @@
+bunsen-utilities (11.0-2) beryllium; urgency=medium
+
+  * bl-pkg-versions: update for beryllium experimental repo.
+
+ -- John Crawley <john@bunsenlabs.org>  Sat, 13 Feb 2021 17:05:35 +0900
+
 bunsen-utilities (11.0-1) beryllium; urgency=medium
 
   * Migrate for Debian Bullseye.
