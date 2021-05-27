@@ -286,7 +286,7 @@ yad_question() {
 
 yad_warning() {
     yad "${popup_args[@]}" --text="$1" \
-    --image="dialog-warning" --width=300 "$CLOSE"
+    --image="dialog-warning" --width=300 --button=gtk-close:0
 }
 
 yad_warning_option() {
