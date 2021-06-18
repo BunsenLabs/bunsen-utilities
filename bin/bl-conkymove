@@ -3,7 +3,7 @@
 #    bl-conkymove: a script to set the position of a moveable Conky
 #    Copyright (C) 2016 xaos52  <xaos52@gmail.com>
 #    Copyright (C) 2015-2017 damo    <damo@bunsenlabs.org>
-#    Copyright (C) 2015-2017 John Crawley <john@bunsenlabs.org>
+#    Copyright (C) 2015-2021 John Crawley <john@bunsenlabs.org>
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -109,7 +109,7 @@ parse_conkyfile(){
             fi
         fi
     done < "$1"
-    entry_regex="([[:alnum:]_]+)[[:blank:]]*=[[:blank:]]*([[:alnum:]]+|'[^']+'|\"[^\"]+\")"
+    entry_regex="([[:alnum:]_]+)[[:blank:]]*=[[:blank:]]*([[:alnum:]-]+|'[^']+'|\"[^\"]+\")"
     while [[ $conkyconf =~ $entry_regex ]]
     do
         name=${BASH_REMATCH[1]}
@@ -127,7 +127,7 @@ parse_conkyfile_1.09(){
     unset config
     declare -Ag config
     local name value
-    while read name value
+    while read -r name value
     do
         [[ $name ]] || continue
         [[ $name = TEXT* ]] && break
@@ -155,7 +155,7 @@ edit_conkyfile(){
         [[ ${config["$name"]} = "${value}" ]] && continue
         [[ $value =~ ^([0-9-]+|true|false)$ ]] || value=\'"$value"\' # add quotes
         (( ${#sed_args[@]} == 0 )) && sed_args=("-ri")
-        sed_pattern="[[:blank:]]*${name}[[:blank:]]*=[[:blank:]]*([[:alnum:]]+|'[^']+'|\"[^\"]+\")"
+        sed_pattern="[[:blank:]]*${name}[[:blank:]]*=[[:blank:]]*([[:alnum:]-]+|'[^']+'|\"[^\"]+\")"
         grep -Eq -- "-- bl-conky(pin|move), original value for $name:" "$file" ||
             sed_replace="-- bl-conkymove, original value for $name: ${config[$name]}\n"
         sed_replace+="\t$name = $value"
@@ -198,12 +198,11 @@ getStart(){    #   Get initial Conky position
     unset CONKYPATH
     unset info1
     declare -A info1
-    while read line
+    while read -r line
     do
         unset key value
-        [[ $line =~ Window\ id: ]] && {
-            ID=${line#*id:}
-            ID=${ID% \"*}
+        [[ $line =~ Window\ id:[[:blank:]]*(0[xX][0-9a-fA-F]+) ]] && {
+            ID=${BASH_REMATCH[1]}
         }
         [[ $line != xwininfo:* && $line = *:* ]] && {
             key=${line%:*}
@@ -211,9 +210,9 @@ getStart(){    #   Get initial Conky position
             info1[$key]=$value
         }
     done < <(xwininfo)
-    # info now contains all the output of xwininfo
+    # info1 array now contains all the output of xwininfo
 
-    wmc=$(xprop -id $ID  WM_COMMAND)
+    wmc=$(xprop -id "$ID"  WM_COMMAND)
     wmc=${wmc#*\"} # strip first & last quotes & everything outside
     wmc=${wmc%\"*}
     CMD=${wmc%% *} # separate first word
@@ -261,7 +260,7 @@ getStart(){    #   Get initial Conky position
 getFinish(){   #   Get new Conky position
     unset info2
     declare -A info2
-    while read line
+    while read -r line
     do
         unset key value
         [[ $line != xwininfo:* && $line = *:* ]] && {
@@ -269,7 +268,7 @@ getFinish(){   #   Get new Conky position
             value=${line#*:}
             info2[$key]=$value
         }
-    done < <(xwininfo -id $ID)
+    done < <(xwininfo -id "$ID")
     posX_2=${info2[Absolute upper-left X]}
     posY_2=${info2[Absolute upper-left Y]}
 }
@@ -308,27 +307,46 @@ adjust_wintype() {
     edit_conkyfile "$CONKYPATH" "own_window_type=normal"
     config[own_window_type]=normal
 }
+
 restore_wintype() {
     [[ ${CONKYPATH:-X} = 'X' || ${original_wintype:-X} = 'X' ]] && return 0
     edit_conkyfile "$CONKYPATH" "own_window_type=$original_wintype"
 }
 
+cleanup() {
+    if [[ $success = TRUE ]];then
+        restore_wintype # backup file $BKP left, but will be overwritten on next run
+    elif [[ -n $CONKYPATH && -f $BKP ]];then
+        echo "$0: exit, restoring original $CONKYPATH"
+        mv "$BKP" "$CONKYPATH"
+    else
+        echo "$0: exit, nothing to restore"
+    fi
+}
+
 ########################################################################
 
-unset CONKYPATH config posX_1 posY_1 posX_2 posY_2 OFFSET_X OFFSET_Y gapX gapY
+success=FALSE
 
-trap restore_wintype EXIT
+unset CONKYPATH BKP config posX_1 posY_1 posX_2 posY_2 OFFSET_X OFFSET_Y gapX gapY
 
+trap cleanup EXIT
+
+# Conky in Debian Buster needs this workaround:
 # reload conky config to work around a bug
 # where conky seems to be part of root desktop window
 # https://forums.bunsenlabs.org/viewtopic.php?id=7111
-pkill -HUP -x conky
+# Not needed with conky 1.11.6-2 in Bullseye.
+# In fact pkill -HUP now causes conky to terminate, so use -USR1
+#pkill -USR1 -x conky
 
-yad_question "Click 'Select Conky' to pick a conky.\n\nThen use the 'xwininfo' cursor on the chosen conky\nto record its position." \
+yad_question "To pick a conky, click 'Select Conky',\n\nthen click the 'xwininfo' cursor on the chosen conky\nto record its position." \
      --button="Select Conky:0" --button="gtk-cancel:1"
 
 if (( $? == 0 ));then
     getStart
+    BKP="${CONKYPATH}-bkp~"
+    cp "$CONKYPATH" "$BKP"
     if ! grep -Eq '(^|[[:blank:]])conky\.config[[:blank:]]*=?' "$CONKYPATH"
     then
         yad_info "This conky uses v1.09 syntax.\nIt is recommended to convert the conky to v1.10 syntax.\nSee: https://forums.bunsenlabs.org/viewtopic.php?id=3983"
@@ -362,4 +380,6 @@ getOffset
 
 edit_conkyfile "$CONKYPATH" "gap_x=$gapX" "gap_y=$gapY"
 
-exit 0
+success=TRUE
+
+exit
