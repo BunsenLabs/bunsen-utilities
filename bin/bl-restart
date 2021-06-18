@@ -2,7 +2,7 @@
 #
 #    bl-restart: a script to restart all instances of a process name
 #    Copyright (C) 2015 damo    <damo@bunsenlabs.org>
-#    Copyright (C) 2015-2016  John Crawley <john@bunsenlabs.org>
+#    Copyright (C) 2015-2021  John Crawley <john@bunsenlabs.org>
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -53,10 +53,12 @@ pidof "$name" >/dev/null || {
 
 declare -A commands # associative array
 tailpids=()
-
+index=1
 while read -r pid cmd; do
-    kill "$pid" || { echo "$0: ERROR: failed to kill $pid" >&2; exit 1;}
-    commands[$cmd]=1 # duplicate commands will be launched only once
+    commands[$cmd]=C${index} # duplicate commands will be launched only once
+    mapfile -d '' -t "C${index}" < "/proc/${pid}/cmdline" # use NULL delimiter to split cmdline into array C$index
+    (( index++ ))
+    kill -TERM "$pid" || { echo "$0: ERROR: failed to kill $pid" >&2; exit 1;}
     tail -f /dev/null --pid="$pid" & tailpids+=($!) # wait in background for process to die
 done <<< "$(pgrep -ax "$name" -u "$USER")"
 # an extra "tail" process for each killed process is the price of being able to "wait" for them to close
@@ -71,10 +73,13 @@ kill "$sleep_pid"
 wait "$sleep_pid" >/dev/null # suppress "terminated" message after killing
 
 set -m # enable job control so forked processes are immune to signals from script
-for i in "${!commands[@]}" # go through the indexes
+
+for i in "${commands[@]}" # go through the array names
 do
-    $i >/dev/null 2>&1 &
+    declare -n CMD="$i"
+    "${CMD[@]}" >/dev/null 2>&1 &
     disown
     sleep 0.2
 done
+
 set +m
