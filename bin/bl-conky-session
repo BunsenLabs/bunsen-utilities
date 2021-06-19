@@ -2,6 +2,7 @@
 #
 #    bl-conky-session: read saved BunsenLabs Conky session file(s) and start the conkys
 #    Copyright (C) 2015 damo    <damo@bunsenlabs.org>
+#                  2021 John Crawley <john@bunsenlabs.org>
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -20,37 +21,54 @@
 #   To start the default conky session at login, add the following line
 #   to config/openbox/autostart:
 #
-#      bl-conky-session --autostart &
+#      bl-conky-session &
 #
 ########################################################################
 CONKYPATH="$HOME/.config/conky"
-CONKYDEFAULT="$CONKYPATH/conky.conf"
-SESSIONFILE="$CONKYPATH/conky-sessionfile"
+BLDEFAULT="$CONKYPATH/BL-Default-conky.conf"
+CONKYDEFAULT="$CONKYPATH/conky.conf" # not normally used
+DEFAULTSESSFILE="$CONKYPATH/conky-sessionfile"
+STARTSESSION="$CONKYPATH/conky-startup-session" # symlink to chosen startup session (DEFAULTSESSFILE by default)
+BKP_SFX=".$(date +"%Y%m%d-%H%M%S").conkysess~"
 USAGE='bl-conky-session is a script to parse saved BunsenLabs Conky session file(s)
 and start the conkys
 
 Usage: bl-conky-session [OPTION(S)]...FILES
 
-With no command argument, the script uses the default "$CONKYPATH/conky-sessionfile" sessionfile.
+With no command argument, the script uses "$CONKYPATH/conky-startup-session"
+which is a symlink pointing by default to "$CONKYPATH/conky-sessionfile".
+Change the symlink to make a different sessionfile the default at startup.
+
+If not absolute, sessionfile paths are assumed to be relative to ~/.config/conky/
 
 Options:
-        --default       : specify default sessionfile
-        --autostart     : no "kill conky" option asked for
-        path/to/sessionfile1  /path/to/sessionfile2 etc
+        --default       : add the default sessionfile to a list of files
+        sessionfile1  sessionfile2 etc
 
 Examples:
     Run specified sessionfile at login:
 
-            "bl-conky-session --autostart /path/to/sessionfile"
+            "bl-conky-session /path/to/sessionfile"
 
-    Run default sessionfile, without killing running conkys:
+    Run default sessionfile:
 
-            "bl-conky-session --autostart"
+            "bl-conky-session"
 
-    Run several conky sessionfiles (option to kill conkys first):
+    Run several conky sessionfiles, including default:
 
-            "bl-conky-session --default sessionfile1 sessionfile2 etc"
+            "bl-conky-session sessionfile1 --default sessionfile2 etc"
 '
+
+# look for a help option somewhere
+for i in "$@"
+do
+    case "$i" in
+    -h|--help)
+        echo "$USAGE"
+        exit 0
+        ;;
+    esac
+done
 
 ### DIALOG VARIABLES
 DLG="yad --center --undecorated --borders=20 "
@@ -61,66 +79,153 @@ CANCEL="--button=gtk-cancel:1"
 
 ########################################################################
 
-findArgs(){     # get command args (switches & sessionfile paths)
-    i=0
-    for arg in "$@";do
-        if [[ $arg = "--default" ]]; then
-            arg="$SESSIONFILE"
-        fi
-        if [[ $arg = "--autostart" ]]; then
-            NOKILL=1    # run from autostart, so don't ask to kill conkys
-        fi
-        if [[ -f  $arg ]]; then # sessionfile exists
-            rawArr[$i]="$arg"       # add sessionfiles to array
-            i=$((i+1))
-        fi
-    done
-    # check if sessionfiles were passed to bl-conky-session
-    if (( ${#rawArr[@]} != 0 )); then
-        # remove duplicate args
-        sessArr=($(printf "%s\n" "${rawArr[@]}" | sort -u))
-        if (( NOKILL == 0 )); then
-            killConkys
-        fi
-        for SESSION in "${sessArr[@]}";do # run the conkys in the sessionfiles
-            source "$SESSION"
-        done
-    else    # --autostart used, but no sessionfiles passed to bl-conky-manager
-        if [[ -f $SESSIONFILE ]] && (( NOKILL == 1 )); then
-            source "$SESSIONFILE"   # use conky-sessionfile
-        else
-            echo -e "WARNING: sessionfile \"$SESSIONFILE\" not found. Using default" >&2
-            conky -c "$CONKYDEFAULT"    # run default conky
-            exit 0
-        fi
-    fi
-}
-
 killConkys(){
     if pidof conky &>/dev/null; then
         MSG="Kill running conkys first?"
-        $DLG $WINICON --title="$TITLE" --text="$MSG"
-        if (( $? == 0 )); then            # kill all conkys
-            killall conky && sleep 0.2s
-        fi
+        $DLG $WINICON --title="$TITLE" --text="$MSG" "$CANCEL" --button="Don't kill":2 "$OK"
+        case $? in            # kill all conkys
+        0)
+            killall conky && sleep 0.2s || return 1
+            ;;
+        1)
+            return 1
+            ;;
+        2)
+            return 0
+            ;;
+        esac
     fi
 }
 
-NOKILL=0
-if (( $# == 0 )); then    # if no args, then run default sessionfile
-    killConkys
-    if [[ ! -f "$SESSIONFILE" ]]; then     # run default conky
-        echo -e "WARNING: sessionfile \"$SESSIONFILE\" not found. Using default" >&2
-        conky -c "$CONKYDEFAULT"
-        exit 0
-    else
-        source "$SESSIONFILE"
+# usage: loadSession <sessionfile>
+loadSession(){
+    local sessfile CPATH_REGEX WMC_REGEX needRewrite conkys c path target
+    sessfile=$1
+    CPATH_REGEX="-c '(.*(conky.*\.conf|conky|conkyrc))'([[:blank:]]+|$)"
+    WMC_REGEX='wmctrl -s ([0-9]{1,2})[[:blank:]]+'
+    needRewrite=false
+    mapfile -t conkys < "$sessfile"
+    for i in "${!conkys[@]}"; do # go through indexes
+        c=${conkys[i]}
+        if [[ ${c%% *} = conky ]]; then # old style: first word is 'conky'
+            if [[ $c =~ $CPATH_REGEX ]]; then
+                conkys[i]=${BASH_REMATCH[1]} # rewrite with filepath only
+            else
+                echo "$0: WARNING: failed to parse line $c in $sessfile" >&2
+                conkys[i]='' # discard line
+            fi
+            needRewrite=true
+        elif [[ ${c%% *} = wmctrl ]]; then # old style, on specific desktop
+            if [[ $c =~ ${WMC_REGEX}.*${CPATH_REGEX} ]]; then
+                conkys[i]="D[${BASH_REMATCH[1]}] ${BASH_REMATCH[2]}" # 'D[<desktop>] <path>'
+            else
+                echo "$0: WARNING: failed to parse line $c in $sessfile" >&2
+                conkys[i]='' # discard line
+            fi
+            needRewrite=true
+        else
+            continue # assume line (in fact, whole file probably) is in new style
+        fi
+    done
+    if [[ $needRewrite = true ]]; then # should only happen once
+        target=$(readlink -f "$sessfile") # in case $sessfile is a symlink
+        cp "$target" "${target}${BKP_SFX}" # make backup
+        echo "$0: reformatting $sessfile"
+        :> "$sessfile"
+        for path in "${conkys[@]}"; do
+            echo "$path" >> "$sessfile"
+        done
     fi
-elif [[ $1 = "-h" ]] || [[ $1 = "--help" ]]; then
-    echo -e "$USAGE"
-    exit 0
-else
-    findArgs "$@"    # get the sessionfile paths from the command args
+    for path in "${conkys[@]}"; do
+        ALL_CONKYS[$path]=1 # copy conkys to global array for launching, no duplicate lines
+    done
+}
+
+launchConkys(){
+    local WINID_REGEX path desktop datafile
+    WINID_REGEX='drawing to created window \((0[xX][0-9a-fA-F]+)\)'
+    set -m # enable job control so forked conkys are immune to signals (although unnecessary when conky is forked to background in config)
+    for path in "${!ALL_CONKYS[@]}"; do
+        case ${path%% *} in # first word
+        D\[*\]) # D[1]... is assumed to be a sufficiently unlikely beginning of a conky filepath
+            desktop=${path%%]*}
+            desktop=${desktop#*[}
+            path=${path#* }
+            [[ -r $path ]] || { echo "$0: WARNING: cannot read $path" >&2 ; continue;}
+            datafile=$(mktemp)
+            conky -c "$path" >> "$datafile" 2>&1 &
+            disown
+            sleep 0.5
+            [[ $(<"$datafile") =~ $WINID_REGEX ]] && id=${BASH_REMATCH[1]} # no need to check file line by line
+            [[ -n $id ]] && wmctrl -i -r "$id" -t "$desktop"
+            rm "$datafile"
+            ;;
+        *) # assume line is a clean filepath
+            [[ -r $path ]] || { echo "$0: WARNING: cannot read $path" >&2 ; continue;}
+            conky -c "$path" >/dev/null 2>&1 &
+            disown
+            sleep 0.5
+            ;;
+        esac
+    done
+    set +m
+}
+
+########################################################################
+
+if [[ ! -f $DEFAULTSESSFILE ]] ; then
+    echo "$0: Failed to locate ${DEFAULTSESSFILE}, generating default..." >&2
+    if [[ -f $BLDEFAULT ]]; then
+        echo "$BLDEFAULT" > "$DEFAULTSESSFILE"
+    elif [[ -f $CONKYDEFAULT ]];then
+        echo "$0: $BLDEFAULT not found, using $CONKYDEFAULT in session file." >&2
+        echo "$CONKYDEFAULT" > "$DEFAULTSESSFILE"
+    else
+        echo "$0: unable to determine conky config file for this session." >&2
+        exit 1
+    fi
 fi
 
-exit 0
+if [[ ! -f $STARTSESSION ]]; then # can change STARTSESSION symlink to make any sessfile the startup default
+    echo "$0: generating missing symlink $STARTSESSION to $DEFAULTSESSFILE"
+    ln -s "$DEFAULTSESSFILE" "$STARTSESSION" || echo "$0: WARNING: failed to create symlink $STARTSESSION" >&2
+fi
+
+declare -A sessions # keys hold all session files passed, without duplicates
+for arg in "$@"
+do
+    case $arg in
+#    '-h'|'--help') # already checked above
+#        echo -e "$USAGE"
+#        exit 0
+#        ;;
+    '--autostart') # this argument now ignored
+        :
+        ;;
+    '--default')
+        sessions["$STARTSESSION"]=1
+        ;;
+    *)
+        [[ $arg = /* ]] || arg="$CONKYPATH/$arg" # was relative path
+        if [[ -f "$arg" ]]; then
+            sessions["$arg"]=1
+        else
+            echo "$0: WARNING: session file $arg does not exist." >&2
+        fi
+        ;;
+    esac
+done
+
+killConkys || exit
+
+declare -A ALL_CONKYS # will hold conkys to be launched from all sessionfiles, no duplicates
+
+if (( ${#sessions[@]} > 0 )); then
+    for SESSION in "${!sessions[@]}";do # run the conkys in the sessionfiles
+        loadSession "$SESSION"
+    done
+else    # no sessionfiles passed to bl-conky-manager
+    loadSession "$STARTSESSION"   # use whichever file symlink conky-startup-session points to (conky-sessionfile by default)
+fi
+
+launchConkys
