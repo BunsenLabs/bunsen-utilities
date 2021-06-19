@@ -345,7 +345,7 @@ yad_question "To pick a conky, click 'Select Conky',\n\nthen click the 'xwininfo
 
 if (( $? == 0 ));then
     getStart
-    BKP="${CONKYPATH}-bkp~"
+    BKP="${CONKYPATH}.bkp"
     cp "$CONKYPATH" "$BKP"
     if ! grep -Eq '(^|[[:blank:]])conky\.config[[:blank:]]*=?' "$CONKYPATH"
     then
