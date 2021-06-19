@@ -1,7 +1,8 @@
 #!/bin/bash
 #
-#    bl-conkyedit: a BunsenLabs Conky Editor
+#    bl-conky-edit: a BunsenLabs Conky Editor
 #    Copyright (C) 2015 damo    <damo@bunsenlabs.org>
+#                  2021  John Crawley <john@bunsenlabs.org>
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -19,16 +20,14 @@
 ########################################################################
 #
 #   Conkys must be in $CONKYPATH
-#   The name must end with "conky" or -conky.conf"
+#   The name must end with "conky", conkyrc or be *conky*.conf"
 #
 #   Checkmarked conkys will be opened in the text editor
 #   Multiple conkys can be chosen
 #
 ########################################################################
 
-declare CONKYPATH="$HOME/.config/conky"
-declare -a CONKYS_PATH
-declare -a CONKYS_ARR
+CONKYPATH="$HOME/.config/conky"
 
 HELP="bl-conkyedit is a script to edit selected Conky config files
 which are displayed in a yad window with checkboxes.
@@ -40,7 +39,7 @@ Optional arguments:
     -h | --help    Show this message (no other options are supported)
 
 Conkys must be in $CONKYPATH
-The name must end with 'conkyrc', 'conky' or 'conky.conf'
+The name must end with 'conkyrc', 'conky' or be '*conky*.conf'
 
 Checkmarked conkys will be opened in the text editor.
 Multiple conkys can be chosen.
@@ -55,37 +54,19 @@ CANCEL="--button=gtk-cancel:1"
 
 ########## FUNCTIONS ###################################################
 
-fillArrays(){
-    local num="$1"
-    CONKYS_PATH[$num]="$2"   # full filepath to conky
-    CONKYS_ARR[$num]="$3"    # displayed name: "directory/*conky(rc)"
-}
+CPATH_REGEX='.*(conky.*\.conf|conky|conkyrc)'
 
-findConky(){
-   # search dirs for conkys files - looking for "conky" in the name
-   # if "*conky(rc)" then display it
-   local num=0
-   # find files in CONKYPATH with conky in the name
-#   for x in $(find "$CONKYPATH" -type f );do
-#       f=$(basename "$x")    # filename from filepath
-#       if [[ $f = *conky.conf ]] || [[ $f = *conky ]];then
-#           # filename ends with *conky or *conky.conf
-#           # get directory/conkyname to display in list
-#           CONKY=$( echo "$x" | awk -F"/" '{print $(NF-1)"/"$NF}')
-#           fillArrays $num "$x" "$CONKY"
-#           num=$((num+1))
-#       fi
-#   done
-    while IFS= read -r -d '' x;do
-        f=$(basename "$x")    # filename from filepath
-        if [[ $f = *conky.conf ]] || [[ $f = *conky ]] || [[ $f = *conkyrc ]];then    # filename ends with *conkyrc, *conky or *conky.conf
-            # get directory/conkyname to display in list
-            CONKY=$( echo "$x" | awk -F"/" '{print $(NF-1)"/"$NF}')
-            fillArrays $num "$x" "$CONKY"
-            num=$((num+1))
-        fi
-    done < <(find "$CONKYPATH" -type f -print0)
-
+findConkys(){
+    LISTCONKY=() # global
+    local file name
+    shopt -s globstar
+    for file in "$CONKYPATH"/**;do
+        [[ -f $file ]] || continue
+        [[ $file =~ ${CPATH_REGEX}$ ]] || continue # ignore other than conky config files
+        name=${file#$CONKYPATH/}
+        LISTCONKY+=(FALSE "$name" "$file")
+    done
+    shopt -u globstar
 }
 
 ######## END FUNCTIONS #################################################
@@ -101,46 +82,22 @@ do
     esac
 done
 
-# get conky directories in .conky, add to array
-findConky
+# get conkys in CONKYPATH, recursively, add to array LISTCONKY
+findConkys
 
-# loop through arrays, and build msg text for yad dialog
-unset LISTCONKY
-for ((j=0; j<${#CONKYS_ARR[*]}; j++));do
-    LISTCONKY="$LISTCONKY FALSE ${CONKYS_ARR[j]}"
-done
-
-## Populate yad dialog from array, get return value(s)
-RET=$($DLGDEC $WINICON --list --title="$TITLE" \
+## Populate yad dialog from array, get choice(s)
+choice=$( $DLGDEC $WINICON --list --title="$TITLE" \
     --text="Select Conkys to edit from the list\nMultiple Conkys can be chosen" \
-    --checklist \
-    --column="Select:CHK" --column="Conky Name:TXT" $LISTCONKY --separator=":"\
-    $OK $CANCEL \
-    )
+    --checklist --width=400 --height=500 \
+    --column="Select:CHK" --column="Conky Name:TEXT" --column="path:HD" "${LISTCONKY[@]}" \
+    --separator='' --print-column=3 $OK $CANCEL )
 
 if [[ $? == 1 ]]; then # cancel button pressed
     exit 0
 else
-    i=0
-    OIFS=$IFS   # save Internal Field Separator
-    IFS=":"     # separator is ":" in returned choices
-    for name in $RET; do
-        retConky[$i]="$name"
-        i=$((i+1))
-    done
-    IFS=$OIFS   # reset IFS back to default
-
-    # Find the chosen conkys and edit them
-    for name in ${retConky[*]};do       # loop through checkmarked conky names
-        for ((j=0; j<${#CONKYS_PATH[*]}; j++));do  # traverse through elements
-            for f in ${CONKYS_PATH[j]};do    # compare with choice from dialog
-                display=$( echo "$f" | awk -F"/" '{print $(NF-1)"/"$NF}')
-                if [[ $display = "$name" ]];then
-                    bl-text-editor "$f"
-                fi
-            done
-        done
-    done
+    while read -r path
+    do
+        [[ -r $path ]] || continue
+        bl-text-editor "$path"
+    done <<< "$choice"
 fi
-
-exit 0
