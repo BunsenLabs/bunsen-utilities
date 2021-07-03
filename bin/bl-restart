@@ -55,7 +55,8 @@ declare -A commands # associative array
 tailpids=()
 index=1
 while read -r pid cmd; do
-    commands[$cmd]=C${index} # duplicate commands will be launched only once
+    [[ -n $pid ]] || { echo "$0: no $name processes found belonging to $USER" >&2; exit 1;}
+    commands["$cmd"]=C${index} # duplicate commands will be launched only once
     mapfile -d '' -t "C${index}" < "/proc/${pid}/cmdline" # use NULL delimiter to split cmdline into array C$index
     (( index++ ))
     kill -TERM "$pid" || { echo "$0: ERROR: failed to kill $pid" >&2; exit 1;}
@@ -74,9 +75,9 @@ wait "$sleep_pid" >/dev/null # suppress "terminated" message after killing
 
 set -m # enable job control so forked processes are immune to signals from script
 
-for i in "${commands[@]}" # go through the array names
+declare -n CMD # CMD is a nameref
+for CMD in "${commands[@]}" # CMD will refer to each array name in turn
 do
-    declare -n CMD="$i"
     "${CMD[@]}" >/dev/null 2>&1 &
     disown
     sleep 0.2
