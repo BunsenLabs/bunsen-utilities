@@ -40,9 +40,9 @@
 #
 #     bl-conky-session &
 #
-#   Different saved-session files can be used by running the script with:
+#   Different saved-session files can be created by running the script with:
 #
-#           bl-conky-manager -f /path/to/sessionfile &
+#           bl-conky-manager -f sessionfilename
 #           bl-conky-manager -z (opens gui entry dialog for filepath)
 #
 ########################################################################
@@ -60,8 +60,9 @@ USAGE1='
     With no command option the script runs the gui
 
     -h,--help   : The full USAGE help
-    -f,--file   : FILEPATH : specify file to save session to
-    -z,--choose-sessfile    : Run filename entry dialog for new saved session
+    -f,--file <FILENAME>    : specify file to save session to
+    -z,--choose-sessfile    : run filename entry dialog for new saved session
+    -s,--choose-startup     : choose session file to run at startup
 '
 USAGE2='bl-conky-manager is a Conky selection and switcher script
 which uses yad to generate a graphical user interface.
@@ -72,8 +73,10 @@ With no command option the script runs the gui
 
 Optional arguments:
     -h,--help   : This USAGE help
-    -f,--file   : FILENAME : specify file to save session to
-    -z,--gui    : Run gui filename entry dialog for new saved session
+    -f,--file <FILENAME> : specify file to save session to
+    -z,--choose-sessfile : run gui filename entry dialog for new saved session
+        (user also has the option of setting this session as startup)
+    -s,--choose-startup  : choose session file to run at startup
 
 Filenames are considered relative to ~/.config/conky/
 
@@ -271,7 +274,8 @@ parseConky(){
 # usage isSticky <file>
 isSticky(){
     parseConky "$1"
-    [[ ${CONKY_CONF[own_window_type]} = desktop ]] && return 0
+    [[ ${CONKY_CONF[own_window]} != true ]] && return 0
+    [[ ${CONKY_CONF[own_window_type]+X} = X ]] && [[ ${CONKY_CONF[own_window_type]} != normal ]] && return 0
     [[ ${CONKY_CONF[own_window_hints]} = *sticky* ]] && return 0
     return 1
 }
@@ -281,7 +285,7 @@ isSticky(){
 chooseDesktop(){
     local path dtplst desktop a b c d e f g h name choice
     [[ -n $1 ]] && path=$1
-    dtplst=(TRUE "x" "This desktop")
+    dtplst=(TRUE "x" "Current Desktop")
     # shellcheck disable=SC2034
     while read -r desktop a b c d e f g h name
     do
@@ -293,7 +297,35 @@ chooseDesktop(){
         --column=Select:RD --column=desktop:HD --column="Desktop Name:TEXT" \
         "${dtplst[@]}" --separator='' --print-column=2 "$OK" ) || return 1
     [[ $choice = x || -z $choice ]] && return 1
-    echo "$choice"
+    printf '%s' "$choice"
+}
+
+chooseStartup(){
+    local file sflst choice
+    type bl-conky-session >/dev/null 2>&1 || { "$0: '--choose-startup' option uses bl-conky-session" >&2; return 1;}
+    while read -r file;
+    do
+        if [[ $file = *\ \* ]]; then # current startup filepath has appended ' *'
+            file=${file% \*}
+            sflst+=(TRUE "$file" "${file#$CONKYPATH/}")
+        else
+            sflst+=(FALSE "$file" "${file#$CONKYPATH/}")
+        fi
+    done < <(bl-conky-session --list)
+    choice=$($DLGDEC $WINICON --list --title="$TITLE" \
+        --text="Choose the startup Conky session:" \
+        --radiolist --width=300 --height=400 \
+        --column=Select:RD --column="Filepath:HD" --column="Session File:TEXT" \
+        "${sflst[@]}" --separator='' --print-column=2 "$OK" "$CANCEL") || return 1
+    [[ -z $choice ]] && return 1
+    bl-conky-session --set-startup "$choice" || return 1
+}
+
+setStartupDlg(){
+    [[ "$SESSIONFILE" = "$STARTSESSION" ]] && return 0
+    if $DLG $WINICON --title="Conky sessionfile" --text="Set ${SESSIONFILE}\n as default startup session?" --button='Yes':0 --button='No':1 ; then
+        bl-conky-session --set-startup "$SESSIONFILE" || return 1
+    fi
 }
 
 loadDialog() {
@@ -316,12 +348,13 @@ loadDialog() {
                 mv "$SESSIONS.bkp" "$SESSIONS"
             fi
         fi
-        exit 0
+        setStartupDlg
+        exit
     fi
 
     if [[ -z $choice ]];then  # No conkys chosen
         MSG="Nothing chosen.\n\nKill all running Conkys?"
-        $DLG $WINICON --title="Conky Chooser" --text="$MSG" $OK --button='Try Again':1
+        $DLG $WINICON --title="$TITLE" --text="$MSG" $OK --button='Try Again':1
         if [[ $? = 1 ]];then
             return
         fi
@@ -344,7 +377,7 @@ loadDialog() {
                 fi
             fi
         done <<< "$choice"
-        bl-conky-session "$SESSIONFILE" # bl-conky-session can handle desktops too
+        bl-conky-session --kill-running "$SESSIONFILE" # bl-conky-session can handle desktops too
     else # this code should seldom be needed
         # kill all conkys
         if [[ $(pidof conky) ]];then
@@ -365,7 +398,7 @@ loadDialog() {
         done <<< "$choice"
     fi
 #   if there is an 'Apply+Close' button that returns 2, it will apply changes and exit
-    (( retval == 2 )) && exit 0
+    (( retval == 2 )) && { setStartupDlg; exit;}
 }
 
 ######## END FUNCTIONS #################################################
@@ -414,6 +447,10 @@ while [[ -n $1 ]];do
                 break
             done
             break
+            ;;
+        -s|--choose-startup)
+            chooseStartup
+            exit
             ;;
         *)
             echo -e "$USAGE1"
