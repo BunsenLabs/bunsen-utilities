@@ -35,24 +35,25 @@ and start the conkys
 
 Usage: bl-conky-session [OPTION(S)]...FILES
 
-With no command argument, the script uses "$CONKYPATH/conky-startup-session"
-which is a symlink pointing by default to "$CONKYPATH/conky-sessionfile".
+With no command argument, the script uses "~/.config/conky/conky-startup-session"
+which is a symlink pointing by default to "~/.config/conky/conky-sessionfile".
 Change the symlink to make a different sessionfile the default at startup.
 
 If not absolute, sessionfile paths are assumed to be relative to ~/.config/conky/
 
 Options:
         --default       : add the default sessionfile to a list of files
-        sessionfile1  sessionfile2 etc
+            sessionfile1  sessionfile2 etc
+        --kill-running  : kill current running conkys without prompting
 
 Examples:
     Run specified sessionfile at login:
 
             "bl-conky-session /path/to/sessionfile"
 
-    Run default sessionfile:
+    Run default sessionfile, do not prompt about killing current conkys:
 
-            "bl-conky-session"
+            "bl-conky-session --kill-running"
 
     Run several conky sessionfiles, including default:
 
@@ -81,19 +82,23 @@ CANCEL="--button=gtk-cancel:1"
 
 killConkys(){
     if pidof conky &>/dev/null; then
-        MSG="Kill running conkys first?"
-        $DLG $WINICON --title="$TITLE" --text="$MSG" "$CANCEL" --button="Don't kill":2 "$OK"
-        case $? in            # kill all conkys
-        0)
+        if ((kill)); then
             killall conky && sleep 0.2s || return 1
-            ;;
-        1)
-            return 1
-            ;;
-        2)
-            return 0
-            ;;
-        esac
+        else
+            MSG="Kill running conkys first?"
+            $DLG $WINICON --title="$TITLE" --text="$MSG" "$CANCEL" --button="Don't kill":2 "$OK"
+            case $? in            # kill all conkys
+            0)
+                killall conky && sleep 0.2s || return 1
+                ;;
+            1)
+                return 1
+                ;;
+            2)
+                return 0
+                ;;
+            esac
+        fi
     fi
 }
 
@@ -117,7 +122,7 @@ loadSession(){
             needRewrite=true
         elif [[ ${c%% *} = wmctrl ]]; then # old style, on specific desktop
             if [[ $c =~ ${WMC_REGEX}.*${CPATH_REGEX} ]]; then
-                conkys[i]="D[${BASH_REMATCH[1]}] ${BASH_REMATCH[2]}" # 'D[<desktop>] <path>'
+                conkys[i]="D[${BASH_REMATCH[1]}] ${BASH_REMATCH[2]}" # format: 'D[<desktop>] <path>'
             else
                 echo "$0: WARNING: failed to parse line $c in $sessfile" >&2
                 conkys[i]='' # discard line
@@ -177,7 +182,7 @@ if [[ ! -f $DEFAULTSESSFILE ]] ; then
     echo "$0: Failed to locate ${DEFAULTSESSFILE}, generating default..." >&2
     if [[ -f $BLDEFAULT ]]; then
         echo "$BLDEFAULT" > "$DEFAULTSESSFILE"
-    elif [[ -f $CONKYDEFAULT ]];then
+    elif [[ -f $CONKYDEFAULT ]]; then
         echo "$0: $BLDEFAULT not found, using $CONKYDEFAULT in session file." >&2
         echo "$CONKYDEFAULT" > "$DEFAULTSESSFILE"
     else
@@ -191,21 +196,30 @@ if [[ ! -f $STARTSESSION ]]; then # can change STARTSESSION symlink to make any 
     ln -s "$DEFAULTSESSFILE" "$STARTSESSION" || echo "$0: WARNING: failed to create symlink $STARTSESSION" >&2
 fi
 
+kill=0 # will evaluate with arithmetic command, so 1 = true
 declare -A sessions # keys hold all session files passed, without duplicates
-for arg in "$@"
+while [[ -n $1 ]]
 do
-    case $arg in
+    case "$1" in
 #    '-h'|'--help') # already checked above
 #        echo -e "$USAGE"
 #        exit 0
 #        ;;
+    '--kill-running')
+        kill=1
+        ;;
     '--autostart') # this argument now ignored
         :
         ;;
     '--default')
         sessions["$STARTSESSION"]=1
         ;;
+    -*)
+        echo "$0: ${1}: no such option" >&2
+        exit 1
+        ;;
     *)
+        arg=$1
         [[ $arg = /* ]] || arg="$CONKYPATH/$arg" # was relative path
         if [[ -f "$arg" ]]; then
             sessions["$arg"]=1
@@ -214,6 +228,7 @@ do
         fi
         ;;
     esac
+    shift
 done
 
 killConkys || exit
