@@ -334,10 +334,9 @@ trap cleanup EXIT
 
 # Conky in Debian Buster needs this workaround:
 # reload conky config to work around a bug
-# where conky seems to be part of root desktop window
+# where conky seems to be part of root desktop window.
 # https://forums.bunsenlabs.org/viewtopic.php?id=7111
 # Not needed with conky 1.11.6-2 in Bullseye.
-# In fact pkill -HUP now causes conky to terminate, so use -USR1
 #pkill -USR1 -x conky
 
 yad_question "To pick a conky, click 'Select Conky',\n\nthen click the 'xwininfo' cursor on the chosen conky\nto record its position." \
