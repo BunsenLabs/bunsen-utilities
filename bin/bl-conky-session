@@ -29,6 +29,7 @@ BLDEFAULT="$CONKYPATH/BL-Default-conky.conf"
 CONKYDEFAULT="$CONKYPATH/conky.conf" # not normally used
 DEFAULTSESSFILE="$CONKYPATH/conky-sessionfile"
 STARTSESSION="$CONKYPATH/conky-startup-session" # symlink to chosen startup session (DEFAULTSESSFILE by default)
+SESSIONS="$CONKYPATH/saved-sessions"    # list of saved sessions to be used by a pipemenu
 BKP_SFX=".$(date +"%Y%m%d-%H%M%S").conkysess~"
 USAGE='bl-conky-session is a script to parse saved BunsenLabs Conky session file(s)
 and start the conkys
@@ -45,6 +46,10 @@ Options:
         --default       : add the default sessionfile to a list of files
             sessionfile1  sessionfile2 etc
         --kill-running  : kill current running conkys without prompting
+        --set-startup <file>  : set <file> as default startup session
+            (Use "default" to reset session to conky-sessionfile.)
+        --list          : list available session files
+            (An asterisk is appended to the current startup session.)
 
 Examples:
     Run specified sessionfile at login:
@@ -58,6 +63,13 @@ Examples:
     Run several conky sessionfiles, including default:
 
             "bl-conky-session sessionfile1 --default sessionfile2 etc"
+
+    Set newsession as default sessionfile:
+    (filepath can be absolute or relative to HOME/.config/conky/)
+            "bl-conky-session --set-startup newsession"
+
+    Restore HOME/.config/conky/conky-sessionfile as startup session:
+            "bl-conky-session --set-startup default"
 '
 
 # look for a help option somewhere
@@ -138,10 +150,12 @@ loadSession(){
         echo "$0: reformatting $sessfile"
         :> "$sessfile"
         for path in "${conkys[@]}"; do
+            [[ -n $path ]] || continue
             echo "$path" >> "$sessfile"
         done
     fi
     for path in "${conkys[@]}"; do
+        [[ -n $path ]] || continue
         ALL_CONKYS[$path]=1 # copy conkys to global array for launching, no duplicate lines
     done
 }
@@ -149,6 +163,7 @@ loadSession(){
 launchConkys(){
     local WINID_REGEX path desktop datafile
     WINID_REGEX='drawing to created window \((0[xX][0-9a-fA-F]+)\)'
+    (( ${#ALL_CONKYS[@]} > 0 )) || { echo "$0: no conkys to launch"; return 0;}
     set -m # enable job control so forked conkys are immune to signals (although unnecessary when conky is forked to background in config)
     for path in "${!ALL_CONKYS[@]}"; do
         case ${path%% *} in # first word
@@ -176,6 +191,38 @@ launchConkys(){
     set +m
 }
 
+setStartup(){
+    local sessfile="$1"
+    [[ $sessfile = default ]] && sessfile="$DEFAULTSESSFILE"
+    [[ $sessfile = /* ]] || sessfile="$CONKYPATH/$sessfile" # was relative path
+    if [[ -f "$sessfile" ]]; then
+        ln -s -f "$sessfile" "$STARTSESSION" || { echo "$0: ERROR: failed to create symlink $STARTSESSION" >&2; return 1;}
+    else
+        echo "$0: ERROR: cannot set session file $sessfile as startup, it does not exist." >&2
+        return 1
+    fi
+}
+
+listSessfiles(){
+    local -a sessfiles startup
+    startup=$(readlink -f "$STARTSESSION")
+    [[ -f $DEFAULTSESSFILE ]] && sessfiles=( "$DEFAULTSESSFILE" )
+    [[ -f $SESSIONS ]] && mapfile -t -O 1 sessfiles < "$SESSIONS"
+    if (( ${#sessfiles[@]} > 0 )); then
+        for file in "${sessfiles[@]}";
+        do
+            if [[ $file = "$startup" ]]; then
+                echo "${file#$CONKYPATH/} *"
+            else
+                echo "${file#$CONKYPATH/}"
+            fi
+        done
+    else
+        echo "Cannot find any session files"
+    fi
+}
+
+
 ########################################################################
 
 if [[ ! -f $DEFAULTSESSFILE ]] ; then
@@ -186,12 +233,13 @@ if [[ ! -f $DEFAULTSESSFILE ]] ; then
         echo "$0: $BLDEFAULT not found, using $CONKYDEFAULT in session file." >&2
         echo "$CONKYDEFAULT" > "$DEFAULTSESSFILE"
     else
-        echo "$0: unable to determine conky config file for this session." >&2
+        echo "$0: WARNING: unable to generate default session file." >&2
         exit 1
     fi
 fi
 
-if [[ ! -f $STARTSESSION ]]; then # can change STARTSESSION symlink to make any sessfile the startup default
+# user can use --set-startup to change STARTSESSION symlink to make any sessfile the startup default
+if [[ ! -f $STARTSESSION ]]; then
     echo "$0: generating missing symlink $STARTSESSION to $DEFAULTSESSFILE"
     ln -s "$DEFAULTSESSFILE" "$STARTSESSION" || echo "$0: WARNING: failed to create symlink $STARTSESSION" >&2
 fi
@@ -207,6 +255,14 @@ do
 #        ;;
     '--kill-running')
         kill=1
+        ;;
+    '--set-startup')
+        setStartup "$2"
+        exit
+        ;;
+    '--list')
+        listSessfiles
+        exit
         ;;
     '--autostart') # this argument now ignored
         :
