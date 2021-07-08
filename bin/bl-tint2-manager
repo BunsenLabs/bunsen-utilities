@@ -2,7 +2,7 @@
 #
 #    bl-tint2-manager: a BunsenLabs tint2 selection and switcher script
 #    Copyright (C) 2015-2019  damo    <damo@bunsenlabs.org>
-#                  2019-2020  John Crawley <john@bunsenlabs.org>
+#                  2019-2021  John Crawley <john@bunsenlabs.org>
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -71,136 +71,132 @@ Use:
             bl-tint2-session
 '
 
+# look for a help option somewhere, then exit
+for i in "$@"
+do
+    case "$i" in
+    -h|--help)
+        echo "$USAGE"
+        exit 0
+        ;;
+    esac
+done
+
 ### DIALOG VARIABLES
+DLG="yad --center --undecorated --borders=20 "
 DLGDEC="yad --center --borders=20 "
 TITLE="BunsenLabs Tint2 Manager"
 WINICON="--window-icon=distributor-logo-bunsenlabs"
-OK="--button=OK:2"
+OK="--button=OK:0"
 APPLY="--button=Apply:0"
-#CANCEL="--button=gtk-cancel:1"
+CANCEL="--button=gtk-cancel:1"
 CLOSE="--button=Close:1"
-########################################################################
+########## FUNCTIONS ###################################################
 
 getRunning(){
-    local pid cmd args TPATH
-    while read -r pid cmd args; do
-        TPATH=${args#-c } # tint2 will start even without -c before filepath
-        if [[ -z $TPATH ]]; then
-            TPATH=$TINT2DEFAULT
-        elif [[ $TPATH != "$HOME"/* ]]; then
-            TPATH="$HOME/$TPATH"
-        fi
-        [[ -f $TPATH ]] || {
-            echo "$0: pgrep tint2 parsing failed: $TPATH not a file" >&2
+    unset runningTints
+    local pid command TPATH
+    declare -g -A runningTints
+    while read -r pid; do
+        mapfile -d '' -t command < "/proc/${pid}/cmdline" # use NULL delimiter to split cmdline into array 'command'
+        [[ ${command[0]} = 'tint2' ]]  || {
+            echo "$0: pgrep parsing failed: command is not 'tint2'" >&2
             continue
         }
-        runningTints+=("$TPATH")
-    done < <(pgrep -ax tint2)
+        if (( ${#command[@]} > 1 )); then
+            TPATH=${command[-1]} # tint2 takes no options other than -c, which is optional
+            [[ $TPATH = /* ]] || TPATH="$HOME/$TPATH" # assume path is relative to $HOME
+        else
+            TPATH="$TINT2DEFAULT"
+        fi
+        [[ -f $TPATH ]] || {
+            echo "$0: pgrep tint2 parsing failed: $TPATH is not a file" >&2
+            continue
+        }
+        runningTints["$TPATH"]=1
+    done < <(pgrep -x 'tint2' -u "$USER")
 }
 
-# $1 holds full path to config file
-# return 0 if a running tint2 is using that file
+# $1 should hold full path to config file
+# returns 0 if a running tint2 is using that file
 isRunning(){
     local file=$1
-    for running in "${runningTints[@]}"
-    do
-        [[ $running = "$file" ]] && return 0
-    done
+    [[ ${runningTints["$file"]} = 1 ]] && return 0
     return 1
 }
 
-fillArrays(){
-    num="$1"
-    tintsPath[$num]="$2"   # full filepath to the tint2
-    tintsArr[$num]="$3"    # displayed name
-    # see if config file matches one of the running tints
-    if isRunning "$2";then
-        checkArr[$num]="TRUE"       # make checkmark in dialog
-    else
-        checkArr[$num]="FALSE"
-    fi
-}
-
-findTint(){
-# search dirs for tint2 config files
-    local file num display
-    num=0
+findTints(){
+    getRunning
+    LISTTINT=() # global
+    local file name check
     shopt -s globstar
     for file in "$TINT2PATH"/**;do
         [[ -f $file ]] || continue
         [[ $file = *~ ]] && continue # ignore backups
         grep -q "panel_monitor" "$file" || continue # not a tint2rc file
-        display=${file#$TINT2PATH/}
-        fillArrays $num "$file" "$display"
-        num=$((num+1))
+        name=${file#$TINT2PATH/}
+        if isRunning "$file"; then
+            check='TRUE'
+        else
+            check='FALSE'
+        fi
+        LISTTINT+=("$check" "$name" "$file")
     done
     shopt -u globstar
 }
 
 loadDialog() {
-    local RET retval i pid cmd name file display
-    declare -a retTint
-## Populate dialog from array, get return value(s)
-    RET=$($DLGDEC $WINICON --list --title="$TITLE" \
+    local choice retval
+    choice=$($DLGDEC $WINICON --list --title="$TITLE" \
         --text="Select Tint2s from the list:" \
-        --checklist --width=400 --height=500 \
-        --column="Select" --column="tint2 Name" "${LISTTINT[@]}" --separator=":" \
-        $APPLY $CLOSE \
+        --checklist --width=400 --height=500 --print-column=2 \
+        --column="Select:CHK" --column="tint2 Name:TEXT" --column=path:HD "${LISTTINT[@]}" \
+        --separator='' --print-column=3 \
+        $APPLY --button='Apply+Close':2 $CLOSE \
         )
-# For OK button, add to last line of yad command:
-#       $APPLY $OK $CLOSE \
-
     retval=$?
     if (( retval == 1 )); then # close button pressed
         exit 0
     fi
-    :> "$SESSIONFILE"    # Create new session file
-
-    # loop through returned choices, add to array
-    i=0
-    OIFS=$IFS   # copy original IFS
-    IFS=":"     # separator is ":" in returned choices
-    for name in $RET; do
-        retTint[$i]=$name
-        i=$((i+1))
-    done
-    IFS=$OIFS    # reset IFS
-
-    # kill all tint2s
-    pgrep -a tint2 | while read -r pid cmd; do
-        if [[ ${cmd%% *} = tint2 ]]; then
-            kill "$pid"
+    if [[ -z $choice ]];then  # No tint2s chosen
+        MSG="Nothing chosen.\n\nKill all running Tint2s?"
+        $DLG $WINICON --title="$TITLE" --text="$MSG" $OK --button='Try Again':1
+        if [[ $? = 1 ]];then
+            return
         fi
-    done
+    fi
 
-    for name in "${retTint[@]}";do       # loop through checkmarked tint2 names
-        for ((j=0; j<${#tintsPath[*]}; j++));do  # traverse through elements
-            file=${tintsPath[j]}
-            display=${tintsArr[j]}
-            # see if it matches the returned name
-            if [[ $display = "$name" ]];then
-                echo "$file" >> "$SESSIONFILE"
-                set -m # enable job control so forked tint2 is immune to signals
-                # start the tint2 (adjust the sleep time if required)
-                tint2 -c "$file" >/dev/null 2>&1 &
-                disown
-                set +m
-                sleep 1s
-            fi
-        done
-    done
-#   if there is an $OK button that returns 2, it will apply changes and exit
+    :> "$SESSIONFILE"    # Create/overwrite empty session file
+
+    if [[ $(pidof tint2) ]];then
+        killall tint2
+        sleep 0.5 # make sure killed tint2s are not running at next iteration of getRunning()
+    fi
+
+    while read -r path
+    do
+        [[ -n $path ]] || continue
+        echo "$path" >> "$SESSIONFILE"
+        set -m # enable job control so forked tint2 is immune to signals
+        # start the tint2 (adjust the sleep time if required)
+        tint2 -c "$path" >/dev/null 2>&1 &
+        disown
+        set +m
+        sleep 0.5s
+    done <<< "$choice"
+
+#   if there is a button that returns 2, it will apply changes and exit
     (( retval == 2 )) && exit 0
 }
 
-# get any commandline arguments
+# get any commandline arguments (none expected)
 if ! (( $# == 0 ));then
     for arg in "$@";do
         if [[ $1 = "-h" ]] || [[ $1 = "--help" ]];then
             echo -e "$USAGE"
             exit 0
         else
-            echo -e "\tERROR: sorry I don't understand \"${arg}\""
+            echo "$0: ERROR: sorry I don't understand \"${arg}\"" >&2
             echo -e "$USAGE"
             exit 1
         fi
@@ -208,17 +204,8 @@ if ! (( $# == 0 ));then
 fi
 
 while true;do
-    runningTints=()
-    # get tint2 directories in .tint2, add to array
-    getRunning
-    findTint
-
-    LISTTINT=()
-    # loop through arrays, and build list text for yad dialog
-    for ((j=0; j<${#tintsArr[*]}; j++));do
-        LISTTINT+=("${checkArr[j]}" "${tintsArr[j]}")
-    done
-    loadDialog #"$LISTTINT" now a global array
+    findTints
+    loadDialog
 done
 
 exit 0
