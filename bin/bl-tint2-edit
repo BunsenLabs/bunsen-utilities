@@ -2,6 +2,7 @@
 #
 #    bl-tintedit: a BunsenLabs tint2 config file editor
 #    Copyright (C) 2015 damo    <damo@bunsenlabs.org>
+#                  2021 John Crawley <john@bunsenlabs.org>
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -37,12 +38,13 @@ Optional arguments:
     -h | --help    Show this message (no other options are supported at this time)
 
 Tint2 files must be in $TINT2PATH
+
 Checkmarked tint2s will be opened in the text editor.
 Multiple tint2s can be chosen.
 "
 
 ### DIALOG VARIABLES
-DLGDEC="yad --center  --borders=20 --width=400 --height=400 "
+DLGDEC="yad --center  --borders=20 --width=400 --height=500 "
 TITLE="BunsenLabs Tint2 Edit"
 WINICON="--window-icon=distributor-logo-bunsenlabs"
 OK="--button=OK:0"
@@ -50,25 +52,20 @@ CANCEL="--button=gtk-cancel:1"
 
 ########## FUNCTIONS ###################################################
 
-fillArrays(){
-    num="$1"
-    tintsPath[$num]="$2"   # full filepath to tint2
-    tintsArr[$num]="$3"    # displayed name: "directory/tintfile"
+findTints(){
+    LISTTINT=() # global
+    local file name
+    shopt -s globstar
+    for file in "$TINT2PATH"/**;do
+        [[ -f $file ]] || continue
+        [[ $file = *~ ]] && continue # ignore backups
+        grep -q "panel_monitor" "$file" || continue # not a tint2rc file
+        name=${file#$TINT2PATH/}
+        LISTTINT+=(FALSE "$name" "$file")
+    done
+    shopt -u globstar
 }
 
-findTint(){
-# search dirs for tint2 config files
-    num=0
-    for x in $(find $TINT2PATH -type f );do
-        # check if likely tint2 config file
-        pm=$(grep  "panel_monitor" "$x")
-        if [[ $pm ]];then
-            TINT2=$( echo $x | awk -F"/" '{print $(NF-1)"/"$NF}')
-            fillArrays $num $x $TINT2
-            num=$(($num+1))
-        fi
-    done
-}
 ######## END FUNCTIONS #################################################
 
 # look for a help option somewhere
@@ -82,45 +79,22 @@ do
     esac
 done
 
-# get tint2 directories, add to array
-findTint
+# get tint2s in $TINT2PATH, recursively, add to array LISTTINT
+findTints
 
-# loop through arrays, and build msg text for yad dialog
-unset LISTINT
-for ((j=0; j<${#tintsArr[*]}; j++));do
-    LISTINT="$LISTINT FALSE ${tintsArr[j]} "
-done
-## Populate dialog from array, get return value(s)
-RET=$($DLGDEC $WINICON --list --title="$TITLE" \
+## Populate yad dialog from array, get choice(s)
+choice=$( $DLGDEC $WINICON --list --title="$TITLE" \
     --text="Select Tint2s to edit from the list\nMultiple Tint2s can be chosen\n" \
-    --checklist \
-    --column="Select:CHK" --column="Tint2 Name:TXT" $LISTINT --separator=":" \
-    $OK $CANCEL \
-    )
+    --checklist  --separator='' \
+    --column="Select:CHK" --column="Tint2 Name:TEXT" --column="path:HD" "${LISTTINT[@]}" \
+    --print-column=3 $OK $CANCEL )
 
 if (( $? == 1 )); then # cancel button pressed
     exit 0
 else
-    i=0
-    OIFS=$IFS   # save Internal Field Separator
-    IFS=":"     # separator is ":" in returned choices
-    for name in $RET; do
-        retTint[$i]="$name"
-        i=$(($i+1))
-    done
-    IFS=$OIFS   # reset IFS back to default
-
-    # Find the chosen tint2s and edit them
-    for name in ${retTint[*]};do       # loop through checkmarked tint2 names
-        for ((j=0; j<${#tintsPath[*]}; j++));do  # traverse through elements
-            for f in ${tintsPath[j]};do    # compare with choice from dialog
-                display=$( echo "$f" | awk -F"/" '{print $(NF-1)"/"$NF}')
-                if [[ $display = $name ]];then
-                    bl-text-editor "$f"
-                fi
-            done
-        done
-    done
+    while read -r path
+    do
+        [[ -r $path ]] || continue
+        bl-text-editor "$path"
+    done <<< "$choice"
 fi
-
-exit 0
