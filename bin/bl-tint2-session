@@ -3,6 +3,7 @@
 #    bl-tint2-session: a script to read a saved Tint2 session file
 #     and start the tint2s
 #    Copyright (C) 2015 damo    <damo@bunsenlabs.org>
+#                  2021 John Crawley <john@bunsenlabs.org>
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -24,68 +25,105 @@
 #
 ########################################################################
 TINT2PATH="$HOME/.config/tint2"
+DEFAULTTINT2="${TINT2PATH}/tint2rc"
 SESSIONFILE="$TINT2PATH/tint2-sessionfile"
 USAGE='bl-tint2-session is a script to parse a saved Tint2 session file
 and start the tint2s.
 
-Usage: bl-tint2-session
-   or: bl-tint2-session --help|-h
+Usage: bl-tint2-session [OPTION(S)]...[FILES]
 
 Optional arguments:
     --help | -h
-        show this message (no other options are supported at this time)
+        show this message
+    <SESSIONFILE>
 
-The script uses the default tint2 session file
-~/.config/tint2/tint2-sessionfile if it exists,
-otherwise the default tint2rc is used.
+With no command arguments, the script uses the default tint2 session file
+~/.config/tint2/tint2-sessionfile" if it exists,
+otherwise the default tint2rc is written to a new tint2-sessionfile.
 
-To start the tint2 session at login,
+If a filepath is passed it is used as the session file,
+multiple sessions can be loaded.
+
+If not absolute, sessionfile paths are assumed to be relative to ~/.config/tint2/
+
+To start the default tint2 session at login,
 add the following line to autostart:
 
     bl-tint2-session
 '
 
+# look for a help option somewhere
+for i in "$@"
+do
+    case "$i" in
+    -h|--help)
+        echo "$USAGE"
+        exit 0
+        ;;
+    esac
+done
+
 # Kill only with exact match, and only if process belongs to executor.
 # Usage: safeKill <processname>
-function safeKill() {
+function safeKill(){
     pkill -x -u "$USER" "$1"
 }
 
-findArgs(){     # get command args
-    for arg in "$@";do
-        if [[ $1 = "-h" ]] || [[ $1 = "--help" ]];then
-            echo "$USAGE"
+findArgs(){
+    while [[ -n $1 ]]
+    do
+        case "$1" in
+        '-h'|'--help') # but already checked above
+            echo -e "$USAGE"
             exit 0
-        else
-            echo -e "\tERROR: sorry I don't understand the input"
-            echo "$USAGE"
-            exit 0
-        fi
+            ;;
+        -*)
+            echo "$0: ${1}: no such option"$'\n' >&2
+            echo -e "$USAGE"
+            exit 1
+            ;;
+        *)
+            loadSession "$1" # non-default session file was passed
+            ;;
+        esac
+        shift
     done
 }
 
-testSessionfile(){
-    if test -f  "$1" ;then # sessionfile found
+loadSession(){
+    local sessfile=$1
+    [[ $sessfile = /* ]] || sessfile="$TINT2PATH/$sessfile" # was relative path
+    if [[ -f "$sessfile" ]]; then
         safeKill tint2
-        while read line;do
-            tint2 -c "$line" >/dev/null 2>&1 &
-            sleep 1s
-        done < "$1"
+        set -m
+        while read -r path;do
+            [[ $path = /* ]] || path="$TINT2PATH/$path" # was relative path
+            [[ -r $path ]] || { echo "$0: WARNING: cannot read $path" >&2 ; continue;}
+            tint2 -c "$path" >/dev/null 2>&1 &
+            disown
+            sleep 0.5
+        done < "$sessfile"
+        set +m
     else
-        echo -e "Created sessionfile \"$1\"\nRunning default tint2rc" 2>&1
-        echo "$TINT2PATH/tint2rc" > "$SESSIONFILE"
-        safeKill tint2
-        tint2 -c "$TINT2PATH/tint2rc" >/dev/null 2>&1 &
+        echo "$0: ERROR: session file $sessfile does not exist." >&2
+        exit 1
     fi
 }
 
-if [ $# -eq 0 ];then    # if no args, then run default sessionfile
-    testSessionfile "$SESSIONFILE"
+########################################################################
+
+if [[ ! -f $SESSIONFILE ]] ; then
+    echo "$0: There is no default session file: ${SESSIONFILE}, generating now..." >&2
+    if [[ -f $DEFAULTTINT2 ]]; then
+        echo "$DEFAULTTINT2" > "$SESSIONFILE"
+    else
+        echo "$0: ERROR: unable to generate default session file." >&2
+        exit 1
+    fi
+fi
+
+if (( $# == 0 )); then
+    loadSession "$SESSIONFILE"
 else
     findArgs "$@"
 fi
-
-# restart compositor in case of rendering problems
-#bl-compositor --restart
-
-exit 0
