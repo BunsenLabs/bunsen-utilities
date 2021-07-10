@@ -64,6 +64,7 @@ USAGE1='
     -z,--choose-sessfile    : run filename entry dialog for new saved session
     -s,--choose-startup     : choose session file to run at startup
 '
+
 USAGE2='bl-conky-manager is a Conky selection and switcher script
 which uses yad to generate a graphical user interface.
 
@@ -121,7 +122,7 @@ fi
 
 ### DIALOG VARIABLES
 DLG="yad --center --undecorated --borders=20 "
-DLGDEC="yad --center  --borders=20 "
+DLGDEC="yad --center --borders=20 "
 TITLE="BunsenLabs Conky Manager"
 WINICON="--window-icon=distributor-logo-bunsenlabs"
 OK="--button=OK:0"
@@ -130,26 +131,32 @@ CANCEL="--button=gtk-cancel:1"
 CLOSE="--button=Close:1"
 ########## FUNCTIONS ###################################################
 
+# for yad text display of filenames
+pangoEscape() {
+    local string="${1//&/&amp;}"
+    string="${string//</&lt;}"
+    string="${string//>/&gt;}"
+    printf '%s' "$string"
+}
+
 CPATH_REGEX='.*(conky.*\.conf|conky|conkyrc)'
 
 # populates global array runningConkys
 getRunning(){
     unset runningConkys
-    local pid CPATH
+    local pid command CPATH
     declare -g -A runningConkys
     while read -r pid; do
         mapfile -d '' -t command < "/proc/${pid}/cmdline" # use NULL delimiter to split cmdline into array 'command'
         [[ ${command[0]} = 'conky' ]]  || {
-            echo "$0: pgrep conky parsing failed: command is not 'conky'" >&2
+            echo "$0: pgrep parsing failed: command is not 'conky'" >&2
             continue
         }
         for i in "${!command[@]}"; do
             [[ ${command[i]} = '-c' ]] && { CPATH="${command[i+1]}"; break;}
             [[ ${command[i]} = '--config='* ]] && { CPATH="${command[i]#--config=}"; break;}
         done
-        if [[ -z $CPATH ]];then
-            CPATH="$CONKYDEFAULT"
-        fi
+        [[ -z $CPATH ]] && CPATH="$CONKYDEFAULT"
         [[ $CPATH = /* ]] || CPATH="$HOME/$CPATH" # assume path is relative to $HOME
         [[ -f $CPATH ]] || {
             echo "$0: pgrep conky parsing failed: $CPATH is not a file" >&2
@@ -181,7 +188,7 @@ findConkys(){
         else
             check='FALSE'
         fi
-        LISTCONKY+=("$check" "$name" "$file")
+        LISTCONKY+=("$check" "$(pangoEscape "$name")" "$file")
     done
     shopt -u globstar
 }
@@ -289,34 +296,36 @@ chooseDesktop(){
     # shellcheck disable=SC2034
     while read -r desktop a b c d e f g h name
     do
-        dtplst+=(FALSE "$desktop" "$name")
+        dtplst+=(FALSE "$name" "$desktop")
     done < <( wmctrl -d )
     choice=$($DLGDEC $WINICON --list --title="$TITLE" \
         --text="Choose a desktop for ${path##*/}:" \
         --radiolist --width=300 --height=400 \
-        --column=Select:RD --column=desktop:HD --column="Desktop Name:TEXT" \
-        "${dtplst[@]}" --separator='' --print-column=2 "$OK" ) || return 1
+        --column=Select:RD --column="Desktop Name:TEXT" --column=desktop:HD \
+        "${dtplst[@]}" --separator='' --print-column=3 "$OK" ) || return 1
     [[ $choice = x || -z $choice ]] && return 1
     printf '%s' "$choice"
 }
 
 chooseStartup(){
-    local file sflst choice
+    local file chk name sflst choice
     type bl-conky-session >/dev/null 2>&1 || { "$0: '--choose-startup' option uses bl-conky-session" >&2; return 1;}
     while read -r file;
     do
         if [[ $file = *\ \* ]]; then # current startup filepath has appended ' *'
             file=${file% \*}
-            sflst+=(TRUE "$file" "${file#$CONKYPATH/}")
+            chk=TRUE
         else
-            sflst+=(FALSE "$file" "${file#$CONKYPATH/}")
+            chk=FALSE
         fi
+        name=${file#$CONKYPATH/}
+        sflst+=("$chk" "$(pangoEscape "$name")" "$file")
     done < <(bl-conky-session --list)
     choice=$($DLGDEC $WINICON --list --title="$TITLE" \
         --text="Choose the startup Conky session:" \
         --radiolist --width=300 --height=400 \
-        --column=Select:RD --column="Filepath:HD" --column="Session File:TEXT" \
-        "${sflst[@]}" --separator='' --print-column=2 "$OK" "$CANCEL") || return 1
+        --column=Select:RD --column="Session File:TEXT" --column="Filepath:HD" \
+        "${sflst[@]}" --separator='' --print-column=3 "$OK" "$CANCEL") || return 1
     [[ -z $choice ]] && return 1
     bl-conky-session --set-startup "$choice" || return 1
 }
@@ -397,7 +406,7 @@ loadDialog() {
             sleep 0.5s
         done <<< "$choice"
     fi
-#   if there is an 'Apply+Close' button that returns 2, it will apply changes and exit
+#   if there is a button that returns 2, it will apply changes and exit
     (( retval == 2 )) && { setStartupDlg; exit;}
 }
 
@@ -453,6 +462,7 @@ while [[ -n $1 ]];do
             exit
             ;;
         *)
+            echo "$0: $1: unknown option"$'\n'
             echo -e "$USAGE1"
             exit 1
             ;;
