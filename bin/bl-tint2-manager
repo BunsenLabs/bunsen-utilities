@@ -93,6 +93,14 @@ CANCEL="--button=gtk-cancel:1"
 CLOSE="--button=Close:1"
 ########## FUNCTIONS ###################################################
 
+# for yad text display of filenames
+pangoEscape() {
+    local string="${1//&/&amp;}"
+    string="${string//</&lt;}"
+    string="${string//>/&gt;}"
+    printf '%s' "$string"
+}
+
 getRunning(){
     unset runningTints
     local pid command TPATH
@@ -140,7 +148,7 @@ findTints(){
         else
             check='FALSE'
         fi
-        LISTTINT+=("$check" "$name" "$file")
+        LISTTINT+=("$check" "$(pangoEscape "$name")" "$file")
     done
     shopt -u globstar
 }
