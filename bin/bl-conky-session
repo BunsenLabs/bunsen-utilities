@@ -226,14 +226,14 @@ listSessfiles(){
 ########################################################################
 
 if [[ ! -f $DEFAULTSESSFILE ]] ; then
-    echo "$0: Failed to locate ${DEFAULTSESSFILE}, generating default..." >&2
+    echo "$0: There is no default session file: ${DEFAULTSESSFILE}, generating now..." >&2
     if [[ -f $BLDEFAULT ]]; then
         echo "$BLDEFAULT" > "$DEFAULTSESSFILE"
     elif [[ -f $CONKYDEFAULT ]]; then
         echo "$0: $BLDEFAULT not found, using $CONKYDEFAULT in session file." >&2
         echo "$CONKYDEFAULT" > "$DEFAULTSESSFILE"
     else
-        echo "$0: WARNING: unable to generate default session file." >&2
+        echo "$0: ERROR: unable to generate default session file." >&2
         exit 1
     fi
 fi
@@ -271,7 +271,8 @@ do
         sessions["$STARTSESSION"]=1
         ;;
     -*)
-        echo "$0: ${1}: no such option" >&2
+        echo "$0: ${1}: no such option"$'\n' >&2
+        echo -e "$USAGE"
         exit 1
         ;;
     *)
@@ -295,7 +296,7 @@ if (( ${#sessions[@]} > 0 )); then
     for SESSION in "${!sessions[@]}";do # run the conkys in the sessionfiles
         loadSession "$SESSION"
     done
-else    # no sessionfiles passed to bl-conky-manager
+else    # no sessionfiles passed
     loadSession "$STARTSESSION"   # use whichever file symlink conky-startup-session points to (conky-sessionfile by default)
 fi
 
