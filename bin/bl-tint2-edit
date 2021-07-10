@@ -52,6 +52,14 @@ CANCEL="--button=gtk-cancel:1"
 
 ########## FUNCTIONS ###################################################
 
+# for yad text display of filenames
+pangoEscape() {
+    local string="${1//&/&amp;}"
+    string="${string//</&lt;}"
+    string="${string//>/&gt;}"
+    printf '%s' "$string"
+}
+
 findTints(){
     LISTTINT=() # global
     local file name
@@ -61,7 +69,7 @@ findTints(){
         [[ $file = *~ ]] && continue # ignore backups
         grep -q "panel_monitor" "$file" || continue # not a tint2rc file
         name=${file#$TINT2PATH/}
-        LISTTINT+=(FALSE "$name" "$file")
+        LISTTINT+=(FALSE "$(pangoEscape "$name")" "$file")
     done
     shopt -u globstar
 }
