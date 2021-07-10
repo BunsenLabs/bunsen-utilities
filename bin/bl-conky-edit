@@ -54,6 +54,14 @@ CANCEL="--button=gtk-cancel:1"
 
 ########## FUNCTIONS ###################################################
 
+# for yad text display of filenames
+pangoEscape() {
+    local string="${1//&/&amp;}"
+    string="${string//</&lt;}"
+    string="${string//>/&gt;}"
+    printf '%s' "$string"
+}
+
 CPATH_REGEX='.*(conky.*\.conf|conky|conkyrc)'
 
 findConkys(){
@@ -64,7 +72,7 @@ findConkys(){
         [[ -f $file ]] || continue
         [[ $file =~ ${CPATH_REGEX}$ ]] || continue # ignore other than conky config files
         name=${file#$CONKYPATH/}
-        LISTCONKY+=(FALSE "$name" "$file")
+        LISTCONKY+=(FALSE "$(pangoEscape "$name")" "$file")
     done
     shopt -u globstar
 }
@@ -88,7 +96,7 @@ findConkys
 ## Populate yad dialog from array, get choice(s)
 choice=$( $DLGDEC $WINICON --list --title="$TITLE" \
     --text="Select Conkys to edit from the list\nMultiple Conkys can be chosen" \
-    --checklist --width=400 --height=500 \
+    --checklist \
     --column="Select:CHK" --column="Conky Name:TEXT" --column="path:HD" "${LISTCONKY[@]}" \
     --separator='' --print-column=3 $OK $CANCEL )
 
