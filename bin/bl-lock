@@ -4,7 +4,7 @@
 #    If running in live mode, offer up a prompt detailing the live session password.
 #    Else, run light-locker-command -l.
 #    Copyright (C) 2012 Philip Newborough   <corenominal@corenominal.org>
-#    Copyright (C) 2015-2016  John Crawley <john@bunsenlabs.org>
+#    Copyright (C) 2015-2021  John Crawley <john@bunsenlabs.org>
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -48,7 +48,8 @@ which ${LOCK_COMMAND[0]} >/dev/null 2>&1 || {
     exit 1
 }
 
-if [[ -d /lib/live && ! -f $HOME/.config/bunsen/bl-lock ]]; then
+#if [[ -d /lib/live && ! -f $HOME/.config/bunsen/bl-lock ]]; then
+if grep -q '\<boot=live\>' /proc/cmdline && [[ ! -e $HOME/.config/bunsen/bl-lock ]]; then
     yad --image='bunsenlabs' --window-icon='distributor-logo-bunsenlabs' --center --borders=20 --button=gtk-ok --fixed --on-top --title='Lock screen info:' --text='Lock screen has detected you are running a live session.\nThe username needed to unlock the screen is "user" and the password is "live".\nThis notice will only be displayed once per live session.'
     mkdir -p "$HOME/.config/bunsen"
     touch "$HOME/.config/bunsen/bl-lock"
