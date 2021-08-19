@@ -1,3 +1,9 @@
+bunsen-utilities (11.1-2) beryllium; urgency=medium
+
+  * debian/control: Add flag to handle package upgrades.
+
+ -- John Crawley <john@bunsenlabs.org>  Thu, 19 Aug 2021 16:12:13 +0900
+
 bunsen-utilities (11.1-1) beryllium; urgency=medium
 
   * Add generic restart script: bl-restart.
