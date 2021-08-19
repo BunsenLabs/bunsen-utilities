@@ -358,6 +358,7 @@ firstChecks() {
 }
 
 # Fork a process to the background, return 1 if it exits soon.
+# Do not use with processes like conky, which can fork themselves to a new pid.
 # Global $FORKWAIT is time to wait before checking if process is still running.
 # Arguments are the command to run.
 forkncheck() {
@@ -850,7 +851,7 @@ function getConky(){
     for (( i=0; i<num_desktops; i++ ));do  # get all conkys running on specific desktops
         while read -r id;do
             unset arrSTICKY["$id"] # remove from sticky list
-            if ! [[ -z "$id" ]];then
+            if [[ -n "$id" ]];then
                 getIdCmd "$id" # generates array idCmd
                 getCfile # extract conky config file as variable $conkyfile
                 conkycmd=${idCmd[*]} # TODO now in string, filepaths with spaces will be broken.
@@ -873,11 +874,11 @@ function getConky(){
                 echo "$conkycmd" >> "$saved_conkysession"
                 debug "Added '$conkycmd' to saved conkysession file"
             fi
-        done < <(xdotool search --desktop $i --class conky)
+        done < <(xdotool search --desktop $((i)) --class conky)
     done
 
     for id in "${!arrSTICKY[@]}";do  # get commands - we don't need wmctrl for these
-        if ! [[ -z "$id" ]];then
+        if [[ -n "$id" ]];then
             getIdCmd "$id" # generates array idCmd
             getCfile # extract conky config file
             conkycmd=${idCmd[*]} # TODO now in string, filepaths with spaces will be broken.
@@ -1146,7 +1147,7 @@ function getScrot(){
         wmctrl -k on    # hide windows, show desktop
         conkyFLAG=0
     else                # Conkys will be saved, so don't hide them for the scrot
-        getWINDOWS min  # minimize windows
+        getWINDOWS min  # minimize non-conky windows
     fi
     checkTint2 stop     # stop running Tint2s for the scrot, if not selected to be saved
     # start lxappearance
@@ -1734,6 +1735,7 @@ needBackup(){
 
 # THEMEPATH and BKP_SFX are globals set by displayBlobs() and restoreSettings() respectively.
 # dconfdir and appname passed as $1 and $2 from restoreSettings()
+# dconfdir is a dconf path, not a file path.
 function restoreDconf(){
     local dconfdir appname src_file bkpdir bkp_file current_state blob_state
     dconfdir=$1
