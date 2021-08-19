@@ -1,3 +1,22 @@
+bunsen-utilities (11.1-1) beryllium; urgency=medium
+
+  * Add generic restart script: bl-restart.
+  * bl-conky-session, bl-conky-manager: support setting desktop in session files.
+  * Rename bl-conkyedit to bl-conky-edit, bl-tint2edit to bl-tint2-edit.
+  * bl-conky-edit: display conkys in locale sort order
+  * bl-conky-session: new options:
+     + "--kill-running" kill current conkys without prompt
+     + "--set-startup" set startup session
+     + "--list" list session files in saved-sessions
+  * bl-conky-manager:
+     + add GUI to choose startup conky session
+     + add option to set as startup default when saving a new session
+  * bl-lock: fix test for live system
+  * bl-tint2-session: allow session file to be passed
+  * All: add pango escaping for yad text when displaying filepaths. 
+
+ -- John Crawley <john@bunsenlabs.org>  Thu, 19 Aug 2021 15:10:09 +0900
+
 bunsen-utilities (11.0-2) beryllium; urgency=medium
 
   * bl-pkg-versions: update for beryllium experimental repo.
