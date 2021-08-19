@@ -19,7 +19,7 @@
 #
 #
 #   To start the default conky session at login, add the following line
-#   to config/openbox/autostart:
+#   to config/bunsen/autostart:
 #
 #      bl-conky-session &
 #
@@ -52,9 +52,13 @@ Options:
             (An asterisk is appended to the current startup session.)
 
 Examples:
+    Run default sessionfile at login:
+
+            "bl-conky-session &"
+
     Run specified sessionfile at login:
 
-            "bl-conky-session /path/to/sessionfile"
+            "bl-conky-session /path/to/sessionfile &"
 
     Run default sessionfile, do not prompt about killing current conkys:
 
