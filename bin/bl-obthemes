@@ -170,6 +170,7 @@ DMENU=".config/dmenu/dmenu-bind.sh"
 XFILE=".Xresources"
 BASHRC=".bashrc"
 #TERMFILE='' # now termfile is set dynamically by checkTerm() in saveSettings()
+COMPFILE=".config/picom.conf"
 
 CONKYPATH=".config/conky"
 TINTPATH=".config/tint2"
@@ -261,6 +262,7 @@ PICKLDM="Lightdm Login theme"
 #PICKTERM='' # now not global, pickterm is from checkTerm(), local in saveSettings()
 PICKX="X configs"
 PICKBASH="Bash configs"
+PICKCOMP="Compositor"
 
 ### END DIALOG VARIABLES
 
@@ -555,6 +557,7 @@ GUI Themes Manager</b></big>
     LightDM theme
     X configs (.bashrc, .Xresources)
     Terminal (if config file exists)
+    Compositor (if config file exists)
     + Screenshot'
 
     debug 'Welcome to BLOB!'
@@ -1051,6 +1054,14 @@ function getBashRC(){
     echo "$txt" >> "$LISTMSG"
 }
 
+function getComp(){
+    saveFiles "$COMPFILE" || return 1
+    txt="Compositor settings: ~/$COMPFILE\n"
+    debug "\n  Saved $txt"
+    echo "[COMPOSITOR] $COMPFILE" >> "$SETTINGS"
+    echo "$txt" >> "$LISTMSG"
+}
+    
 function checkTint2(){   # kill or restart tint2s for screenshot, if necessary
     if [[ $1 = stop ]];then
         if ! grep -q "TINT2" "$SETTINGS" ;then
@@ -1240,6 +1251,7 @@ function saveSettings(){
         "$PICKLDM"
         "$PICKX"
         "$PICKBASH"
+        "$PICKCOMP"
     )
     checkTerm # sets termfile and pickterm
     # add terminal to array if one with a config file is in use
@@ -1265,6 +1277,8 @@ function saveSettings(){
             "$PICKX"    )   getXconfig
                             ;;
             "$PICKBASH"    )   getBashRC
+                            ;;
+            "$PICKCOMP"    )   getComp
                             ;;
             "$pickterm" )   getTerminal "$termfile" "$pickterm"
                             ;;
@@ -1835,6 +1849,9 @@ restoreSettings() {
                                 ;;
             "[BASHRC]"      )   labels+=("$PICKBASH")
                                 values["$PICKBASH"]="$VAL"
+                                ;;
+            "[COMPOSITOR]"      )   labels+=("$PICKCOMP")
+                                values["$PICKCOMP"]="$VAL"
                                 ;;
             '['*']'         )   TAG="${TAG#[}" # strip outside brackets
                                 TAG="${TAG%]}"
