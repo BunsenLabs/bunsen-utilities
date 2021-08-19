@@ -44,7 +44,7 @@ Recommends: at,
   nitrogen | feh,
   scrot,
   xsettingsd
- Breaks: bunsen-pipemenus (<< 11.2-1)
+Breaks: bunsen-pipemenus (<< 11.2-1)
 Description: Small scripts to use with BunsenLabs.
  A collection of small scripts to provide various functions
  which might be useful to BunsenLinux users and system administrators.
