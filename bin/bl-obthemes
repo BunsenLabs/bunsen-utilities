@@ -1029,7 +1029,7 @@ function getDmenu(){
 
 function getLightdm(){
     local txt
-    saveFileAbs "$LDMDIR/$LDM" "$CONFIGDIR/$LDM"
+    saveFileAbs "$LDMDIR/$LDM" "$CONFIGDIR/$LDM" || return 1
     txt="Lightdm config:  $LDMDIR/$LDM\n(password will be needed to restore)\n"
     debug "\n  Saved $txt"
     echo "[LIGHTDM]" >> "$SETTINGS"
@@ -1143,7 +1143,7 @@ function getWINDOWS(){  # Minimize/Activate windows for scrot. Args= 'min', 'rai
 function getScrot(){
     local conkyFLAG currDesktop SCROT MONS
     conkyFLAG=1
-    currDesktop=$(xprop -root _NET_CURRENT_DESKTOP | tail -c -2)
+    currDesktop=$(xdotool get_desktop)
     SCROT="$USRCONFIGPATH/$NEWNAME/${NEWNAME}.jpg"
     MONS=$(xrandr -q | grep -c " connected")    # number of monitors
     debug "Taking screenshot..."
@@ -1557,7 +1557,7 @@ function restoreOBrc(){
 function restoreConky(){    # $1 = $VAL from restoreSettings()
     local conkycmds currDesktop user_conkysession saved_conkysession
     conkycmds="${1//;/$'\n'}"
-    currDesktop=$(xprop -root _NET_CURRENT_DESKTOP | tail -c -2)   # Conkys may have been started on different desktops
+    currDesktop=$(xdotool get_desktop)   # Conkys may have been started on different desktops
     user_conkysession="$HOME/$CONKYSESSION"
     saved_conkysession="$THEMEPATH/user/$CONKYSESSION"
     # cd only applies during subshell
