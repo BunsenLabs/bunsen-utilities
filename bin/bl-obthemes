@@ -955,25 +955,44 @@ function getTint(){
     debug "\n  Saved running Tint2(s)\n"
 }
 
-# global OBTHEME from getOBname()
-function getOBtheme(){   # copy <theme> section from rc.xml to obtheme.txt
-    [[ -r $RCFILE ]] || RCFILE="$OLDRCFILE"
-    tag="theme"
-    sed -n "/<$tag>/,/<\/$tag>/p" "$RCFILE" > "$CONFIGDIR/obtheme.txt"
-    getOBname
-    echo "[OBTHEME] $OBTHEME" >> "$SETTINGS"
-    debug "copied Openbox theme (${OBTHEME}) section from $RCFILE"
-}
-
-function getOBname(){    # get Openbox theme name, generate OBTHEME
-    local txt obfile
+# copy <theme> section from bl-rc.xml to obtheme.txt
+function getOBtheme(){
+    local obfile obtheme xpath
     obfile="$CONFIGDIR/obtheme.txt"
-    # OBTHEME=$(awk 'NR==2 {print;exit}' "$obfile" | awk -F'[>|<]' '{print $3}')
-    # sed command is long, but it's more precise, and a little bit faster than two awk calls
-    OBTHEME=$(sed -nr '/<theme>/ {N;s/^[[:blank:]]*<theme>[[:space:]]*<name>([^<]*)<\/name>.*$/\1/p;q}' "$obfile")
-    txt="Openbox theme:  $OBTHEME\n"
-    debug "\n  Saved $txt"
-    echo "$txt" >> "$LISTMSG"
+    [[ -r $RCFILE ]] || {
+        RCFILE="$OLDRCFILE"
+        debug "Getting openbox theme from $OLDRCFILE instead of $RCFILE"
+    }
+    [[ -r $RCFILE ]] || return 1
+    xsl='<?xml version="1.0" encoding="UTF-8"?>
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:ob="http://openbox.org/3.4/rc">
+  <xsl:output method="xml" encoding="UTF-8" omit-xml-declaration="yes" />
+
+  <xsl:template match="/">
+    <xsl:apply-templates select="/ob:openbox_config/ob:theme" />
+  </xsl:template>
+
+  <xsl:template match="*">
+    <xsl:element name="{local-name()}">
+      <xsl:apply-templates select="@*|node()" />
+    </xsl:element>
+  </xsl:template>
+
+  <xsl:template match="@*|text()|comment()">
+    <xsl:copy/>
+  </xsl:template>
+
+</xsl:stylesheet>
+'
+    xmlstarlet transform <(cat <<<"$xsl") "$RCFILE" > "$obfile" || return 1
+    [[ -s $obfile ]] || return 1
+    # $obfile has no namespace declarations, so '_:' syntax unnecessary
+    xpath='/theme/name/text()'
+    obtheme=$(xmlstarlet sel --template --value-of "$xpath" "$obfile")
+    [[ -n $obtheme ]] || return 1
+    echo "Openbox theme:  $obtheme" >> "$LISTMSG"
+    echo "[OBTHEME] $obtheme" >> "$SETTINGS"
+    debug "copied Openbox theme (${obtheme}) section from $RCFILE"
 }
 
 function getGTKtheme(){
@@ -1463,35 +1482,76 @@ function checkOBTHEME(){
     fi
 }
 
+# escape filepaths for xmlstarlet
+urlencode() {
+    local LC_ALL=C c i e=''
+    for (( i = 0; i < ${#1}; i++ )); do
+        c=${1:i:1}
+        case $c in
+            [[:alnum:].~_-]) ;;
+            *) printf -v c '%%%02X' "'$c" ;;
+        esac
+        e+=$c
+    done
+    printf '%s' "$e"
+}
+
+# RCFILE and OLDRCFILE set in USER CONFIG VARIABLES at top.
 # THEMEPATH and BKP_SFX are globals,
 # set by displayBlobs() and restoreSettings() respectively.
 function restoreOBrc(){
-    THEMEFILE="$THEMEPATH/obtheme.txt"
-    FTEMP=$(mktemp --tmpdir blob.XXXX)
-    [[ -r $RCFILE ]] || RCFILE="$OLDRCFILE"
+    local themefile rcbkp xsl
+    themefile="$THEMEPATH/obtheme.txt"
+    [[ -r $RCFILE ]] || {
+        RCFILE="$OLDRCFILE"
+        debug "Restoring theme from $themefile to $OLDRCFILE instead of $RCFILE"
+    }
     # backup bl-rc.xml first
-    RCBKP="${RCFILE}${BKP_SFX}"
-    cp "$RCFILE" "$RCBKP"
+    rcbkp="${RCFILE}${BKP_SFX}"
+    cp "$RCFILE" "$rcbkp"
     # remove older backups
     for f in "$OBPATH"/*.blob~ ;do
-        if [[ $f -ot $RCBKP ]];then
+        if [[ $f -ot $rcbkp ]];then
             rm "$f"
         fi
     done
-    ## put placeholder in place of <theme> section, write to tempfile
-    sed -n "/<theme>/{:a;N;/<\/theme>/!ba;N;s/.*\n/THEMESECTION\n/};p" "$RCFILE" > "$FTEMP"
-    # replace placeholder from theme file
-    sed -i "/THEMESECTION/{
-        s/THEMESECTION//g
-        r $THEMEFILE
-    }" "$FTEMP"
-    sed -i '/^$/d' "$FTEMP"   # remove empty lines
-    cp "$FTEMP" "$RCFILE"     # overwrite rc.xml
-    debug "\n  rc.xml backed up and edited for OB theme"
-    openbox --reconfigure && debug "\n Openbox reconfigured"
-#    hash jgmenu_run 2>/dev/null && JGMENU_RCXML="$RCFILE" jgmenu_run init --apply-obtheme && debug "\n jgmenu reconfigured"
+    debug "\n  $RCFILE backed up as $rcbkp"
+    # Replace <theme> element in $RCFILE from $themefile:
+    xsl='<?xml version="1.0" encoding="UTF-8"?>
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:ob="http://openbox.org/3.4/rc" >
+  <xsl:output method="xml" encoding="UTF-8" />
+  <xsl:param name="themefile" /> <!-- must url encode this file path -->
+
+  <xsl:template match="@*|node()">
+    <xsl:copy>
+      <xsl:apply-templates select="@*|node()" />
+    </xsl:copy>
+  </xsl:template>
+
+  <xsl:template match="ob:theme">
+    <xsl:apply-templates  select="document($themefile)" />
+  </xsl:template>
+  <!-- create elements with default namespace -->
+  <xsl:template match="*" >
+    <xsl:element name="{local-name()}" namespace="http://openbox.org/3.4/rc">
+      <xsl:apply-templates select="@*|node()" />
+    </xsl:element>
+  </xsl:template>
+
+  <xsl:template match="@*|text()|comment()">
+    <xsl:copy/>
+  </xsl:template>
+
+</xsl:stylesheet>
+'
+    themefile="file://$(urlencode "$themefile")"
+    xmlstarlet transform <(cat <<<"$xsl") -p themefile="'$themefile'"  "$RCFILE" > "${RCFILE}_tmp" || return 1
+    cat "${RCFILE}_tmp" > "$RCFILE" || return 1
+    rm "${RCFILE}_tmp"
+
+    debug "\n  $RCFILE edited for OB theme"
+    openbox --reconfigure || return 1
     debug "\n Openbox reconfigured"
-    rm -f "$FTEMP"
 }
 
 function restoreConky(){    # $1 = $VAL from restoreSettings()
