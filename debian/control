@@ -31,6 +31,7 @@ Depends: ${misc:Depends},
   python3-xlib,
   wmctrl,
   xdotool (>=1:2.20110530.1-3),
+  xmlstarlet,
   yad
 Conflicts: bunsen-lock, bunsen-user-setup
 Recommends: at,
