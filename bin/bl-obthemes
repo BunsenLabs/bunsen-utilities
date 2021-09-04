@@ -781,6 +781,7 @@ function getNitrogen(){  # get Nitrogen saved backgrounds
 # WARNING WM_COMMAND is deprecated: https://www.x.org/releases/X11R7.6/doc/xorg-docs/specs/ICCCM/icccm.html#obsolete_session_manager_conventions
 # Usage: getIdCmd <id>
 # called in getConky() where idCmd is local array variable
+# NOTE this works with conky windows, but tint2 provides no WM_COMMAND data.
 function getIdCmd(){
     local wmc del s
     wmc=$(xprop -id "$1"  WM_COMMAND)
@@ -790,8 +791,7 @@ function getIdCmd(){
     del='", "' # delimiter
     s=${wmc}${del}
     idCmd=()
-    while [[ -n $s ]]
-    do
+    while [[ -n $s ]]; do
         idCmd+=("${s%%${del}*}")
         s=${s#*${del}}
     done
@@ -825,10 +825,9 @@ userFilepath(){
 }
 
 function getConky(){
-    local conkyfile conkycmd saved_conkysession num_desktops CONKYCMDS CONKYTXT
+    local conkyfile conkyline saved_conkysession num_desktops CONKYCMDS CONKYTXT
     local -a idCmd
     local -A arrSTICKY
-    conkycmd=""
     saved_conkysession="$CONFIGDIR/user/$CONKYSESSION"
     num_desktops=$(xdotool get_num_desktops)
     CONKYCMDS=''
@@ -839,7 +838,7 @@ function getConky(){
 
     [[ $(pidof conky) ]] || {
         debug "No conkys are running"
-        echo "[CONKY] none" >> "$SETTINGS"
+        echo '[CONKY] none' >> "$SETTINGS"
         echo -e "No conkys.\n(Any running conkys will be stopped.)\n" >> "$LISTMSG"
         return 0
     }
@@ -848,67 +847,64 @@ function getConky(){
         arrSTICKY["$id"]=1
     done < <(xdotool search --class conky)
 
-    for (( i=0; i<num_desktops; i++ ));do  # get all conkys running on specific desktops
+    for (( d=0; d<num_desktops; d++ ));do  # get all conkys running on specific desktops
         while read -r id;do
             unset arrSTICKY["$id"] # remove from sticky list
             if [[ -n "$id" ]];then
                 getIdCmd "$id" # generates array idCmd
                 getCfile # extract conky config file as variable $conkyfile
-                conkycmd=${idCmd[*]} # TODO now in string, filepaths with spaces will be broken.
-                if [[ "$conkycmd" == "conky" ]] || [[ "$conkycmd" == "conky -q" ]];then
+                if [[ "${idCmd[*]}" == "conky" ]] || [[ "${idCmd[*]}" == "conky -q" ]];then # $conkyfile will be empty
+                    conkyfile='.config/conky/conky.conf'
                     CONKYTXT="$CONKYTXT\n\tDesktop $i:  Default Conky"
-                    debug "Found running default conky on Desktop $i"
+                    debug "Found running default conky on Desktop $d"
                     debug "saving copy of default conky file"
-                    saveFiles '.config/conky/conky.conf' || return 1
                 else
-                    CONKYTXT="$CONKYTXT\n\tDesktop $i:  $conkyfile"
-                    debug "Found running conky file $conkyfile on Desktop $i"
-                    conkyfile=$( userFilepath "$conkyfile" ) && {
-                        debug "Saving copy of $conkyfile"
-                        saveFiles "$conkyfile" || return 1
-                    }
+                    conkyfile=$( userFilepath "$conkyfile" ) || continue
+                    CONKYTXT="$CONKYTXT\n\tDesktop $d:  $conkyfile"
+                    debug "Found running conky file $conkyfile on Desktop $d"
+                    debug "Saving copy of $conkyfile"
                 fi
-                # command to start on specified desktop with wmctrl
-                conkycmd="wmctrl -s $i && $conkycmd & sleep 1s"
-                CONKYCMDS="${CONKYCMDS}${conkycmd};" # add semicolon separator here
-                echo "$conkycmd" >> "$saved_conkysession"
-                debug "Added '$conkycmd' to saved conkysession file"
+                saveFiles "$conkyfile" || return 1
+                # line to start on specified desktop with bl-conky-session
+                conkyline="D[$d] $conkyfile"
+                CONKYCMDS="${CONKYCMDS}${conkyline};" # add semicolon separator here
+                echo "$conkyline" >> "$saved_conkysession"
+                debug "Added '$conkyline' to saved conkysession file"
             fi
-        done < <(xdotool search --desktop $((i)) --class conky)
+        done < <(xdotool search --desktop $((d)) --class conky)
     done
 
     for id in "${!arrSTICKY[@]}";do  # get commands - we don't need wmctrl for these
         if [[ -n "$id" ]];then
             getIdCmd "$id" # generates array idCmd
             getCfile # extract conky config file
-            conkycmd=${idCmd[*]} # TODO now in string, filepaths with spaces will be broken.
-            if [[ "$conkycmd" == "conky" ]] || [[ "$conkycmd" == "conky -q" ]];then
+            if [[ "${idCmd[*]}" == "conky" ]] || [[ "${idCmd[*]}" == "conky -q" ]];then
+                conkyfile='.config/conky/conky.conf'
                 CONKYTXT="$CONKYTXT\n\tDefault Conky"
                 debug "Found running default conky"
                 debug "saving copy of default conky file"
-                saveFiles '.config/conky/conky.conf' || return 1
             else
+                conkyfile=$( userFilepath "$conkyfile" ) || continue
                 CONKYTXT="$CONKYTXT\n\t$conkyfile"
                 debug "Found running conky file $conkyfile"
-                conkyfile=$( userFilepath "$conkyfile" ) && {
-                    debug "Saving copy of $conkyfile"
-                    saveFiles "$conkyfile" || return 1
-                }
+                debug "Saving copy of $conkyfile"
             fi
-            conkycmd="$conkycmd & sleep 1s"
-            CONKYCMDS="${CONKYCMDS}${conkycmd};" # add semicolon separator here
-            echo "$conkycmd" >> "$saved_conkysession"
-            debug "Added '$conkycmd' to saved conkysession file"
+            saveFiles "$conkyfile" || return 1
+            conkyline="$conkyfile"
+            CONKYCMDS="${CONKYCMDS}${conkyline};" # add semicolon separator here
+            echo "$conkyline" >> "$saved_conkysession"
+            debug "Added '$conkyline' to saved conkysession file"
         fi
     done
-    echo "[CONKY] $CONKYCMDS" >> "$SETTINGS" # CONKYCMDS not needed if saved to conkysession
+    echo "[CONKY] $CONKYCMDS" >> "$SETTINGS" # semicolon-delimited list CONKYCMDS is now only a fallback in case sessionfile is missing
     echo -e "Running Conkys:\t$CONKYTXT\n" >> "$LISTMSG"
     debug "\n  Saved running Conky(s)\n"
 }
 
 function getTint(){
-    local tpath tintfile tint saved_tintsession TINTCMDS TINT2TXT
-    local -a arrTINT
+    local tpath saved_tintsession TINTCMDS TINT2TXT
+    TINTCMDS=""
+    TINT2TXT=""
     saved_tintsession="$CONFIGDIR/user/$TINTSESSION"
 
     mkdir -p "${saved_tintsession%/*}"
@@ -921,36 +917,36 @@ function getTint(){
         return 0
     }
 
-    while read -r pid cmd;do
-        if [[ ${cmd%% *} == tint2 ]];then
-            #tpath=$(echo "$cmd" | awk '{print $NF";"}')
-            tpath=${cmd##* } # TODO breaks if filepath has spaces
-            arrTINT+=("$tpath")
+    while read -r pid; do
+        mapfile -d '' -t command < "/proc/${pid}/cmdline"
+        [[ ${command[0]} = 'tint2' ]]  || {
+            echo "$0: pgrep parsing failed: command is not 'tint2'" >&2
+            continue
+        }
+        if (( ${#command[@]} > 1 )); then
+            tpath=${command[-1]} # tint2 takes no options other than -c, which is optional
+            tpath=$( userFilepath "$tpath" ) || continue # assume path is relative to $HOME
+        else
+            tpath='.config/tint2/tint2rc'
         fi
-    done < <(pgrep -a -u "$USER" tint2)
-
-    TINTCMDS=""
-    TINT2TXT=""
-    for tint in "${arrTINT[@]}";do
-        #tint=${i//;}
-        echo "$tint" >> "$saved_tintsession"
-        debug "Added '$tint' to saved tintsession file"
-        if [[ "$tint" == "tint2" ]];then
-            TINTCMDS="$TINTCMDS$tint;"
+        [[ -f $HOME/$tpath ]] || {
+            echo "$0: pgrep tint2 parsing failed: $HOME/$tpath is not a file" >&2
+            continue
+        }
+        echo "$tpath" >> "$saved_tintsession"
+        debug "Added '$tpath' to saved tintsession file"
+        TINTCMDS="$TINTCMDS$tpath;"
+        if (( ${#command[@]} == 1 ));then
             TINT2TXT="$TINT2TXT\n\tDefault Tint2"
             debug "saving copy of default tint2 config file"
-            saveFiles '.config/tint2/tint2rc' || return 1
         else
-            TINTCMDS="$TINTCMDS$tint;"
-            TINT2TXT="$TINT2TXT\n\t$tint"
-            tintfile=$( userFilepath "$tint" ) && {
-                debug "saving copy of $tintfile"
-                saveFiles "$tintfile" || return 1
-            }
+            TINT2TXT="$TINT2TXT\n\t$tpath"
+            debug "saving copy of $tpath"
         fi
-    done
+        saveFiles "$tpath" || return 1
+    done < <(pgrep -x 'tint2' -u "$USER")
 
-    echo "[TINT2] $TINTCMDS" >> "$SETTINGS"
+    echo "[TINT2] $TINTCMDS" >> "$SETTINGS" # $TINTCMDS only fallback if sessionfile is missing
     echo -e "Running Tint2s:\t$TINT2TXT\n" >> "$LISTMSG"
     debug "\n  Saved running Tint2(s)\n"
 }
@@ -1000,7 +996,7 @@ function getGTKtheme(){
     getGTKname
 }
 
-function getGTKname(){   # get saved GTK theme name and Icons name
+function getGTKname(){   # get saved GTK3 theme name and Icons name
     local txt
     GTKFILE="$CONFIGDIR/user/$GTK2"
     while read -r line;do
@@ -1556,8 +1552,7 @@ function restoreOBrc(){
 
 function restoreConky(){    # $1 = $VAL from restoreSettings()
     local conkycmds currDesktop user_conkysession saved_conkysession
-    conkycmds="${1//;/$'\n'}"
-    currDesktop=$(xdotool get_desktop)   # Conkys may have been started on different desktops
+    conkycmds="${1//;/$'\n'}" # only used as fallback if there is no sessionfile
     user_conkysession="$HOME/$CONKYSESSION"
     saved_conkysession="$THEMEPATH/user/$CONKYSESSION"
     # cd only applies during subshell
@@ -1576,26 +1571,30 @@ function restoreConky(){    # $1 = $VAL from restoreSettings()
     if [[ -f $saved_conkysession ]]
     then
         debug "Restoring conky sessionfile."
-        restoreFiles "$CONKYSESSION" || return 1
     elif [[ -n $conkycmds ]]
     then
         debug "No saved conkysession file found, using commands in settings.cfg"
         if [[ $conkycmds = 'none' ]]
         then
-            :> "$user_conkysession"
+            debug "No saved conkys - removing content of conky sessionfile."
+            :> "$saved_conkysession"
         else
-            echo "$conkycmds" > "$user_conkysession"
+            echo "$conkycmds" > "$saved_conkysession"
         fi
     else
-        "$0: cannot restore conky, there is no session information." >&2
+        echo "$0: cannot restore conky, there is no session information." >&2
         return 1
     fi
-    safeKill conky
-    set -m # enable job control so forked conky is immune to signals
-    source "$user_conkysession" || return 1  # run conky commands
-    set +m
+    restoreFiles "$CONKYSESSION" || {
+        echo "$0: failed to restore conky session $saved_conkysession" >&2
+        return 1
+    }
+    hash bl-conky-session || return 1 # bl-conky-session should be available - it comes with bl-obthemes in bunsen-utilities
+    bl-conky-session --kill-running "$user_conkysession" || { # bl-conky-session can handle old-style sessionfiles, desktops too
+        "$0: failed to start conky session $user_conkysession with bl-conky-session" >&2
+        return 1
+    }
     debug "\n  Restored Conky\n"
-    wmctrl -s "$currDesktop" && sleep 1 # return to desktop that BLOB was started on, if conkys used 'wmctrl -s'
 }
 
 function restoreTint2(){    # $1 = $VAL from restoreSettings()
@@ -1605,46 +1604,38 @@ function restoreTint2(){    # $1 = $VAL from restoreSettings()
     saved_tintsession="$THEMEPATH/user/$TINTSESSION"
     # restore any tint2 configs that have been saved
     # assume they are all in the tint2 directory
-    [[ -d "$THEMEPATH/user/.config/tint2" ]] && (
-        cd "$THEMEPATH/user" && {
-            shopt -s nullglob
-            for i in .config/tint2/*
-            do
-                [[ $i = "$TINTSESSION" ]] && continue
-                restoreFiles "$i"
-            done
-            shopt -u nullglob
-        }
-    )
+    [[ -d "$THEMEPATH/user/.config/tint2" ]] || {
+        echo "$0: cannot restore tint2, directory $THEMEPATH/user/.config/tint2 does not exist" >&2
+        return 1
+    }
     if [[ -f "$saved_tintsession" ]]
     then
         debug "Restoring tint2 sessionfile."
-        restoreFiles "$TINTSESSION" || return 1
     elif [[ -n $tintcmds ]]
     then
         debug "No saved tintsession file found, using filepaths in settings.cfg"
         if [[ $tintcmds = 'none' ]]
         then
-            :> "$user_tintsession"
+            debug "No saved tint2s - generating empty tint2 sessionfile."
+            :> "$saved_tintsession"
         else
-            echo "$tintcmds" > "$user_tintsession"
+            echo "$tintcmds" > "$saved_tintsession"
         fi
     else
-        "$0: cannot restore tint2, there is no session information." >&2
+        echo "$0: cannot restore tint2, there is no session information." >&2
         return 1
     fi
-    safeKill tint2
-    while read -r tintline;do
-        if [[ "$tintline" == "tint2" ]];then
-            forkncheck tint2 || return 1
-            sleep 1
-            debug "\n  Restored Tint2: $tintline\n"
-        elif [[ -n "$tintline" ]];then
-            forkncheck tint2 -c "$tintline" || return 1
-            sleep 1s
-            debug "\n  Restored Tint2: $tintline\n"
-        fi
-    done < "$user_tintsession"
+    restoreFiles  '.config/tint2' || { # restoreFiles will restore whole directory with contents
+        echo "$0: failed to restore user/.config/tint2 directory in $THEMEPATH" >&2
+        return 1
+    }
+    if hash bl-tint2-session # bl-tint2-session should be present, it comes in bunsen-utilities, with bl-obthemes
+    then
+        bl-tint2-session "$user_tintsession" || {
+            echo "$0: failed to start tint2 session $user_tintsession with bl-tint2-session" >&2
+            return 1
+        }
+    fi
     debug "\n Restored Tint2\n"
 }
 
