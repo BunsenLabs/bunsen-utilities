@@ -45,6 +45,8 @@ If a filepath is passed it is used as the session file,
 multiple sessions can be loaded.
 
 If not absolute, sessionfile paths are assumed to be relative to ~/.config/tint2/
+Relative tint2 paths are checked against HOME and ~/.config/tint2/,
+with the latter having priority.
 
 To start the default tint2 session at login,
 add the following line to autostart:
@@ -90,6 +92,19 @@ findArgs(){
     done
 }
 
+fullPath(){
+    local path=$1
+    if [[ $path != /* ]]; then
+        if [[ -r "$TINT2PATH/$path" ]]; then
+            path="$TINT2PATH/$path"
+        elif [[ -r "$HOME/$path" ]]; then
+            path="$HOME/$path"
+        fi
+    fi
+    [[ -r $path ]] || { echo "$0: WARNING: cannot read $path" >&2 ; return 1;}
+    printf '%s' "$path"
+}
+
 loadSession(){
     local sessfile=$1
     [[ $sessfile = /* ]] || sessfile="$TINT2PATH/$sessfile" # was relative path
@@ -97,8 +112,7 @@ loadSession(){
         safeKill tint2
         set -m
         while read -r path;do
-            [[ $path = /* ]] || path="$TINT2PATH/$path" # was relative path
-            [[ -r $path ]] || { echo "$0: WARNING: cannot read $path" >&2 ; continue;}
+            path=$( fullPath "$path" ) || continue
             tint2 -c "$path" >/dev/null 2>&1 &
             disown
             sleep 0.5
@@ -112,7 +126,7 @@ loadSession(){
 
 ########################################################################
 
-if [[ ! -f $SESSIONFILE ]] ; then
+if [[ ! -f $SESSIONFILE ]]; then
     echo "$0: There is no default session file: ${SESSIONFILE}, generating now..." >&2
     if [[ -f $DEFAULTTINT2 ]]; then
         echo "$DEFAULTTINT2" > "$SESSIONFILE"

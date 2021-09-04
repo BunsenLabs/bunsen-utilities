@@ -122,7 +122,7 @@ killConkys(){
 loadSession(){
     local sessfile CPATH_REGEX WMC_REGEX needRewrite conkys c path target
     sessfile=$1
-    CPATH_REGEX="-c '(.*(conky.*\.conf|conky|conkyrc))'([[:blank:]]+|$)"
+    CPATH_REGEX="-c[[:blank:]]+(.*(conky.*\.conf|conky|conkyrc))([[:blank:]]+|$)"
     WMC_REGEX='wmctrl -s ([0-9]{1,2})[[:blank:]]+'
     needRewrite=false
     mapfile -t conkys < "$sessfile"
@@ -164,6 +164,19 @@ loadSession(){
     done
 }
 
+fullPath(){
+    local path=$1
+    if [[ $path != /* ]]; then
+        if [[ -r "$CONKYPATH/$path" ]]; then
+            path="$CONKYPATH/$path"
+        elif [[ -r "$HOME/$path" ]]; then
+            path="$HOME/$path"
+        fi
+    fi
+    [[ -r $path ]] || { echo "$0: WARNING: cannot read $path" >&2 ; return 1;}
+    printf '%s' "$path"
+}
+
 launchConkys(){
     local WINID_REGEX path desktop datafile
     WINID_REGEX='drawing to created window \((0[xX][0-9a-fA-F]+)\)'
@@ -171,11 +184,11 @@ launchConkys(){
     set -m # enable job control so forked conkys are immune to signals (although unnecessary when conky is forked to background in config)
     for path in "${!ALL_CONKYS[@]}"; do
         case ${path%% *} in # first word
-        D\[*\]) # D[1]... is assumed to be a sufficiently unlikely beginning of a conky filepath
+        D\[*\]) # D[1]<space> is assumed to be a sufficiently unlikely beginning of a conky filepath
             desktop=${path%%]*}
             desktop=${desktop#*[}
             path=${path#* }
-            [[ -r $path ]] || { echo "$0: WARNING: cannot read $path" >&2 ; continue;}
+            path=$( fullPath "$path" ) || continue
             datafile=$(mktemp)
             conky -c "$path" >> "$datafile" 2>&1 &
             disown
@@ -185,7 +198,7 @@ launchConkys(){
             rm "$datafile"
             ;;
         *) # assume line is a clean filepath
-            [[ -r $path ]] || { echo "$0: WARNING: cannot read $path" >&2 ; continue;}
+            path=$( fullPath "$path" ) || continue
             conky -c "$path" >/dev/null 2>&1 &
             disown
             sleep 0.5
