@@ -37,6 +37,7 @@ Conflicts: bunsen-lock, bunsen-user-setup
 Recommends: at,
   bunsen-exit (>= 9.1-1),
   bunsen-conky,
+  colordiff,
   gmrun,
   libglib2.0-bin,
   light-locker,
