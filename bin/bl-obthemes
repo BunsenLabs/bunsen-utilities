@@ -2029,7 +2029,7 @@ function saveNewBlob() {
 
 # used in displayBlobs() below
 # tests if every file in $1 is identical with its equivalent in $2
-# (files not present in $2 are ignored)
+# (files not present in both directories are ignored)
 # $1 is usually the blob theme directory and $2 is usually $HOME
 # difflist is local inside displayBlobs()
 function sameFiles() {
@@ -2068,11 +2068,62 @@ function sameFiles() {
     return 1
 }
 
+# compare 2 files, opening new terminal window if needed
+# If --title is passed it will be used as title of a new terminal (if opened).
+# Usage: differ [--title] firstfile secondfile
+differ () {
+    local title firstfile secondfile diffcmd
+    if [[ $1 = '--title' ]]
+    then
+        title=$2
+        shift 2
+    fi
+    firstfile=$1
+    secondfile=$2
+    diffcmd=(colordiff -s -u)
+    type colordiff >/dev/null || diffcmd=(diff -s -u)
+    diffcmd+=("$firstfile" "$secondfile")
+    if [[ -t 0 && -t 1 ]] # on terminal
+    then
+        "${diffcmd[@]}"
+    else
+        local termname termcmd
+        [[ -n $title ]] || title="Diff of $firstfile and $secondfile"
+        termname=$( readlink -f "$( which x-terminal-emulator )" )
+        termname=${termname##*/}
+        badterm_msg="$0: cannot display file diff with new window ${termname}."
+        case $termname # cope with terminal inconsistencies
+        in
+            lxterminal)
+                termcmd=(lxterminal --no-remote -T "$title" -e) # otherwise lxterminal does not start a new process
+                ;;
+            mate-terminal.wrapper)
+                termcmd=(mate-terminal --disable-factory -t "$title" -x) # mate-terminal.wrapper does not support --disable-factory
+                ;;
+            gnome-terminal.wrapper)
+                termcmd=(gnome-terminal --wait -t "$title" --) # gnome-terminal.wrapper does not support --wait
+                ;;
+            tilix.wrapper)
+                termcmd=(tilix --new-process -t "$title" -e) # tilix.wrapper does not support --new-process
+                ;;
+            qterminal|terminology)
+                echo "$badterm_msg" >&2
+                return 1
+                ;;
+            *)
+                termcmd=(x-terminal-emulator -T "$title" -e) # the normal case
+                ;;
+        esac
+
+        "${termcmd[@]}" bash -c '"$@"; echo -e "\nPress any key to close"; read -srn1' _ "${diffcmd[@]}"
+    fi
+}
+
 ########################################################################
 ######## Main BLOB list display function ###############################
 # sets globals THEMEPATH and BKP_SFX (via restoreSettings) for restore functions
 function displayBlobs(){
-    local DLGWIDTH DLGHEIGHT DLGARR RET CONFIG CURRENTSESSDIR themename TEXT difflist
+    local DLGWIDTH DLGHEIGHT DLGARR RET CONFIG CURRENTSESSDIR themename TEXT difflist userfile
     getActiveMonitorDimensions
     while true ;do
         UpdateDisplayDialog # generates DLGARR aand CURRENTSESSDIR
@@ -2124,17 +2175,30 @@ Do you want to save your current session before restoring <b>${themename}</b>?"
                         TEXT="You might have modified your desktop appearance since it was last saved.
 Do you want to save your current session before restoring <b>${themename}</b>?"
                     fi
-                    yad_question "$TEXT" --button='Save settings first':2 --button='No, restore now':0 --button='Cancel':1
-                    case $? in
-                        1)
-                            debug "\n Cancelled restoring of $themename"
-                            continue
-                        ;;
-                        2)
-                            debug "\n Saving current desktop settings before restoring $themename"
-                            saveNewBlob || debug "Current settings were not saved."
-                        ;;
-                    esac
+                    while true; do
+                        yad_question "$TEXT" --button='Save settings first':2 --button='No, restore now':0 --button='View difference(s)':3 --button='Cancel':1
+                        case $? in
+                            0)
+                                debug "\n Some changed user files, but restoring $themename anyway."
+                                break
+                            ;;
+                            1)
+                                debug "\n Cancelled restoring of $themename"
+                                continue 2
+                            ;;
+                            2)
+                                debug "\n Saving current desktop settings before restoring $themename"
+                                saveNewBlob || debug "Current settings were not saved."
+                                break
+                            ;;
+                            3)
+                                debug "\n Showing file differences"
+                                for userfile in "${difflist[@]}"; do
+                                    differ --title "Changes in user files" "$CURRENTSESSDIR/user/${userfile#$HOME}" "$userfile"
+                                done
+                            ;;
+                        esac
+                    done
                 }
                 SAVED="$THEMEPATH/LISTMSG.txt"
                 TEXT="These configs saved as $CONFIG can be restored:\n\n"
