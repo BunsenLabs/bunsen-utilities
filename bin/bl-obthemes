@@ -126,7 +126,7 @@ KNOWN ISSUES:
 '
 
 debug() { : ;}
-DEBUG_FLAG=false
+DEBUG_FLAG=0 # will be interpreted numerically, as boolean
 for i in "$@"
 do
     case "$i" in
@@ -138,7 +138,7 @@ do
         debug() {
             echo -e "$*"
         }
-        DEBUG_FLAG=true
+        DEBUG_FLAG=1
         ;;
     esac
 done
@@ -781,7 +781,7 @@ function getNitrogen(){  # get Nitrogen saved backgrounds
 # WARNING WM_COMMAND is deprecated: https://www.x.org/releases/X11R7.6/doc/xorg-docs/specs/ICCCM/icccm.html#obsolete_session_manager_conventions
 # Usage: getIdCmd <id>
 # called in getConky() where idCmd is local array variable
-# NOTE this works with conky windows, but tint2 provides no WM_COMMAND data.
+# NOTE: this works with conky windows, but not with tint2 which provides no WM_COMMAND data.
 function getIdCmd(){
     local wmc del s
     wmc=$(xprop -id "$1"  WM_COMMAND)
@@ -1406,7 +1406,7 @@ function restoreGTK(){
 
 function reloadGTK(){ # reload gtk theme after restoring saved config
     debug "\nReloading GTK theme..."
-    if [[ $DEBUG_FLAG = true ]]; then
+    if ((DEBUG_FLAG)); then
         bl-reload-gtk23 --force && debug "\nbl-reload-gtk23: done\n" || echo "bl-reload-gtk23 failed" >&2
     else
         bl-reload-gtk23 --force >/dev/null 2>&1 || echo "bl-reload-gtk23 failed" >&2
