@@ -112,9 +112,9 @@ Configuration:
  to change this.
 
 WARNING:
- It is assumed that the conkys are not being run via a script, so
- they will appear on all desktops. If you usually use a script, then you
- may have to make your own arrangements! Conkys in non-default directories
+ Although conkys displayed on a single desktop are handled,
+ if you usually run conkys with a script, then you may have to
+ make your own arrangements! Conkys in non-default directories
  can be saved, but will not be seen when running the bl conky chooser.
 
 KNOWN ISSUES:
@@ -824,22 +824,34 @@ userFilepath(){
     printf '%s' "$file"
 }
 
+# If conky is not to be saved in new theme, pass '--tmp <filepath>'
+# to store current conkys in tempfile <filepath> while making scrot.
 function getConky(){
     local conkyfile conkyline saved_conkysession num_desktops CONKYCMDS CONKYTXT
     local -a idCmd
     local -A arrSTICKY
-    saved_conkysession="$CONFIGDIR/user/$CONKYSESSION"
+    local save=1
+    if [[ $1 = '--tmp' ]]
+    then
+        saved_conkysession=$2 # temporary sessionfile while scrot is taken
+        save=0
+    else
+        saved_conkysession="$CONFIGDIR/user/$CONKYSESSION"
+        mkdir -p "${saved_conkysession%/*}"
+    fi
+    
     num_desktops=$(xdotool get_num_desktops)
     CONKYCMDS=''
     CONKYTXT=''
 
-    mkdir -p "${saved_conkysession%/*}"
     :> "$saved_conkysession"
 
-    [[ $(pidof conky) ]] || {
+    pgrep -x conky -u "$USER" >/dev/null || {
         debug "No conkys are running"
-        echo '[CONKY] none' >> "$SETTINGS"
-        echo -e "No conkys.\n(Any running conkys will be stopped.)\n" >> "$LISTMSG"
+        ((save)) && {
+            echo '[CONKY] none' >> "$SETTINGS"
+            echo -e "No conkys.\n(Any running conkys will be stopped.)\n" >> "$LISTMSG"
+        }
         return 0
     }
 
@@ -857,14 +869,14 @@ function getConky(){
                     conkyfile='.config/conky/conky.conf'
                     CONKYTXT="$CONKYTXT\n\tDesktop $i:  Default Conky"
                     debug "Found running default conky on Desktop $d"
-                    debug "saving copy of default conky file"
+                    ((save)) && debug "saving copy of default conky file"
                 else
                     conkyfile=$( userFilepath "$conkyfile" ) || continue
                     CONKYTXT="$CONKYTXT\n\tDesktop $d:  $conkyfile"
                     debug "Found running conky file $conkyfile on Desktop $d"
-                    debug "Saving copy of $conkyfile"
+                    ((save)) && debug "Saving copy of $conkyfile"
                 fi
-                saveFiles "$conkyfile" || return 1
+                ((save)) && { saveFiles "$conkyfile" || return 1; }
                 # line to start on specified desktop with bl-conky-session
                 conkyline="D[$d] $conkyfile"
                 CONKYCMDS="${CONKYCMDS}${conkyline};" # add semicolon separator here
@@ -882,38 +894,52 @@ function getConky(){
                 conkyfile='.config/conky/conky.conf'
                 CONKYTXT="$CONKYTXT\n\tDefault Conky"
                 debug "Found running default conky"
-                debug "saving copy of default conky file"
+                ((save)) && debug "saving copy of default conky file"
             else
                 conkyfile=$( userFilepath "$conkyfile" ) || continue
                 CONKYTXT="$CONKYTXT\n\t$conkyfile"
                 debug "Found running conky file $conkyfile"
-                debug "Saving copy of $conkyfile"
+                ((save)) && debug "Saving copy of $conkyfile"
             fi
-            saveFiles "$conkyfile" || return 1
+            ((save)) && { saveFiles "$conkyfile" || return 1; }
             conkyline="$conkyfile"
             CONKYCMDS="${CONKYCMDS}${conkyline};" # add semicolon separator here
             echo "$conkyline" >> "$saved_conkysession"
             debug "Added '$conkyline' to saved conkysession file"
         fi
     done
-    echo "[CONKY] $CONKYCMDS" >> "$SETTINGS" # semicolon-delimited list CONKYCMDS is now only a fallback in case sessionfile is missing
-    echo -e "Running Conkys:\t$CONKYTXT\n" >> "$LISTMSG"
+    ((save)) && {
+        echo "[CONKY] $CONKYCMDS" >> "$SETTINGS" # semicolon-delimited list CONKYCMDS is now only a fallback in case sessionfile is missing
+        echo -e "Running Conkys:\t$CONKYTXT\n" >> "$LISTMSG"
+    }
     debug "\n  Saved running Conky(s)\n"
 }
 
+# If tint2 is not to be saved in new theme, pass '--tmp <filepath>'
+# to store current tint2s in tempfile <filepath> while making scrot.
 function getTint(){
     local tpath saved_tintsession TINTCMDS TINT2TXT
+    local save=1
+    if [[ $1 = '--tmp' ]]
+    then
+        saved_tintsession=$2 # temporary sessionfile while scrot is taken
+        save=0
+    else
+        saved_tintsession="$CONFIGDIR/user/$TINTSESSION"
+        mkdir -p "${saved_tintsession%/*}"
+    fi
+
     TINTCMDS=""
     TINT2TXT=""
-    saved_tintsession="$CONFIGDIR/user/$TINTSESSION"
 
-    mkdir -p "${saved_tintsession%/*}"
     :> "$saved_tintsession"
 
-    [[ $(pidof tint2) ]] || {
+    pgrep -x tint2 -u "$USER" >/dev/null || {
         debug "No tint2 instances are running"
-        echo "[TINT2] none" >> "$SETTINGS"
-        echo -e "No tint2.\n(Any running tint2s will be stopped.)\n" >> "$LISTMSG"
+        ((save)) && {
+            echo "[TINT2] none" >> "$SETTINGS"
+            echo -e "No tint2.\n(Any running tint2s will be stopped.)\n" >> "$LISTMSG"
+        }
         return 0
     }
 
@@ -935,6 +961,7 @@ function getTint(){
         }
         echo "$tpath" >> "$saved_tintsession"
         debug "Added '$tpath' to saved tintsession file"
+        ((save)) || continue
         TINTCMDS="$TINTCMDS$tpath;"
         if (( ${#command[@]} == 1 ));then
             TINT2TXT="$TINT2TXT\n\tDefault Tint2"
@@ -946,8 +973,10 @@ function getTint(){
         saveFiles "$tpath" || return 1
     done < <(pgrep -x 'tint2' -u "$USER")
 
-    echo "[TINT2] $TINTCMDS" >> "$SETTINGS" # $TINTCMDS only fallback if sessionfile is missing
-    echo -e "Running Tint2s:\t$TINT2TXT\n" >> "$LISTMSG"
+    ((save)) && {
+        echo "[TINT2] $TINTCMDS" >> "$SETTINGS" # $TINTCMDS only fallback if sessionfile is missing
+        echo -e "Running Tint2s:\t$TINT2TXT\n" >> "$LISTMSG"
+    }
     debug "\n  Saved running Tint2(s)\n"
 }
 
@@ -999,12 +1028,13 @@ function getGTKtheme(){
 function getGTKname(){   # get saved GTK3 theme name and Icons name
     local gtk3_settings gtktheme icons txt
     gtk3_settings="$CONFIGDIR/user/$GTK3/settings.ini"
+    # parseKeyfile generates global associative array KEYS
     parseKeyfile "$gtk3_settings" || { yad_warning "Failed to parse $gtk3_settings."; return 1;}
-    gtktheme=${SETTINGS[gtk-theme-name]}
+    gtktheme=${KEYS[gtk-theme-name]}
     echo "[GTK] $gtktheme" >> "$SETTINGS"
-    icons=${SETTINGS[gtk-icon-theme-name]}
+    icons=${KEYS[gtk-icon-theme-name]}
     echo "[ICONS] $icons" >> "$SETTINGS"
-    unset SETTINGS # SETTINGS is global generated by parseKeyfile()
+    unset KEYS
     txt="GTK theme:  $gtktheme;  Icon Theme: $icons\n"
     debug "\n  Saved $txt"
     echo  "$txt" >> "$LISTMSG"
@@ -1074,77 +1104,40 @@ function getComp(){
     echo "$txt" >> "$LISTMSG"
 }
     
-function checkTint2(){   # kill or restart tint2s for screenshot, if necessary
-    if [[ $1 = stop ]];then
-        if ! grep -q "TINT2" "$SETTINGS" ;then
-            tmpTINT=$(mktemp --tmpdir blob.XXXX) # make blank tempfile, to save running tint2 paths
-            if [[ $(pidof tint2) ]];then
-                pgrep -a -u "$USER" tint2 | while read -r pid cmd;do
-                    if [[ ${cmd%% *} = tint2 ]];then
-                        echo "$cmd" >> "$tmpTINT"
-                    fi
-                done
-            safeKill tint2
-            fi
-        fi
-    fi
-    if [[ $1 = start ]];then
-        if [[ -f "$tmpTINT" ]] 2>/dev/null;then
-            while read -r line;do
-                ($line &) &>/dev/null
-                sleep 1s
-            done < "$tmpTINT"
-            rm -f "$tmpTINT"
-        fi
-    fi
-}
 
-function getWINDOWS(){  # Minimize/Activate windows for scrot. Args= 'min', 'raise', 'all'
-    declare -a arrWINDOWS
 
-    xdoFN() { echo "$0: xdoFN() not set" >&2; exit 1; }
-    if [[ "$1" == "min" ]];then
-        xdoFN() { xdotool windowminimize "$1";}
-    elif [[ "$1" == "raise" ]] || [[ "$1" == "all" ]];then
-        xdoFN() { xdotool windowactivate --sync "$1";}
-    fi
 
-    # get window id's on current desktop, which aren't sticky; convert hexcode to int.
-    # add window ids to array, if not conky
-    dtop=$(xdotool get_desktop)
-    while read -r id dt _
-    do
-        [[ $dt = "$dtop" ]] || continue
-        arrWINDOWS+=($(( id )))
-    done < <(wmctrl -l)
 
-    # minimize/activate non-conky windows
-    conk="$(xdotool search --desktop "$dtop" --class 'Conky')"
-    for win in "${arrWINDOWS[@]}";do
-        if ! [[ $win = "$conk" ]];then
-            ( xdoFN "$win" ) 2>/dev/null
-        fi
-    done
-    if [[ "$1" == "all" ]];then # activate any hidden conkys
-        for CONK in $(xdotool search --class 'Conky');do
-            xdotool windowactivate "$CONK" 2>/dev/null
-        done
-    fi
-}
 
 function getScrot(){
-    local conkyFLAG currDesktop SCROT MONS
+    local conkyFLAG tint2FLAG currDesktop scrot mons hiddenWins
     conkyFLAG=1
+    tint2FLAG=1
+    grep -q "CONKY" "$SETTINGS" || {
+        conkyFLAG=0    # Conkys not to be saved
+        tmpConky=$(mktemp --tmpdir blob.XXXX)
+        getConky --tmp "$tmpConky" # save current conky session to restore after taking scrot
+        debug "Hiding Conkys - they are not to be saved to this BLOB."
+        safeKill conky
+    }
+    grep -q "TINT2" "$SETTINGS" || {
+        tint2FLAG=0    # Tint2s not to be saved
+        tmpTint=$(mktemp --tmpdir blob.XXXX)
+        getTint --tmp "$tmpTint" # save current tint2 session to restore after taking scrot
+        debug "Hiding tint2s - they are not to be saved to this BLOB"
+        safeKill tint2
+    }
     currDesktop=$(xdotool get_desktop)
-    SCROT="$USRCONFIGPATH/$NEWNAME/${NEWNAME}.jpg"
-    MONS=$(xrandr -q | grep -c " connected")    # number of monitors
+    scrot="$USRCONFIGPATH/$NEWNAME/${NEWNAME}.jpg"
+    mons=$(xrandr -q | grep -c " connected")    # number of monitors
     debug "Taking screenshot..."
 
     # set mouse position, for appearance of root-menu
-    screenW=$(xrandr -q | awk '/Screen/ {print $8}')
-    screenH=$(xrandr -q | awk '/Screen/ {print $10}')
-    screenH=${screenH%,}
-    if (( MONS == 1 ));then # single monitor
+    local -a dim
+    read -r -a dim < <(bl-xinerama-prop)
+    screenW=${dim[0]}
+    screenH=${dim[1]}
+    if (( mons == 1 ));then # single monitor
         appX=$(( (screenW/20)*8 ))
         menuX=$(( (screenW/20)*2 ))
     else
@@ -1154,13 +1147,17 @@ function getScrot(){
     appY=$(( (screenH/20)*4 ))
     menuY=$(( (screenH/20)*4 ))
 
-    if ! grep "CONKY" "$SETTINGS" &>/dev/null;then    # Conkys not to be saved
-        wmctrl -k on    # hide windows, show desktop
-        conkyFLAG=0
-    else                # Conkys will be saved, so don't hide them for the scrot
-        getWINDOWS min  # minimize non-conky windows
-    fi
-    checkTint2 stop     # stop running Tint2s for the scrot, if not selected to be saved
+
+    # minimize all visible non-sticky windows on current desktop (most conkys are sticky)
+    sleep 1 # make sure previous yad window is completely closed before listing
+    hiddenWins=()
+    for w in $(xdotool search --onlyvisible --desktop "$currDesktop" --name '.*')
+    do
+        grep -iq <<<"$(xprop WM_CLASS -id "$w")" 'conky' && continue # remove any non-sticky conkys from hide list
+        hiddenWins+=("$w")
+        xdotool windowminimize "$w"
+    done
+    
     # start lxappearance
     lxappearance 2>/dev/null &
     sleep 0.5
@@ -1195,7 +1192,7 @@ function getScrot(){
     esac
 
     # take scrot
-    scrot -t 9 "$SCROT"    # scrot thumbnail @9% fullsize
+    scrot -t 9 "$scrot"    # scrot thumbnail @9% fullsize
 
     # close root menu
     xdotool mousemove_relative --sync --polar 0 10 "${MOUSECMD[@]}"
@@ -1203,13 +1200,20 @@ function getScrot(){
     pkill -P "$$" lxappearance
 
     # restore hidden windows
-    if (( conkyFLAG == 0 ));then
-        getWINDOWS all              # including hidden conkys
-    else
-        getWINDOWS raise            # Conkys weren't closed for scrot
-    fi
-    wmctrl -s "$currDesktop" # return to desktop that BLOB was started on, if conkys used 'wmctrl -s'
-    checkTint2 start                # restore any stopped Tint2s
+
+    for w in "${hiddenWins[@]}"
+    do
+        xdotool windowmap --sync "$w"
+    done
+    # if conkys or tint2s were killed, restore previously running session
+    ((conkyFLAG)) || {
+        bash /home/john/git/bunsen/bunsen-utilities/bin/bl-conky-session "$tmpConky"
+        rm -f "$tmpConky"
+    }
+    ((tint2FLAG)) || {
+        bash /home/john/git/bunsen/bunsen-utilities/bin/bl-tint2-session "$tmpTint"
+        rm -f "$tmpTint"
+    }
 }
 
 # choose terminal settings to save, based on what is x-terminal-emulator
@@ -1410,11 +1414,11 @@ function reloadGTK(){ # reload gtk theme after restoring saved config
 }
 
 # $1 is path to keyfile (eg gtk3 settings.ini)
-# global associative array SETTINGS will be generated
+# global associative array KEYS will be generated
 parseKeyfile(){
     [[ -f $1 ]] || { echo "$1 is not a file." >&2;return 1;}
-    unset SETTINGS
-    declare -Ag SETTINGS
+    unset KEYS
+    declare -Ag KEYS
     local entry_regex line key value
     entry_regex="^[[:blank:]]*([A-Za-z0-9][A-Za-z0-9-]*)[[:blank:]]*=[[:blank:]]*('[^']+'|\"[^\"]+\"|[^#[:blank:]]+([[:blank:]]+[^#[:blank:]]+)*)[[:blank:]]*(#.*)*$"
     while read -r line
@@ -1429,7 +1433,7 @@ parseKeyfile(){
         \"*\")
             value=${value#\"}; value=${value%\"};;
         esac
-        SETTINGS["${key}"]="${value}"
+        KEYS["${key}"]="${value}"
     done < "$1"
 }
 
@@ -1439,10 +1443,10 @@ function jgmenu_write_gtkcache(){
     jgmenu_cachedir="$HOME/.cache/jgmenu"
     mkdir -p "$jgmenu_cachedir"
     parseKeyfile "$1" || { yad_warning "Failed to parse $1."; return 1;}
-    gtktheme=${SETTINGS[gtk-theme-name]}
+    gtktheme=${KEYS[gtk-theme-name]}
     debug "Setting $gtktheme as GTK theme in jgmenu cache."
     printf '%s' "$gtktheme" > "$jgmenu_cachedir/.last-gtktheme"
-    unset SETTINGS
+    unset KEYS
 }
 
 # next time xfce4-notifyd is called it will restart the two daemons, with latest config
@@ -1838,10 +1842,11 @@ function UpdateDisplayDialog(){   # list saved theme collections for yad as DLGA
     done
 }
 
-# This function is run in displayBlobs() below
-function getActiveMonitorDimensions(){   # set width and height for View dialog
-    declare -a dim=()
-    dim=($(bl-xinerama-prop))
+# This function is run in displayBlobs() below to set width and height for View dialog.
+# generates DLGWIDTH and DLGHEIGHT, local to displayBlobs()
+function getActiveMonitorDimensions(){   # 
+    local -a dim
+    read -r -a dim < <(bl-xinerama-prop)
     DLGWIDTH=$(( dim[0] / 3 ))
     DLGHEIGHT=$(( dim[1] * 2 / 3 ))
     [[ $DLGWIDTH =~ ^[0-9]+$ ]] && [[ $DLGHEIGHT =~ ^[0-9]+$ ]] || {
