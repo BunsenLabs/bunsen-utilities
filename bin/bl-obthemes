@@ -1207,11 +1207,11 @@ function getScrot(){
     done
     # if conkys or tint2s were killed, restore previously running session
     ((conkyFLAG)) || {
-        bash /home/john/git/bunsen/bunsen-utilities/bin/bl-conky-session "$tmpConky"
+        bl-conky-session "$tmpConky"
         rm -f "$tmpConky"
     }
     ((tint2FLAG)) || {
-        bash /home/john/git/bunsen/bunsen-utilities/bin/bl-tint2-session "$tmpTint"
+        bl-tint2-session "$tmpTint"
         rm -f "$tmpTint"
     }
 }
