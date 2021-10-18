@@ -90,6 +90,10 @@ Save options:
 
             Terminal emulator config (if available)
 
+            Compositor config (if available)
+
+            jgmenu theming (if available)
+
 Paths are assumed to be BunsenLabs defaults.
 
 A Screenshot is saved
@@ -144,8 +148,9 @@ do
 done
 
 ######################### VARIABLES ####################################
+# ( with some exceptions, GLOBAL variable names are uppercase, local in functions are lowercase )
 
-### USER SETTINGS
+### USER SETTINGS FOR THIS SCRIPT
 IMGCMD="bl-image-viewer"    # application command to view screenshot
 MENUMODIFIER="super+space"  # keybind for show root-menu (not used in standard BunsenLabs sessions)
 KEYDOWN=10                  # adjust this for where "Preferences" is in the menu
@@ -171,6 +176,8 @@ XFILE=".Xresources"
 BASHRC=".bashrc"
 #TERMFILE='' # now termfile is set dynamically by checkTerm() in saveSettings()
 COMPFILE=".config/picom.conf"
+OLDCOMPFILE=".config/compton.conf"
+JGMENURC=".config/jgmenu/jgmenurc" # jgmenu theming, not menu content
 
 CONKYPATH=".config/conky"
 TINTPATH=".config/tint2"
@@ -243,7 +250,7 @@ ICON="distributor-logo-bunsenlabs"
 #DIALOGDEC="yad --center  --borders=20 --window-icon=$ICON"
 yad_args=( '--center'  '--borders=20' "--window-icon=$ICON" )
 popup_args=( "${yad_args[@]}" "--title=$TITLE" '--undecorated' '--fixed' )
-T="--text="
+#T="--text="
 OK="--button=OK:0"
 CANCEL="--button=gtk-cancel:1"
 EXIT="--button=gtk-quit:1"
@@ -258,11 +265,12 @@ PICKCONKY="Conky"
 PICKTINT="Tint2"
 PICKDMENU="dmenu (Alt menu)"
 PICKLDM="Lightdm Login theme"
-#PICKEXIT="Exit dialog theme"
+#PICKEXIT="Exit dialog theme" # bl-exit no longer has separate themes
 #PICKTERM='' # now not global, pickterm is from checkTerm(), local in saveSettings()
 PICKX="X configs"
 PICKBASH="Bash configs"
 PICKCOMP="Compositor"
+PICKJGMENU="jgmenu theming"
 
 ### END DIALOG VARIABLES
 
@@ -525,6 +533,30 @@ function safeKill() {
     }
 }
 
+# $1 is path to keyfile (eg gtk3 settings.ini)
+# global associative array KEYS will be generated
+parseKeyfile(){
+    [[ -f $1 ]] || { echo "$1 is not a file." >&2;return 1;}
+    unset KEYS
+    declare -Ag KEYS
+    local entry_regex line key value
+    entry_regex="^[[:blank:]]*([A-Za-z0-9][A-Za-z0-9-]*)[[:blank:]]*=[[:blank:]]*('[^']+'|\"[^\"]+\"|[^#[:blank:]]+([[:blank:]]+[^#[:blank:]]+)*)[[:blank:]]*(#.*)*$"
+    while read -r line
+    do
+        [[ -n $line ]] || continue
+        [[ $line =~ $entry_regex ]] || continue
+        key=${BASH_REMATCH[1]}
+        value=${BASH_REMATCH[2]}
+        case $value in # strip quotes
+        \'*\')
+            value=${value#\'}; value=${value%\'};;
+        \"*\")
+            value=${value#\"}; value=${value%\"};;
+        esac
+        KEYS["${key}"]="${value}"
+    done < "$1"
+}
+
 # sets globals NUMDIRS and CURRENTSESSION, inside intro() and UpdateDisplayDialog()
 function getCurrent(){      # get name of currently set BLOB config
     local dirs
@@ -557,8 +589,9 @@ GUI Themes Manager</b></big>
     Alt Menu (dmenu)
     LightDM theme
     X configs (.bashrc, .Xresources)
-    Terminal (if config file exists)
+    Terminal (if config file is known)
     Compositor (if config file exists)
+    jgmenu (if config file exists)
     + Screenshot'
 
     debug 'Welcome to BLOB!'
@@ -566,12 +599,12 @@ GUI Themes Manager</b></big>
     getCurrent # generates NUMDIRS and CURRENTSESSION
     #  if blob/ is empty, then don't display "View Saved" option in Intro dialog
     if (( NUMDIRS > 0 ));then
-        yad "${yad_args[@]}" "$T$TXTINTRO" \
+        yad "${yad_args[@]}" "--text=$TXTINTRO" \
         --title="$TITLE" --borders=30 \
         --button="Save Settings:0" --button="View Saved:2" $CLOSE
 
     else
-        yad "${yad_args[@]}" "$T$TXTINTRO" \
+        yad "${yad_args[@]}" "--text=$TXTINTRO" \
         --title="$TITLE" --borders=30 \
         --button="Save Settings:0" $CLOSE
 
@@ -1097,10 +1130,25 @@ function getBashRC(){
 }
 
 function getComp(){
+    local txt
+    [[ -r "$HOME/$COMPFILE" ]] || COMPFILE=$OLDCOMPFILE
     saveFiles "$COMPFILE" || return 1
     txt="Compositor settings: ~/$COMPFILE\n"
     debug "\n  Saved $txt"
     echo "[COMPOSITOR] $COMPFILE" >> "$SETTINGS"
+    echo "$txt" >> "$LISTMSG"
+}
+
+function getJgmenu(){
+    local txt
+    [[ -r $HOME/$JGMENURC ]] || {
+        debug "No jgmenu config file, not saving"
+        return 0
+    }
+    saveFiles "$JGMENURC" || return 1
+    txt="jgmenu settings: ~/$JGMENURC\n"
+    debug "\n  Saved $txt"
+    echo "[JGMENU] $JGMENURC" >> "$SETTINGS"
     echo "$txt" >> "$LISTMSG"
 }
     
@@ -1149,7 +1197,7 @@ function getScrot(){
 
 
     # minimize all visible non-sticky windows on current desktop (most conkys are sticky)
-    sleep 1 # make sure previous yad window is completely closed before listing
+    sleep 0.5 # make sure previous yad window is completely closed before listing
     hiddenWins=()
     for w in $(xdotool search --onlyvisible --desktop "$currDesktop" --name '.*')
     do
@@ -1268,6 +1316,7 @@ function saveSettings(){
         "$PICKX"
         "$PICKBASH"
         "$PICKCOMP"
+        "$PICKJGMENU"
     )
     checkTerm # sets termfile and pickterm
     # add terminal to array if one with a config file is in use
@@ -1292,9 +1341,11 @@ function saveSettings(){
                             ;;
             "$PICKX"    )   getXconfig
                             ;;
-            "$PICKBASH"    )   getBashRC
+            "$PICKBASH" )   getBashRC
                             ;;
-            "$PICKCOMP"    )   getComp
+            "$PICKCOMP" )   getComp
+                            ;;
+            "$PICKJGMENU")  getJgmenu
                             ;;
             "$pickterm" )   getTerminal "$termfile" "$pickterm"
                             ;;
@@ -1411,30 +1462,6 @@ function reloadGTK(){ # reload gtk theme after restoring saved config
     else
         bl-reload-gtk23 --force >/dev/null 2>&1 || echo "bl-reload-gtk23 failed" >&2
     fi
-}
-
-# $1 is path to keyfile (eg gtk3 settings.ini)
-# global associative array KEYS will be generated
-parseKeyfile(){
-    [[ -f $1 ]] || { echo "$1 is not a file." >&2;return 1;}
-    unset KEYS
-    declare -Ag KEYS
-    local entry_regex line key value
-    entry_regex="^[[:blank:]]*([A-Za-z0-9][A-Za-z0-9-]*)[[:blank:]]*=[[:blank:]]*('[^']+'|\"[^\"]+\"|[^#[:blank:]]+([[:blank:]]+[^#[:blank:]]+)*)[[:blank:]]*(#.*)*$"
-    while read -r line
-    do
-        [[ -n $line ]] || continue
-        [[ $line =~ $entry_regex ]] || continue
-        key=${BASH_REMATCH[1]}
-        value=${BASH_REMATCH[2]}
-        case $value in # strip quotes
-        \'*\')
-            value=${value#\'}; value=${value%\'};;
-        \"*\")
-            value=${value#\"}; value=${value%\"};;
-        esac
-        KEYS["${key}"]="${value}"
-    done < "$1"
 }
 
 # pass gtk keyfile as $1, parse GTK theme from there instead of accepting name in settings.cfg
@@ -1892,14 +1919,17 @@ restoreSettings() {
                                 ;;
             "[EXITRC]"      )   : # do nothing
                                 ;;
-            "[XFILE]"      )   labels+=("$PICKX")
+            "[XFILE]"       )   labels+=("$PICKX")
                                 values["$PICKX"]="$VAL"
                                 ;;
             "[BASHRC]"      )   labels+=("$PICKBASH")
                                 values["$PICKBASH"]="$VAL"
                                 ;;
-            "[COMPOSITOR]"      )   labels+=("$PICKCOMP")
+            "[COMPOSITOR]"  )   labels+=("$PICKCOMP")
                                 values["$PICKCOMP"]="$VAL"
+                                ;;
+            "[JGMENU]"      )   labels+=("$PICKJGMENU")
+                                values["$PICKJGMENU"]="$VAL"
                                 ;;
             '['*']'         )   TAG="${TAG#[}" # strip outside brackets
                                 TAG="${TAG%]}"
@@ -2086,7 +2116,7 @@ differ () {
     firstfile=$1
     secondfile=$2
     diffcmd=(colordiff -s -u)
-    type colordiff >/dev/null || diffcmd=(diff -s -u)
+    type colordiff >/dev/null 2>&1 || diffcmd=(diff -s -u)
     diffcmd+=("$firstfile" "$secondfile")
     if [[ -t 0 && -t 1 ]] # on terminal
     then
