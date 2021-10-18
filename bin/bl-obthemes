@@ -412,7 +412,7 @@ function upgradeBlobs(){
         do
             [[ -n $t2file ]] || continue
             t2name=${t2file##*/}
-            [[ $t2name = *'.tint2rc' ]] && {
+            [[ $t2name = *'.tint2rc' || $t2name = tint2rc ]] && {
                 VAL+=${t2file};
                 continue # already using new name style
             }
