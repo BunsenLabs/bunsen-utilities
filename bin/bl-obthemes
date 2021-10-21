@@ -1749,8 +1749,8 @@ function restoreFileAbs(){
     target_dir="${target_file%/*}"
     mkdir -p "$target_dir" || return 1
     extra_txt=''
-    src_content=$(< "$src_file" )
-    [[ $src_content = *"$HOME_MARKER"* ]] && {
+    grep -qF "$HOME_MARKER" "$src_file" && {
+        src_content=$(< "$src_file" )
         tmpsrc="$(mktemp)" || return 1
         echo "${src_content//$HOME_MARKER/$HOME}" > "$tmpsrc"
         src_file=$tmpsrc
@@ -1795,12 +1795,20 @@ needBackup(){
     for dir in "$USRCONFIGPATH"/*/user "$SYSCONFIGPATH"/*/user
     do
         [[ -f $dir/$path ]] || continue
-        homefile_content=$(< "$file" )
-        blobfile_content=$(< "$dir/$path" )
-        [[ "$homefile_content" = "${blobfile_content//$HOME_MARKER/$HOME}" ]]  && {
-            debug "$file has identical copy $dir/${path}, no need to backup"
-            return 1
-        }
+        blobfile=$dir/$path
+        if grep -qF "$HOME_MARKER" "$blobfile"; then
+            homefile_content=$(< "$file" )
+            blobfile_content=$(< "$blobfile" )
+            [[ "$homefile_content" = "${blobfile_content//$HOME_MARKER/$HOME}" ]]  && {
+                debug "$file has identical copy $blobfile, no need to backup"
+                return 1
+            }
+        else
+            diff -BEbZ "$file" "$blobfile" >/dev/null && {
+                debug "$file has identical copy ${blobfile}, no need to backup"
+                return 1
+            }
+        fi
     done
     return 0
 }
@@ -2086,14 +2094,21 @@ function sameFiles() {
         [[ -f $file ]] || continue
         bigdirfile=${file/#$smalldir/$bigdir}
         [[ -f $bigdirfile ]] || continue
-        file_content=$(< "$file" )
-        bigdirfile_content=$(< "$bigdirfile" )
         extra_txt=''
-        [[ $file_content = *"$HOME_MARKER"* ]] && extra_txt=' (home path adjusted)'
-        [[ "${file_content//$HOME_MARKER/$HOME}" = "$bigdirfile_content" ]] || {
-            debug "${file}${extra_txt} is different from $bigdirfile"
-            difflist+=("$bigdirfile")
-        }
+        if grep -qF "$HOME_MARKER" "$file"; then
+            file_content=$(< "$file" )
+            bigdirfile_content=$(< "$bigdirfile" )
+            extra_txt=' (home path adjusted)'
+            [[ "${file_content//$HOME_MARKER/$HOME}" = "$bigdirfile_content" ]] || {
+                debug "${file}${extra_txt} is different from $bigdirfile"
+                difflist+=("$bigdirfile")
+            }
+        else
+            diff -BEbZ "$file" "$bigdirfile" >/dev/null || {
+                debug "${file} is different from $bigdirfile"
+                difflist+=("$bigdirfile")
+            }
+        fi
     done
     shopt -u globstar dotglob
     [[ ${#difflist[@]} -eq 0 ]] && {
