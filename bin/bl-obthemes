@@ -246,11 +246,8 @@ iconPaths=("$ICONPATH_1" "$ICONPATH_2" "$ICONPATH_3" "$ICONPATH_4")
 ### DIALOG VARIABLES
 TITLE="BLOB Themes Manager"
 ICON="distributor-logo-bunsenlabs"
-#DIALOG="yad --center --undecorated --borders=20 --window-icon=distributor-logo-bunsenlabs --fixed"
-#DIALOGDEC="yad --center  --borders=20 --window-icon=$ICON"
 yad_args=( '--center'  '--borders=20' "--window-icon=$ICON" )
 popup_args=( "${yad_args[@]}" "--title=$TITLE" '--undecorated' '--fixed' )
-#T="--text="
 OK="--button=OK:0"
 CANCEL="--button=gtk-cancel:1"
 EXIT="--button=gtk-quit:1"
@@ -1152,11 +1149,6 @@ function getJgmenu(){
     echo "$txt" >> "$LISTMSG"
 }
     
-
-
-
-
-
 function getScrot(){
     local conkyFLAG tint2FLAG currDesktop scrot mons hiddenWins
     conkyFLAG=1
@@ -1194,7 +1186,6 @@ function getScrot(){
     fi
     appY=$(( (screenH/20)*4 ))
     menuY=$(( (screenH/20)*4 ))
-
 
     # minimize all visible non-sticky windows on current desktop (most conkys are sticky)
     sleep 0.5 # make sure previous yad window is completely closed before listing
@@ -1565,7 +1556,6 @@ function restoreOBrc(){
     xmlstarlet transform <(cat <<<"$xsl") -p themefile="'$themefile'"  "$RCFILE" > "${RCFILE}_tmp" || return 1
     cat "${RCFILE}_tmp" > "$RCFILE" || return 1
     rm "${RCFILE}_tmp"
-
     debug "\n  $RCFILE edited for OB theme"
     openbox --reconfigure || return 1
     debug "\n Openbox reconfigured"
