@@ -148,9 +148,9 @@ loadSession(){
             continue # assume line (in fact, whole file probably) is in new style
         fi
     done
-    if [[ $needRewrite = true ]]; then # should only happen once
+    if [[ $needRewrite = true ]]; then # should only happen once, except if restoring old-style BLOBs
         target=$(readlink -f "$sessfile") # in case $sessfile is a symlink
-        cp "$target" "${target}${BKP_SFX}" # make backup
+        needBackup "$target" && cp "$target" "${target}${BKP_SFX}" # make backup
         echo "$0: reformatting $sessfile"
         :> "$sessfile"
         for path in "${conkys[@]}"; do
@@ -239,6 +239,23 @@ listSessfiles(){
     fi
 }
 
+# Take absolute filepath (in $HOME) as $1
+# Check if an identical backed-up file already exists in same directory.
+# Return 1 if found (no backup needed before overwrite),
+# otherwise return 0 (do backup).
+needBackup(){
+    local file bkp_file
+    file=$1
+    for bkp_file in "${file}"*~
+    do
+        [[ -f $bkp_file ]] || continue
+        diff -BEbZ "$file" "$bkp_file" >/dev/null && {
+            #debug "$file already has identical backup ${bkp_file}, no need to backup again"
+            return 1
+        }
+    done
+    return 0
+}
 
 ########################################################################
 
