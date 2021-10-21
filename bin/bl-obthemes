@@ -905,7 +905,7 @@ function getConky(){
                     ((save)) && debug "saving copy of default conky file"
                 else
                     conkyfile=$( userFilepath "$conkyfile" ) || continue
-                    CONKYTXT="$CONKYTXT\n\tDesktop $d:  $conkyfile"
+                    CONKYTXT="$CONKYTXT\n\tDesktop $d:  ~/$conkyfile"
                     debug "Found running conky file $conkyfile on Desktop $d"
                     ((save)) && debug "Saving copy of $conkyfile"
                 fi
@@ -930,7 +930,7 @@ function getConky(){
                 ((save)) && debug "saving copy of default conky file"
             else
                 conkyfile=$( userFilepath "$conkyfile" ) || continue
-                CONKYTXT="$CONKYTXT\n\t$conkyfile"
+                CONKYTXT="$CONKYTXT\n\t~/$conkyfile"
                 debug "Found running conky file $conkyfile"
                 ((save)) && debug "Saving copy of $conkyfile"
             fi
@@ -1000,7 +1000,7 @@ function getTint(){
             TINT2TXT="$TINT2TXT\n\tDefault Tint2"
             debug "saving copy of default tint2 config file"
         else
-            TINT2TXT="$TINT2TXT\n\t$tpath"
+            TINT2TXT="$TINT2TXT\n\t~/$tpath"
             debug "saving copy of $tpath"
         fi
         saveFiles "$tpath" || return 1
@@ -1076,7 +1076,7 @@ function getGTKname(){   # get saved GTK3 theme name and Icons name
 function getDmenu(){
     local txt
     saveFiles "$DMENU" || return 1
-    txt="dmenu config:  $HOME/$DMENU\n"
+    txt="dmenu config:  ~/$DMENU\n"
     debug "\n  Saved $txt"
     echo "[DMENU]" >> "$SETTINGS"
     echo "$txt" >> "$LISTMSG"
