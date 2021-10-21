@@ -245,10 +245,10 @@ listSessfiles(){
 if [[ ! -f $DEFAULTSESSFILE ]] ; then
     echo "$0: There is no default session file: ${DEFAULTSESSFILE}, generating now..." >&2
     if [[ -f $BLDEFAULT ]]; then
-        echo "$BLDEFAULT" > "$DEFAULTSESSFILE"
+        echo "${BLDEFAULT#$HOME/}" > "$DEFAULTSESSFILE" # use relative path in session file for better compatibility with BLOB
     elif [[ -f $CONKYDEFAULT ]]; then
         echo "$0: $BLDEFAULT not found, using $CONKYDEFAULT in session file." >&2
-        echo "$CONKYDEFAULT" > "$DEFAULTSESSFILE"
+        echo "${CONKYDEFAULT#$HOME/}" > "$DEFAULTSESSFILE"
     else
         echo "$0: ERROR: unable to generate default session file." >&2
         exit 1

@@ -129,7 +129,7 @@ loadSession(){
 if [[ ! -f $SESSIONFILE ]]; then
     echo "$0: There is no default session file: ${SESSIONFILE}, generating now..." >&2
     if [[ -f $DEFAULTTINT2 ]]; then
-        echo "$DEFAULTTINT2" > "$SESSIONFILE"
+        echo "${DEFAULTTINT2#$HOME/}" > "$SESSIONFILE"
     else
         echo "$0: ERROR: unable to generate default session file." >&2
         exit 1
