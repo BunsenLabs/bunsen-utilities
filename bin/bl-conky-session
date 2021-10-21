@@ -25,7 +25,7 @@
 #
 ########################################################################
 CONKYPATH="$HOME/.config/conky"
-BLDEFAULT="$CONKYPATH/BL-Default-conky.conf"
+BLDEFAULT=$(readlink -f "$CONKYPATH/BL-Default-conky.conf") # BL-Default-conky.conf is a symlink to this release's default conky
 CONKYDEFAULT="$CONKYPATH/conky.conf" # not normally used
 DEFAULTSESSFILE="$CONKYPATH/conky-sessionfile"
 STARTSESSION="$CONKYPATH/conky-startup-session" # symlink to chosen startup session (DEFAULTSESSFILE by default)
