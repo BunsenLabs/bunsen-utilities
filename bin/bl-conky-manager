@@ -377,12 +377,12 @@ loadDialog() {
         do
             [[ -n $path ]] || continue
             if isSticky "$path"; then
-                echo "$path" >> "$SESSIONFILE"
+                echo "${path#$HOME/}" >> "$SESSIONFILE" # put HOME-relative paths in sessionfile for better compatibility with BLOB
             else
                 if desktop=$( chooseDesktop "$path" ); then
-                    echo "D[${desktop}] ${path}" >> "$SESSIONFILE"
+                    echo "D[${desktop}] ${path#$HOME/}" >> "$SESSIONFILE"
                 else
-                    echo "$path" >> "$SESSIONFILE"
+                    echo "${path#$HOME/}" >> "$SESSIONFILE"
                 fi
             fi
         done <<< "$choice"
@@ -397,7 +397,7 @@ loadDialog() {
         while read -r path
         do
             [[ -n $path ]] || continue
-            echo "$path" >> "$SESSIONFILE"
+            echo "${path#$HOME/}" >> "$SESSIONFILE"
             set -m # enable job control so forked conky is immune to signals
             # start the conky (adjust the sleep time if required)
             conky -c "$path" >/dev/null 2>&1 &
