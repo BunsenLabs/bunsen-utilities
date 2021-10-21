@@ -1668,7 +1668,7 @@ function restoreLightdm(){   # need sudo to restore lightdm-gtk-greeter.conf
         echo "$0: Cannot read file $THEMEPATH/$LDM" >&2
         return 1
     }
-    cmp "$THEMEPATH/$LDM" "$LDMDIR/$LDM" >/dev/null 2>&1 && {
+    diff -qBEbZ "$THEMEPATH/$LDM" "$LDMDIR/$LDM" >/dev/null && {
         debug "\n $THEMEPATH/$LDM and $LDMDIR/$LDM are identical, no need to restore."
         return 0
     }
@@ -1757,7 +1757,7 @@ function restoreFileAbs(){
         extra_txt=' (home path adjusted)'
     }
     if [[ -e $target_file ]];then        # backup config first
-        cmp "$src_file" "$target_file" >/dev/null 2>&1 && {
+        diff -qBEbZ "$src_file" "$target_file" >/dev/null && {
             debug "\n  $target_file and ${1}${extra_txt} are identical, no need to restore."
             return 0
         }
@@ -1781,12 +1781,12 @@ function restoreFileAbs(){
 # Return 1 if found (no backup needed before overwrite),
 # otherwise return 0 (do backup).
 needBackup(){
-    local file bkp_file path dir homefile_content blobfile_content
+    local file bkp_file path dir blobfile homefile_content blobfile_content
     file=$1
     for bkp_file in "${file}"*~
     do
         [[ -f $bkp_file ]] || continue
-        cmp "$file" "$bkp_file" >/dev/null 2>&1 && {
+        diff -qBEbZ "$file" "$bkp_file" >/dev/null && {
             debug "$file already has identical backup ${bkp_file}, no need to backup again"
             return 1
         }
@@ -2244,7 +2244,7 @@ Do you want to save your current session before restoring <b>${themename}</b>?"
                             3)
                                 debug "\n Showing file differences"
                                 for userfile in "${difflist[@]}"; do
-                                    differ --title "Changes in user files" "$CURRENTSESSDIR/user/${userfile#$HOME}" "$userfile"
+                                    differ --title "Changes in user files" "$CURRENTSESSDIR/user/${userfile#$HOME/}" "$userfile"
                                 done
                             ;;
                         esac
