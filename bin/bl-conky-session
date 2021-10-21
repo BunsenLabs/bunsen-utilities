@@ -211,15 +211,14 @@ launchConkys(){
 setStartup(){
     local sessfile="$1"
     [[ $sessfile = default ]] && sessfile="$DEFAULTSESSFILE"
-    [[ $sessfile = /* ]] || sessfile="$CONKYPATH/$sessfile" # was relative path
-    if [[ -f "$sessfile" ]]; then
-        ln -s -f "$sessfile" "$STARTSESSION" || { echo "$0: ERROR: failed to create symlink $STARTSESSION" >&2; return 1;}
-    else
+    sessfile=$( fullPath "$sessfile" ) || {
         echo "$0: ERROR: cannot set session file $sessfile as startup, it does not exist." >&2
         return 1
-    fi
+    }
+    ln -s -f "$sessfile" "$STARTSESSION" || { echo "$0: ERROR: failed to create symlink $STARTSESSION" >&2; return 1;}
 }
 
+# generate output for terminal
 listSessfiles(){
     local -a sessfiles startup
     startup=$(readlink -f "$STARTSESSION")
