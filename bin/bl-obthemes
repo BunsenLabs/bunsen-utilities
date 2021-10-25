@@ -1145,7 +1145,7 @@ function getJgmenu(){
     saveFiles "$JGMENURC" || return 1
     txt="jgmenu settings: ~/$JGMENURC\n"
     debug "\n  Saved $txt"
-    echo "[JGMENU] $JGMENURC" >> "$SETTINGS"
+    echo "[JGMENU]" >> "$SETTINGS"
     echo "$txt" >> "$LISTMSG"
 }
     
@@ -1887,7 +1887,7 @@ restoreSettings() {
     # get chosen saved configs and restore them
     # Conky and Tint2 will be killed by their restore functions, if called.
     BKP_SFX=".$(date +"%Y%m%d-%H%M%S").blob~" # global: unified backup suffix that restore functions will use
-    local TAG VAL labels label columns select ret CHOICE jgmenu_sync_ob jgmenu_sync_gtk
+    local TAG VAL labels label columns select ret CHOICE jgmenu_sync jgmenu_sync_ob jgmenu_sync_gtk
     declare -A values
     while read -r TAG VAL; do
         case "$TAG" in
@@ -1977,6 +1977,7 @@ restoreSettings() {
     # TODO: add 'return 1' to functions as needed
     trap 'trap_error $LINENO "$BASH_COMMAND"' ERR
 
+    jgmenu_sync=true
     jgmenu_sync_ob=false
     jgmenu_sync_gtk=false
     # Go through user's selected choices.
@@ -2023,6 +2024,9 @@ restoreSettings() {
                                 ;;
             "$PICKBASH"     )   restoreFiles "$BASHRC"
                                 ;;
+            "$PICKJGMENU"   )   restoreFiles "$JGMENURC"
+                                jgmenu_sync=false # no need for openbox or gtk theme syncing, theme is provided in $JGMENURC
+                                ;;
             *               )   if [[ $VAL = '%dconf%'* ]] # dconf directories come prefixed with %dconf% in checkTerm (and others in future?)
                                 then
                                     restoreDconf "${VAL#'%dconf%'}" "$label"
@@ -2032,7 +2036,7 @@ restoreSettings() {
                                 ;;
         esac
     done <<< "$CHOICE"
-    hash jgmenu_run 2>/dev/null && {
+    hash jgmenu_run 2>/dev/null && [[ $jgmenu_sync = true ]] && {
         if [[ $jgmenu_sync_ob = true ]]
         then
             jgmenu_run init --apply-obtheme && debug "\n jgmenu synced with openbox theme"
