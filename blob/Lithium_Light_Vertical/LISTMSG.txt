@@ -1,5 +1,5 @@
 <b>Configuration name: Lithium_Light_Vertical</b>
-Released with BunsenLabs Lithium
+Released with BunsenLabs Beryllium
 
 Openbox theme:  BL-Lithium-light\n
 GTK theme:  BL-Lithium-light;  Icon Theme: Papirus-Bunsen-bluegrey\n (When restoring, Thunar will be restarted to use new theme.)\n

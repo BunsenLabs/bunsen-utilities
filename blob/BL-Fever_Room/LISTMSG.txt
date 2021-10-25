@@ -1,5 +1,5 @@
 <b>Configuration name: BL-Fever_Room</b>
-Released with BunsenLabs Lithium
+Released with BunsenLabs Beryllium
 
 Openbox theme:  BL-Fever_Room\n
 GTK theme:  BL-Fever_Room;  Icon Theme: Adwaita\n

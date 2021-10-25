@@ -1,5 +1,5 @@
 <b>Configuration name: Yeti-Lith</b>
-Released with BunsenLabs Lithium
+Released with BunsenLabs Beryllium
 
 Openbox theme:  Yeti-Lith\n
 GTK theme:  Yeti-Lith;  Icon Theme: Papirus-Bunsen-Dark-bluegrey\n (When restoring, Thunar will be restarted to use new theme.)\n
