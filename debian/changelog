@@ -1,3 +1,26 @@
+bunsen-utilities (11.2-1) beryllium; urgency=medium
+
+  * bl-obthemes:
+     + add saving of configs for compositor (picom or compton) and jgmenu.
+     + inhibit jgmenu theme syncing with openbox or GTK if configs are saved.
+     + use xmlstarlet + xslt for manipulating bl-rc.xml
+     + conky,tint2: handle spaces in filepaths, use BL session scripts to reload.
+     + add option to view file diffs when restoring and user files changed.
+     + improve hiding and restoring of windows when taking screenshot.
+     + improve readability of filepaths in user messages.
+     + update preset themes for new conky & tint2 filepath handling.
+     + add many small code improvements.
+  * bl-conky-session: 
+     + BLDEFAULT: resolve symlink BL-Default-conky.conf
+        to actual file for sessionfile etc.
+     + only backup changed session files if identical copy does not
+        exist.
+  * bl-conky-session, bl-tint2-session:
+     + allow relative (to HOME or config dir) file paths.
+  * bl-conky-manager: use HOME-relative file paths in session files.  
+
+ -- John Crawley <john@bunsenlabs.org>  Tue, 26 Oct 2021 14:10:56 +0900
+
 bunsen-utilities (11.1-2) beryllium; urgency=medium
 
   * debian/control: Add flag to handle package upgrades.
