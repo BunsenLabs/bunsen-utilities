@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Conky Mover
+Keywords=conky;settings;configurations;themes
+Comment=Move a conky to a new position on the desktop.
+Icon=bunsenlabs
+Exec=bl-conkymove
+Categories=Settings;DesktopSettings
+StartupNotify=false
+Terminal=false

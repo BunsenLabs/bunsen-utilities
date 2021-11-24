@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Quick Screenshot
+Comment=Take screenshot of the desktop and make anonymous upload to image host.
+Exec=bl-image-upload
+Icon=bunsenlabs
+Terminal=false
+StartupNotify=false
+Categories=Graphics;Utility;

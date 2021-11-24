@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Tint2 Manager
+Keywords=tint2;settings;configurations;themes
+Comment=Choose tint2 panels to run in this session.
+Icon=bunsenlabs
+Exec=bl-tint2-manager
+Categories=Settings;DesktopSettings;
+StartupNotify=false
+Terminal=false

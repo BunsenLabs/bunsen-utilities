@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Conky Editor
+Keywords=conky;settings;configurations;themes
+Comment=Edit selected conky config files.
+Icon=bunsenlabs
+Exec=bl-conky-edit
+Categories=Settings;DesktopSettings
+StartupNotify=false
+Terminal=false

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Tint2 Editor
+Keywords=tint2;settings;configurations;themes
+Comment=Edit selected tint2 config files.
+Icon=bunsenlabs
+Exec=bl-tint2-edit
+Categories=Settings;DesktopSettings
+StartupNotify=false
+Terminal=false

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Conky Manager
+Keywords=conky;settings;configurations;themes
+Comment=Choose conkys to run in this session.
+Icon=bunsenlabs
+Exec=bl-conky-manager
+Categories=Settings;DesktopSettings
+StartupNotify=false
+Terminal=false
