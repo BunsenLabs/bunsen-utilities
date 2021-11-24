@@ -1,3 +1,9 @@
+bunsen-utilities (11.3-1) beryllium; urgency=medium
+
+  * Add .desktop files for some utilities so they appear in auto-gen menus.
+
+ -- John Crawley <john@bunsenlabs.org>  Wed, 24 Nov 2021 14:36:51 +0900
+
 bunsen-utilities (11.2-1) beryllium; urgency=medium
 
   * bl-obthemes:
