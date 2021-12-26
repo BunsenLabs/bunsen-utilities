@@ -43,7 +43,7 @@ do
     esac
 done
 
-pidof tint2 >/dev/null || {
+pgrep -x -u "$USER" tint2 >/dev/null || {
     echo "$0: no tint2 processes running"
     exit 0
 }

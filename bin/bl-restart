@@ -46,7 +46,7 @@ done
 
 name=$1
 
-pidof "$name" >/dev/null || {
+pgrep -x -u "$USER" "$name" >/dev/null || {
     echo "$0: no $name processes running"
     exit 0
 }

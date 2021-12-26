@@ -97,15 +97,15 @@ CANCEL="--button=gtk-cancel:1"
 ########################################################################
 
 killConkys(){
-    if pidof conky &>/dev/null; then
+    if pgrep -x -u "$USER" conky >/dev/null; then
         if ((kill)); then
-            killall conky && sleep 0.2s || return 1
+            killall -u "$USER" conky && sleep 0.2s || return 1
         else
             MSG="Kill running conkys first?"
             $DLG $WINICON --title="$TITLE" --text="$MSG" "$CANCEL" --button="Don't kill":2 "$OK"
-            case $? in            # kill all conkys
-            0)
-                killall conky && sleep 0.2s || return 1
+            case $? in
+            0)            # kill all conkys
+                killall -u "$USER" conky && sleep 0.2s || return 1
                 ;;
             1)
                 return 1

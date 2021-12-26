@@ -176,8 +176,8 @@ loadDialog() {
 
     :> "$SESSIONFILE"    # Create/overwrite empty session file
 
-    if [[ $(pidof tint2) ]];then
-        killall tint2
+    if pgrep -x -u "$USER" tint2 >/dev/null;then
+        killall -u "$USER" tint2
         sleep 0.5 # make sure killed tint2s are not running at next iteration of getRunning()
     fi
 

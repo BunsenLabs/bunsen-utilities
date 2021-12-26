@@ -389,8 +389,8 @@ loadDialog() {
         bl-conky-session --kill-running "$SESSIONFILE" # bl-conky-session can handle desktops too
     else # this code should seldom be needed
         # kill all conkys
-        if [[ $(pidof conky) ]];then
-            killall conky
+        if pgrep -x -u "$USER" conky >/dev/null;then
+            killall -u "$USER" conky
             sleep 0.5 # make sure killed conkys are not running at next iteration of getRunning()
         fi
         # Find the chosen conkys, launch them and add them to SESSIONFILE.
