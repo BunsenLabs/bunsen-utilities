@@ -816,7 +816,7 @@ if [[ "${AUTH_MODE}" = "L" ]];then        # logged in as user
         api_call "${CMD}" "  Uploading ${IMG_FILE}..."
     fi
 else    # anonymous upload
-    CMD="curl -H \"${AUTH}\" -F \"image=@\"${IMG_FILE}\"\" -F title=\"${IMG_TITLE}\" \
+    CMD="curl -H \"${AUTH}\" -F image=@\"${IMG_FILE}\" -F title=\"${IMG_TITLE}\" \
     https://api.imgur.com/3/image"
 
     api_call "${CMD}" "  Uploading ${IMG_FILE}..."

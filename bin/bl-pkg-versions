@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 #    bl-pkg-versions: a script to check versions of BunsenLabs packages
-#    Copyright (C) 2015-2020  John Crawley <john@bunsenlabs.org>
+#    Copyright (C) 2015-2021  John Crawley <john@bunsenlabs.org>
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
