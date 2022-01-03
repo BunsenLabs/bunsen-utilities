@@ -40,6 +40,8 @@ beepmein 8:00 --alarm    # alarm (must be last parameter)
 
 beepmein --nr 5          # with no reason (must be first parameter)
 
+beepmein --reason <reason> # pass reason (must be first & second parameters)
+
 Set sounds:
     (playback depends on mpv or vlc)
 
@@ -255,6 +257,10 @@ if [[ "$1" != "--reaction" ]] ; then
     if [[ "$1" == "--nr" ]] ; then       # --nr must be first
         # chop off first argument
         noreason="true" && shift
+    elif [[ "$1" == "--reason" ]]; then
+        reason="$2"
+        noreason="true" # inhibit reason popup
+        shift 2
     fi
     if [[ "${!#}" == "--alarm" ]] ; then # --alarm must be last
         # chop off last argument
