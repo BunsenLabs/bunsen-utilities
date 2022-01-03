@@ -169,7 +169,7 @@ testAlarmPath () {
 # mpv or cvlc (by jr)
 playa () {
     file="$1"
-    [[ -f $file ]] || { superecho "file not found" ; return 1; }
+    [[ -f $file ]] || { return 1; } # if no sample configured then return error, so that failsafe beeps can be used instead
     if command -v mpv >/dev/null 2>&1
     then
         mpv --no-terminal --no-resume-playback --no-video "$file"
