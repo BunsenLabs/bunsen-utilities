@@ -1,3 +1,11 @@
+bunsen-utilities (11.4-1) beryllium; urgency=medium
+
+  * bl-pkg-versions: update to Beryllium as default.
+  * bl-obthemes: add possibility to display file diffs in GUI app.
+  * Add some bugfixes and UI tweaks.
+
+ -- John Crawley <john@bunsenlabs.org>  Fri, 22 Apr 2022 10:09:06 +0900
+
 bunsen-utilities (11.3-1) beryllium; urgency=medium
 
   * Add .desktop files for some utilities so they appear in auto-gen menus.
