@@ -292,14 +292,14 @@ isSticky(){
 chooseDesktop(){
     local path dtplst desktop a b c d e f g h name choice
     [[ -n $1 ]] && path=$1
-    dtplst=(TRUE "x" "Current Desktop")
+    dtplst=(TRUE "Current Desktop" "x")
     # shellcheck disable=SC2034
     while read -r desktop a b c d e f g h name
     do
-        dtplst+=(FALSE "$name" "$desktop")
+        dtplst+=(FALSE "$(pangoEscape "$name")" "$desktop")
     done < <( wmctrl -d )
     choice=$($DLGDEC $WINICON --list --title="$TITLE" \
-        --text="Choose a desktop for ${path##*/}:" \
+        --text="Choose a desktop for $(pangoEscape "${path##*/}"):" \
         --radiolist --width=300 --height=400 \
         --column=Select:RD --column="Desktop Name:TEXT" --column=desktop:HD \
         "${dtplst[@]}" --separator='' --print-column=3 "$OK" ) || return 1
