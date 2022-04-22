@@ -29,11 +29,10 @@
 
 CONKYPATH="$HOME/.config/conky"
 
-HELP="bl-conkyedit is a script to edit selected Conky config files
+HELP="bl-conky-edit is a script to edit selected Conky config files
 which are displayed in a yad window with checkboxes.
 
-Usage: bl-conkyedit
-   or: bl-conkyedit -h|--help
+Usage: bl-conky-edit [-h|--help]
 
 Optional arguments:
     -h | --help    Show this message (no other options are supported)
