@@ -869,7 +869,7 @@ function getConky(){
         saved_conkysession="$CONFIGDIR/user/$CONKYSESSION"
         mkdir -p "${saved_conkysession%/*}"
     fi
-    
+
     num_desktops=$(xdotool get_num_desktops)
     CONKYCMDS=''
     CONKYTXT=''
@@ -1148,7 +1148,7 @@ function getJgmenu(){
     echo "[JGMENU]" >> "$SETTINGS"
     echo "$txt" >> "$LISTMSG"
 }
-    
+
 function getScrot(){
     local conkyFLAG tint2FLAG currDesktop scrot mons hiddenWins
     conkyFLAG=1
@@ -1196,7 +1196,7 @@ function getScrot(){
         hiddenWins+=("$w")
         xdotool windowminimize "$w"
     done
-    
+
     # start lxappearance
     lxappearance 2>/dev/null &
     sleep 0.5
@@ -1345,7 +1345,7 @@ function saveSettings(){
                             ;;
         esac
     done
-    txt="<big><b><u>Openbox Configurations to be saved:</u></b></big>\n\n"
+    txt="<big><b><u>Theming Configurations to be saved:</u></b></big>\n\n"
     txt2=$(cat "$LISTMSG")
     yad_prompt "$txt$txt2"
     ret=$?
@@ -1869,7 +1869,7 @@ function UpdateDisplayDialog(){   # list saved theme collections for yad as DLGA
 
 # This function is run in displayBlobs() below to set width and height for View dialog.
 # generates DLGWIDTH and DLGHEIGHT, local to displayBlobs()
-function getActiveMonitorDimensions(){   # 
+function getActiveMonitorDimensions(){   #
     local -a dim
     read -r -a dim < <(bl-xinerama-prop)
     DLGWIDTH=$(( dim[0] / 3 ))
@@ -2124,6 +2124,14 @@ differ () {
     fi
     firstfile=$1
     secondfile=$2
+    # if a GUI diff is available, use that instead
+    for gui in meld kompare diffuse
+    do
+        hash "$gui" 2>/dev/null && {
+            "$gui" "$firstfile" "$secondfile"
+            return
+        }
+    done
     diffcmd=(colordiff -s -u)
     type colordiff >/dev/null 2>&1 || diffcmd=(diff -s -u)
     diffcmd+=("$firstfile" "$secondfile")
