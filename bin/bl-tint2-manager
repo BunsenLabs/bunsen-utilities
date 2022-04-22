@@ -55,13 +55,13 @@ Use:
 
     When the dialog opens, any running tint2s will be checkmarked.
 
-    Click "Apply" or "OK" and all running tint2s are stopped,
+    Click "Apply" and all running tint2s are stopped,
     and all checkmarked tint2s are started.
 
-    To stop a tint2 just uncheck it, and click "Apply" or "OK".
+    To stop a tint2 just uncheck it, and click "Apply".
 
     Click "Apply" to return to the dialog after applying changes,
-    click "OK" to close the window after applying changes,
+    click "Apply+Close" to close the window after applying changes,
     click "Close" to close the window without applying any more changes.
 
     Running tint2s are saved to a session file, and can be run with
