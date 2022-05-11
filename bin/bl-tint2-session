@@ -25,7 +25,7 @@
 #
 ########################################################################
 TINT2PATH="$HOME/.config/tint2"
-DEFAULTTINT2="${TINT2PATH}/tint2rc"
+DEFAULTTINT2="${TINT2PATH}/tint2rc" # tint2rc is a symlink to this release's default tint2 file
 SESSIONFILE="$TINT2PATH/tint2-sessionfile"
 USAGE='bl-tint2-session is a script to parse a saved Tint2 session file
 and start the tint2s.
