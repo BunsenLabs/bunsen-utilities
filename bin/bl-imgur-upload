@@ -220,33 +220,37 @@ function declareDependencies(){     # adapted from bl-includes
 }
 
 ### File and Image functions #####################################################
+
+# takes file as argument
 function getimage(){
-    if (( F_FLAG == 1 ));then           # a file is being uploaded
-        if (( THUNAR == 1 ));then       # --auto-upload requested
-            if [[ -f "${CREDENTIALS_FILE}" ]];then
-                TEXT="
-                    This action will upload \"${FNAME}\",
-                    and return the BBCode to the clipboard.
+    if (( F_FLAG == 1 ));then          # a file is being uploaded
+        [[ -f "${FNAME}" ]] || {
+            if (( THUNAR == 1 ));then       # --auto-upload requested
+                if [[ -f "${CREDENTIALS_FILE}" ]];then
+                    TEXT="
+                        This action will upload \"${FNAME}\",
+                        and return the BBCode to the clipboard.
 
-                    Do you want to upload to your Imgur account
-                    or upload Anonymously?
+                        Do you want to upload to your Imgur account
+                        or upload Anonymously?
 
-                    "
-                DLG=$(${DIALOG} "${TITLE}" \
-                    ${T}"${TEXT}" --text-align=left \
-                    --button="To Account:0" --button="Anonymous upload:2" ${CANCEL} \
-                    )
-                RET=$?
-                if (( RET == 0 ));then              # upload to account
-                    load_access_token "${CLIENT_ID}"
-                    AUTH="Authorization: Bearer ${ACCESS_TOKEN}"
-                elif (( RET == 2 ));then            # upload as anonymous user
-                    AUTH_MODE="A"
-                else
-                    exit 0
+                        "
+                    DLG=$(${DIALOG} "${TITLE}" \
+                        ${T}"${TEXT}" --text-align=left \
+                        --button="To Account:0" --button="Anonymous upload:2" ${CANCEL} \
+                        )
+                    RET=$?
+                    if (( RET == 0 ));then              # upload to account
+                        load_access_token "${CLIENT_ID}"
+                        AUTH="Authorization: Bearer ${ACCESS_TOKEN}"
+                    elif (( RET == 2 ));then            # upload as anonymous user
+                        AUTH_MODE="A"
+                    else
+                        exit 0
+                    fi
                 fi
             fi
-        fi
+        }
     fi
 
     # Only show dialogs if account upload was requested
