@@ -2217,18 +2217,18 @@ function displayBlobs(){
 
         case $RET in
             0)  sameFiles "$CURRENTSESSDIR/user" "$HOME" || {
-                    if [[ -d $CURRENTSESSDIR ]]
-                    then
-                        TEXT="You might have modified your desktop appearance since it was saved as <b>${CURRENTSESSION}</b>.
+                    while true; do
+                        if [[ -d $CURRENTSESSDIR ]]; then
+                            TEXT="You might have modified your desktop appearance since it was saved as <b>${CURRENTSESSION}</b>.
 These files are now different:
  ${difflist[*]/%/\\n}
 Do you want to save your current session before restoring <b>${themename}</b>?"
-                    else
-                        TEXT="You might have modified your desktop appearance since it was last saved.
+                            yad_question "$TEXT" --button='Save settings first':2 --button='No, restore now':0 --button='View difference(s)':3 --button='Cancel':1
+                        else
+                            TEXT="You do not seem to have saved your current desktop appearance.
 Do you want to save your current session before restoring <b>${themename}</b>?"
-                    fi
-                    while true; do
-                        yad_question "$TEXT" --button='Save settings first':2 --button='No, restore now':0 --button='View difference(s)':3 --button='Cancel':1
+                            yad_question "$TEXT" --button='Save settings first':2 --button='No, restore now':0 --button='Cancel':1
+                        fi
                         case $? in
                             0)
                                 debug "\n Some changed user files, but restoring $themename anyway."
