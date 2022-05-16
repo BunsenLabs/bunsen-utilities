@@ -2,9 +2,9 @@
 Released with BunsenLabs Beryllium
 
 Openbox theme:  BL-Lithium-light\n
-GTK theme:  BL-Lithium-light;  Icon Theme: Papirus-Bunsen-bluegrey\n (When restoring, Thunar will be restarted to use new theme.)\n
+GTK theme:  BL-Lithium-light;  Icon Theme: Papirus-Bunsen-bluegrey\n
 Background set with nitrogen:
-	/usr/share/images/bunsen/wallpapers/default/BL-networks.png
+	/usr/share/images/bunsen/wallpapers/default/Networks.png
 	
 Running Conkys:
 	~/.config/conky/bigClock-lithium-light-conky.conf

@@ -3,7 +3,7 @@ Released with BunsenLabs Beryllium
 
 Openbox theme:  Beam\n
 GTK theme:  Beam;  Icon Theme: Paper-Bunsen\n
-Background set with nitrogen:\n/usr/share/images/bunsen/wallpapers/default/BL-beam.png\n
+Background set with nitrogen:\n/usr/share/images/bunsen/wallpapers/default/Beam-plain.png\n
 Running Conkys:\n\t~/.config/conky/BL-Helium-conky.conf\n
 Running Tint2s:\n\t~/.config/tint2/helium.tint2rc\n
 dmenu config:  ~/.config/dmenu/dmenu-bind.sh\n

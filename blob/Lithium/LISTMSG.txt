@@ -1,10 +1,10 @@
 <b>Configuration name: Lithium</b>	
 Released with BunsenLabs Beryllium
 
-Openbox theme:  BL-Lithium\n
-GTK theme:  BL-Lithium;  Icon Theme: Papirus-Bunsen-Dark-bluegrey\n (When restoring, Thunar will be restarted to use new theme.)\n
+Openbox theme:  BL-Lithium
+GTK theme:  BL-Lithium;  Icon Theme: Papirus-Bunsen-Dark-bluegrey\n
 Background set with nitrogen:
-	/usr/share/images/bunsen/wallpapers/default/BL-Lithium-logo-only.png
+	/usr/share/images/bunsen/wallpapers/default/Lithium-logo-only.png
 	
 Running Conkys:
 	~/.config/conky/BL-Lithium-conky.conf

@@ -35,6 +35,9 @@ URxvt.iconFile: /usr/share/icons/Papirus/48x48/apps/urxvt.svg
 URxvt.cursorBlink: true
 URxvt.fading: 20
 
+! Beryllium colours
+!URxvt.background: [95]#18191A
+!URxvt.foreground: #BECFCF
 ! Lithium colours
 URxvt.background: [95]#22373F
 URxvt.foreground: #C6D5E5

@@ -4,7 +4,7 @@ Released with BunsenLabs Beryllium
 Openbox theme:  Dragon
 GTK theme:  Dragon;  Icon Theme: Papirus-Bunsen-Dark-black\n
 Background set with nitrogen:
-	/usr/share/images/bunsen/wallpapers/default/Beryllium-1920x1080.jpg
+	/usr/share/images/bunsen/wallpapers/default/Beryllium-1440x900.jpg
 	
 Running Conkys:	
 	~/.config/conky/BL-Beryllium-conky.conf
