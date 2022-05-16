@@ -1,3 +1,10 @@
+bunsen-utilities (11.5-1) beryllium; urgency=medium
+
+  * BLOB: add new collection "Beryllium".
+  * bl-imgur-upload: bugfix: handle case when no arguments are passed.
+
+ -- John Crawley <john@bunsenlabs.org>  Mon, 16 May 2022 09:31:19 +0900
+
 bunsen-utilities (11.4-1) beryllium; urgency=medium
 
   * bl-pkg-versions: update to Beryllium as default.
