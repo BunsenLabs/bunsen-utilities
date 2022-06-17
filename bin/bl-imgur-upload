@@ -42,6 +42,7 @@ USR_CFG_DIR="$HOME/.config/image-upload/imgur"
 CREDENTIALS_FILE="${USR_CFG_DIR}/credentials.conf"
 SETTINGS_FILE="${USR_CFG_DIR}/imgur.conf"
 SCRIPT=$(basename "$0")
+IMG_VIEWER=bl-image-viewer
 
 USAGE="bl-imgur-upload is a script to take screenshots and upload them to Imgur
 this can be to an existing account, or anonymously.
@@ -143,8 +144,14 @@ function getargs(){
                             shift
                             ;;
             --file)         FNAME="$2"
-                            shift
+                            if ! [[ -f "${FNAME}" ]]; then
+                                MSG="\n\tFile\"'${FNAME}\" doesn't exist!\n\n\tExiting script...\n"
+                                echo -e "${MSG}"
+                                yad_error "${MSG}"
+                                exit 1
+                            fi
                             F_FLAG=1
+                            shift
                             ;;
             --auto-upload)  THUNAR=1
                             ;;
@@ -185,6 +192,9 @@ FILE_NAME="imgur-%Y_%m_%d-%H:%M:%S"
 # possible formats are png | jpg | tiff | gif
 FILE_FORMAT="png"
 
+# Use this app to view images locally
+IMG_VIEWER=bl-image-viewer
+
 # Screenshot scrot commands
 SCREENSHOT_SELECT_COMMAND="scrot -s "
 SCREENSHOT_WINDOW_COMMAND="scrot -u -b "
@@ -223,34 +233,37 @@ function declareDependencies(){     # adapted from bl-includes
 
 # takes file as argument
 function getimage(){
-    if (( F_FLAG == 1 ));then          # a file is being uploaded
-        [[ -f "${FNAME}" ]] || {
-            if (( THUNAR == 1 ));then       # --auto-upload requested
-                if [[ -f "${CREDENTIALS_FILE}" ]];then
-                    TEXT="
-                        This action will upload \"${FNAME}\",
-                        and return the BBCode to the clipboard.
+    if (( THUNAR == 1 ));then       # --auto-upload requested
+        if (( F_FLAG == 1 ));then          # a file is being uploaded
+            if [[ -f "${CREDENTIALS_FILE}" ]];then
+                TEXT="
+                    This action will upload \"${FNAME}\",
+                    and return the BBCode to the clipboard.
 
-                        Do you want to upload to your Imgur account
-                        or upload Anonymously?
+                    Do you want to upload to your Imgur account
+                    or upload Anonymously?
 
-                        "
-                    DLG=$(${DIALOG} "${TITLE}" \
-                        ${T}"${TEXT}" --text-align=left \
-                        --button="To Account:0" --button="Anonymous upload:2" ${CANCEL} \
-                        )
-                    RET=$?
-                    if (( RET == 0 ));then              # upload to account
-                        load_access_token "${CLIENT_ID}"
-                        AUTH="Authorization: Bearer ${ACCESS_TOKEN}"
-                    elif (( RET == 2 ));then            # upload as anonymous user
-                        AUTH_MODE="A"
-                    else
-                        exit 0
-                    fi
+                    "
+                DLG=$(${DIALOG} "${TITLE}" \
+                    ${T}"${TEXT}" --text-align=left \
+                    --button="To Account:0" --button="Anonymous upload:2" ${CANCEL} \
+                    )
+                RET=$?
+                if (( RET == 0 ));then              # upload to account
+                    load_access_token "${CLIENT_ID}"
+                    AUTH="Authorization: Bearer ${ACCESS_TOKEN}"
+                elif (( RET == 2 ));then            # upload as anonymous user
+                    AUTH_MODE="A"
+                else
+                    exit 0
                 fi
             fi
-        }
+        else
+            MSG="\n\tNo file specified for upload!\n\n\tExiting script...\n"
+            echo -e "${MSG}"
+            yad_error "${MSG}"
+            exit 1
+        fi
     fi
 
     # Only show dialogs if account upload was requested
@@ -280,6 +293,30 @@ function getimage(){
         IMG_FILE="$(date +"${FILE_NAME}.${FILE_FORMAT}")"
         IMG_FILE="${FILE_DIR}/${IMG_FILE}"
         take_screenshot "${IMG_FILE}"
+        thumbnail="${IMG_FILE%.*}-thumb.${FILE_FORMAT}"
+        MSG="
+This action will upload this screenshot of your desktop,
+and return the BBCode to the clipboard.
+
+Do you want to upload anonymously to Imgur?
+
+"
+        while true; do
+            ${DIALOG} --image="${thumbnail}" --title="Confirm Screenshot Upload" \
+            ${CANCEL} ${OK} --button="Show Fullsize":2 --button="Imgur T.O.S":3 --width=680 --text="${MSG}" --text-align=left
+            RET=$?
+            case "$RET" in
+            0)
+                break;;
+            1)
+                exit 0;;
+            2)
+                "$IMG_VIEWER" "${IMG_FILE}";;
+            3)
+                x-www-browser "https://imgur.com/tos";;
+            esac
+        done
+        rm -f "${thumbnail}"
     else
         # upload file instead of screenshot
         IMG_FILE="$1"
@@ -385,7 +422,7 @@ function delete_local(){        # delete local screenshot or image file
 }
 
 function take_screenshot() {
-    CMD_SCROT="${SCROT}$1"
+    CMD_SCROT="${SCROT}-t 15 ${1}" # also take thumbnail for dialogue
     SHOT_ERR="$(${CMD_SCROT} &>/dev/null)" #takes a screenshot
     if (( $? != 0 )); then
         MSG="\n\tFailed to take screenshot of\n\t\"$1\":\n\tError: \"${SHOT_ERR}\"\n"
