@@ -1,3 +1,10 @@
+bunsen-utilities (11.6-1) beryllium; urgency=medium
+
+  * bl-imgur-upload: confirm upload of screenshot,
+     add options to view fullsized image and Imgur T.O.S.
+
+ -- John Crawley <john@bunsenlabs.org>  Sun, 19 Jun 2022 16:08:28 +0900
+
 bunsen-utilities (11.5.3-1) beryllium; urgency=medium
 
   * BLOB: Beryllium: update jgmenu colours.
