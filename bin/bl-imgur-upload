@@ -245,8 +245,8 @@ function getimage(){
 
                     "
                 DLG=$(${DIALOG} "${TITLE}" \
-                    ${T}"${TEXT}" --text-align=left \
-                    --button="To Account:0" --button="Anonymous upload:2" ${CANCEL} \
+                    "${T}${TEXT}" --text-align=left \
+                    --button="To Account:0" --button="Anonymous upload:2" "${CANCEL}" \
                     )
                 RET=$?
                 if (( RET == 0 ));then              # upload to account
@@ -308,7 +308,7 @@ Do you want to upload anonymously to Imgur?
             case "$RET" in
             0)
                 break;;
-            1)
+            1|70|252)
                 exit 0;;
             2)
                 "$IMG_VIEWER" "${IMG_FILE}";;
