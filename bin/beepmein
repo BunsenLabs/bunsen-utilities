@@ -291,7 +291,7 @@ if [[ "$1" != "--reaction" ]] ; then
     (( setdelay )) && delay="$(date +%_S.%N)"
 
     # set 'at'
-    at -M "$attime" <<< "$(echo "sleep $delay; DISPLAY=${DISPLAY} /home/john/bin/beepmein --reaction $alarm '${reason}'")" &>/dev/null || { superecho "at input error." ; beep "2"; exit 1; } # beep two times for error
+    at -M "$attime" <<< "$(echo "sleep $delay; DISPLAY=${DISPLAY} beepmein --reaction $alarm '${reason}'")" &>/dev/null || { superecho "at input error." ; beep "2"; exit 1; } # beep two times for error
 
 else
     # reaction
