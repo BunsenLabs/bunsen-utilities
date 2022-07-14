@@ -1,3 +1,10 @@
+bunsen-utilities (11.6.1-1) beryllium; urgency=medium
+
+  * beepmein: bugfix: wrong executable path.
+  * bl-imgur-upload: exit anonymous upload if dialog box is closed.
+
+ -- John Crawley <john@bunsenlabs.org>  Thu, 14 Jul 2022 10:48:18 +0900
+
 bunsen-utilities (11.6-1) beryllium; urgency=medium
 
   * bl-imgur-upload: confirm upload of screenshot,
