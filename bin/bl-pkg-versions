@@ -24,9 +24,7 @@ Usage:
 Options:
         -h, --help      Show this message.
         <empty>|beryllium   Check the Beryllium packages.
-        beryllium-dev   Check the packages on the beryllium-dev server.
         lithium         Check the Lithium packages.
-        lithium-dev     Check the packages on the lithium-dev server.
         helium          Check the Helium packages.
         hydrogen        Check the Hydrogen packages.
 
@@ -50,11 +48,11 @@ case $1 in
     readonly SERVER=http://pkg.bunsenlabs.org
     readonly RELEASE=beryllium
     ;;
-beryllium-dev)
-    readonly GITHUB_BRANCH=beryllium
-    readonly SERVER=https://kelaino.bunsenlabs.org/~johnraff
-    readonly RELEASE=beryllium
-    ;;
+#beryllium-dev)
+#    readonly GITHUB_BRANCH=beryllium
+#    readonly SERVER=https://kelaino.bunsenlabs.org/~johnraff
+#    readonly RELEASE=beryllium
+#    ;;
 lithium)
     readonly GITHUB_BRANCH=lithium
     readonly SERVER=http://pkg.bunsenlabs.org
