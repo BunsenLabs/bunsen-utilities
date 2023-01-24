@@ -17,17 +17,15 @@ Save options are for  Conky(s)
 
 Paths are assumed to be BunsenLabs defaults.
 
-WARNING: It is assumed that the conkys are not being run via a script, so 
-they will appear on all desktops. If you usually use a script, then you 
-may have to make your own arrangements! Conkys in non-default directories
-can be saved, but will not be seen when running bl-conky-manager.
+WARNING: Conkys in non-default directories can be saved,
+but might not be seen when running bl-conky-manager.
 
 A Screenshot is saved (Windows are hidden briefly so the image
-                       is the bare desktop, with any Tint2s 
+                       is the bare desktop, with any Tint2s
                        or Conkys which are running, and a representive
                        menu and lxappearance open)
 
-A time-stamped backup of rc.xml is saved "just in case". 
+A time-stamped backup of rc.xml is saved "just in case".
 
 xdotool is used to move the mouse pointer, and assumes the root-menu is shown.
 with "Super + Space" keys, and the right mouse button is set for r-click.
