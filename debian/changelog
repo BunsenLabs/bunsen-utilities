@@ -1,3 +1,14 @@
+bunsen-utilities (12.0-1) boron; urgency=medium
+
+  * Migrate for Debian Bookworm
+    - debian/control: Bump Standards-Version to 4.6.1.0 - no changes required.
+    - debian/control: Declare debhelper compatibility 13.
+    - debian/control: Add Rules-Requires-Root: no
+    - debian/copyright: update year, use https Format url.
+  * bk-pkg-versions: remove references to obsolete *-dev suites.
+
+ -- John Crawley <john@bunsenlabs.org>  Tue, 24 Jan 2023 16:03:28 +0900
+
 bunsen-utilities (11.6.1-1) beryllium; urgency=medium
 
   * beepmein: bugfix: wrong executable path.
@@ -63,14 +74,14 @@ bunsen-utilities (11.2-1) beryllium; urgency=medium
      + improve readability of filepaths in user messages.
      + update preset themes for new conky & tint2 filepath handling.
      + add many small code improvements.
-  * bl-conky-session: 
+  * bl-conky-session:
      + BLDEFAULT: resolve symlink BL-Default-conky.conf
         to actual file for sessionfile etc.
      + only backup changed session files if identical copy does not
         exist.
   * bl-conky-session, bl-tint2-session:
      + allow relative (to HOME or config dir) file paths.
-  * bl-conky-manager: use HOME-relative file paths in session files.  
+  * bl-conky-manager: use HOME-relative file paths in session files.
 
  -- John Crawley <john@bunsenlabs.org>  Tue, 26 Oct 2021 14:10:56 +0900
 
@@ -95,7 +106,7 @@ bunsen-utilities (11.1-1) beryllium; urgency=medium
      + add option to set as startup default when saving a new session
   * bl-lock: fix test for live system
   * bl-tint2-session: allow session file to be passed
-  * All: add pango escaping for yad text when displaying filepaths. 
+  * All: add pango escaping for yad text when displaying filepaths.
 
  -- John Crawley <john@bunsenlabs.org>  Thu, 19 Aug 2021 15:10:09 +0900
 
@@ -844,4 +855,3 @@ cb-exit (0.01) unstable; urgency=low
   * Initial release.
 
  -- Philip Newborough <corenominal@corenominal.org>  Mon, 16 Apr 2012 11:28:48 +0100
-
