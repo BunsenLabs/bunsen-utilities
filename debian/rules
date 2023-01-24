@@ -10,4 +10,3 @@ override_dh_installman:
 override_dh_clean:
 	dh_clean
 	sh debian/genman.sh --clean
-

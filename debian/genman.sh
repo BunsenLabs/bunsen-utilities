@@ -4,9 +4,9 @@
 # to generate man files from executables' --help options,
 # using help2man.
 # Tested on Dash, should work with other POSIX shells.
-# Version 20200505
+# Version 20220126
 
-#    Copyright (C) 2018-2020  John Crawley <john@bunsenlabs.org>
+#    Copyright (C) 2018-2022  John Crawley <john@bunsenlabs.org>
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@
 # their paths will be appended to an existing debian/*manpages file,
 # or put in a new manpages or <packagename>.manpages file.
 #
-# genman.sh --clean will return everything to its previous state.
+# see genman.sh --help for more info.
 #
 # Run the script manually before building the package,
 # or to auto-run, add this to debian/rules:
@@ -65,11 +65,12 @@ default_section=1
 
 # BunsenLabs generic content
 # Other vendors, please edit to taste.
-includes="[authors]
+includes="[author]
 Written by the BunsenLabs team.
 
 [reporting bugs]
-Please report bugs at
+Please report bugs at:
+
 https://github.com/BunsenLabs/${src_name}/issues
 
 [see also]
@@ -264,6 +265,14 @@ EOF
 --help|-h)
     echo "$HELP"
     exit 0
+    ;;
+'')
+    ;;
+*)
+    echo "${0}: ERROR \"${1}\": no such option" >&2
+    echo
+    echo "$HELP"
+    exit 1
     ;;
 esac
 

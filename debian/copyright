@@ -1,4 +1,4 @@
-Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: bunsen-utilities
 Source: https://github.com/BunsenLabs/bunsen-utilities
 
@@ -10,12 +10,12 @@ Copyright: 2012 Philip Newborough <corenominal@corenominal.org>
            2018 Matthew T Hoare <matthew.t.hoare@gmail.com>
            2015-2020 damo <damo@bunsenlabs.org>
            2019-2020 brontosaurusrex
-           2015-2021 John Crawley <john@bunsenlabs.org>
+           2015-2023 John Crawley <john@bunsenlabs.org>
            2015-2021 Jens John <dev@2ion.de>
 License: GPL-3.0+
 
 Files: debian/*
-Copyright: 2015-2021 John Crawley <john@bunsenlabs.org>
+Copyright: 2015-2023 John Crawley <john@bunsenlabs.org>
 License: GPL-3.0+
 
 License: GPL-3.0+
