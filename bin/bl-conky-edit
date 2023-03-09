@@ -53,14 +53,6 @@ CANCEL="--button=gtk-cancel:1"
 
 ########## FUNCTIONS ###################################################
 
-# for yad text display of filenames
-pangoEscape() {
-    local string="${1//&/&amp;}"
-    string="${string//</&lt;}"
-    string="${string//>/&gt;}"
-    printf '%s' "$string"
-}
-
 CPATH_REGEX='.*(conky.*\.conf|conky|conkyrc)'
 
 findConkys(){
@@ -88,6 +80,14 @@ do
         ;;
     esac
 done
+
+BL_COMMON_LIBDIR='/usr/lib/bunsen/common'
+if ! . "$BL_COMMON_LIBDIR/bl-includes" 2> /dev/null; then
+    echo $"Error: Failed to locate bl-includes in $BL_COMMON_LIBDIR" >&2
+    exit 1
+fi
+# pangoEscape() for yad text display of filenames
+# is provided in bl-includes
 
 # get conkys in CONKYPATH, recursively, add to array LISTCONKY
 findConkys
