@@ -2,7 +2,7 @@
 #
 #    bl-obthemes: script to save or restore various GUI theme settings
 #    Copyright (C) 2015-2020 damo    <damo@bunsenlabs.org>
-#                  2018-2021 John Crawley <john@bunsenlabs.org>
+#                  2018-2023 John Crawley <john@bunsenlabs.org>
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -47,10 +47,8 @@
 # The image viewer is set to be "bl-image-viewer". Edit the "IMGCMD" variable
 # to change this.
 #
-# WARNING: It is assumed that the conkys are not being run via a script, so
-# they will appear on all desktops. If you usually use a script, then you
-# may have to make your own arrangements! Conkys in non-default directories
-# can be saved, but will not be seen when running the bl conky chooser
+# WARNING: Conkys in non-default directories are saved, but
+# will not be seen when running the bl conky manager.
 #
 ########################################################################
 #
@@ -116,10 +114,8 @@ Configuration:
  to change this.
 
 WARNING:
- Although conkys displayed on a single desktop are handled,
- if you usually run conkys with a script, then you may have to
- make your own arrangements! Conkys in non-default directories
- can be saved, but will not be seen when running the bl conky chooser.
+ Conkys in non-default directories are saved, but will not be seen
+ when running the bl conky manager.
 
 KNOWN ISSUES:
  Virtualbox does not allow the guest to move the host mouse cursor,
@@ -252,6 +248,7 @@ OK="--button=OK:0"
 CANCEL="--button=gtk-cancel:1"
 EXIT="--button=gtk-quit:1"
 CLOSE="--button=gtk-close:1"
+HLPBTN="--button=Help:10"
 
 ## USER READABLE LABELS
 PICKOB="OB theme"
@@ -598,7 +595,7 @@ GUI Themes Manager</b></big>
     if (( NUMDIRS > 0 ));then
         yad "${yad_args[@]}" "--text=$TXTINTRO" \
         --title="$TITLE" --borders=30 \
-        --button="Save Settings:0" --button="View Saved:2" $CLOSE
+        --button="Save Settings:0" --button="View Saved:2" $HLPBTN $CLOSE
 
     else
         yad "${yad_args[@]}" "--text=$TXTINTRO" \
@@ -614,6 +611,9 @@ GUI Themes Manager</b></big>
             exit 0
             ;;
         2)  displayBlobs
+            ;;
+        10) yad --button="OK":0 --center --window-icon=distributor-logo-bunsenlabs --text-info --title="The BLOB themes manager" --filename="/usr/share/bunsen/docs/helpfiles/helpfile-blob.txt" --width=900 --height=700 --fontname=Monospace
+            Intro
             ;;
         *)  echo "RETURN ERROR" >&2
             exit 1
@@ -780,7 +780,7 @@ function getFeh(){    # get Feh saved backgrounds
         while read -r line;do
             bg="$bg$line;\n\t"
         done < <(grep -o "'[^']*'" "$ffile" | sed "s/'//g" 2>/dev/null)
-        debug "\n  Backgrounds set with Feh, using:\t$FEHFILE"
+        debug "\n  Backgrounds set with Feh, using:\t$CONFIGDIR/user/$FEHFILE"
         debug "\t$bg"
         echo -e "Background set with feh:\n\t$bg" >> "$LISTMSG"
     else
