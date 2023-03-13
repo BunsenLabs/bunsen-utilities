@@ -183,7 +183,7 @@ loadDialog() {
     while read -r path
     do
         [[ -n $path ]] || continue
-        echo "$path" >> "$SESSIONFILE"
+        echo "${path#$HOME/}" >> "$SESSIONFILE" # strip $HOME to avoid unnecessary warnings from bl-obthemes when restoring
         set -m # enable job control so forked tint2 is immune to signals
         # start the tint2 (adjust the sleep time if required)
         tint2 -c "$path" >/dev/null 2>&1 &
