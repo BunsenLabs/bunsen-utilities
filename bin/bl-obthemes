@@ -319,6 +319,14 @@ trap_error(){
     fi
 }
 
+# Usage: createFlag filename
+# Currently used in Intro()
+# to record if "About" window has been shown.
+createFlag() {
+    mkdir -p "$HOME/.config/bunsen"
+    touch "$HOME/.config/bunsen/$1"
+}
+
 # This is run at the start.
 # OBSESSION global used in getScrot()
 firstChecks() {
@@ -568,8 +576,18 @@ function getCurrent(){      # get name of currently set BLOB config
     fi
 }
 
+# pass --one-view-only to skip the intro window
+# after first viewing
 function Intro(){
-    TXTINTRO='<big><b>BunsenLabs
+
+    debug 'Welcome to BLOB!'
+
+    getCurrent # generates NUMDIRS and CURRENTSESSION
+
+    if [[ $1 = '--one-view-only' && -e $HOME/.config/bunsen/blob-intro-viewed ]];then
+        displayBlobs
+    else
+        TXTINTRO='<big><b>BunsenLabs
 GUI Themes Manager</b></big>
 
 
@@ -588,37 +606,37 @@ GUI Themes Manager</b></big>
     jgmenu (if config file exists)
     + Screenshot'
 
-    debug 'Welcome to BLOB!'
+        createFlag 'blob-intro-viewed'
 
-    getCurrent # generates NUMDIRS and CURRENTSESSION
-    #  if blob/ is empty, then don't display "View Saved" option in Intro dialog
-    if (( NUMDIRS > 0 ));then
-        yad "${yad_args[@]}" "--text=$TXTINTRO" \
-        --title="$TITLE" --borders=30 \
-        --button="Save Settings:0" --button="View Saved:2" $HLPBTN $CLOSE
+        #  if blob/ is empty, then don't display "View Saved" option in Intro dialog
+        if (( NUMDIRS > 0 ));then
+            yad "${yad_args[@]}" "--text=$TXTINTRO" \
+            --title="$TITLE" --borders=30 \
+            --button="Save Settings:0" --button="View Blobs:2" $HLPBTN $CLOSE
 
-    else
-        yad "${yad_args[@]}" "--text=$TXTINTRO" \
-        --title="$TITLE" --borders=30 \
-        --button="Save Settings:0" $CLOSE
+        else
+            yad "${yad_args[@]}" "--text=$TXTINTRO" \
+            --title="$TITLE" --borders=30 \
+            --button="Save Settings:0" $HLPBTN $CLOSE
 
+        fi
+        case $? in
+            0)  saveNewBlob
+                displayBlobs
+                ;;
+            1)  debug "CANCELLED..."
+                exit 0
+                ;;
+            2)  displayBlobs
+                ;;
+            10) yad --button="OK":0 --center --window-icon=distributor-logo-bunsenlabs --text-info --title="The BLOB themes manager" --filename="/usr/share/bunsen/docs/helpfiles/helpfile-blob.txt" --width=900 --height=700 --fontname=Monospace
+                Intro
+                ;;
+            *)  echo "RETURN ERROR" >&2
+                exit 1
+                ;;
+        esac
     fi
-    case $? in
-        0)  saveNewBlob
-            displayBlobs
-            ;;
-        1)  debug "CANCELLED..."
-            exit 0
-            ;;
-        2)  displayBlobs
-            ;;
-        10) yad --button="OK":0 --center --window-icon=distributor-logo-bunsenlabs --text-info --title="The BLOB themes manager" --filename="/usr/share/bunsen/docs/helpfiles/helpfile-blob.txt" --width=900 --height=700 --fontname=Monospace
-            Intro
-            ;;
-        *)  echo "RETURN ERROR" >&2
-            exit 1
-            ;;
-    esac
 }
 
 ####################### save functions #################################
@@ -742,7 +760,8 @@ function saveDconf(){ # passed dconf directory as #1 and name of app (for dumpfi
 }
 
 function getBg(){    # find if feh or nitrogen was used. Save config file(s)
-    local bgset
+    local bgset unsupported_bgsetters
+    unsupported_bgsetters=(xfdesktop) # If any of these are running, cannot use nitrogen or feh.
     if [[ -e $HOME/$NITROFILE ]] && [[ -e $HOME/$FEHFILE ]];then  # see which was last used to set background
         if [[ $HOME/$NITROFILE -nt $HOME/$FEHFILE ]];then # use most recent method
             bgset="NITROGEN"
@@ -754,9 +773,16 @@ function getBg(){    # find if feh or nitrogen was used. Save config file(s)
     elif [[ -e $HOME/$NITROFILE ]];then    # use nitrogen for background
         bgset="NITROGEN"
     else
-        echo "$0:  No background-setting application found" >&2
+        echo "$0:  No nitrogen or feh files found" >&2
         bgset="None"
     fi
+    for i in "${unsupported_bgsetters[@]}"
+    do
+        pgrep -x "$i" -u "$USER" && {
+            echo "$0: unsupported background setter $i is running" >&2
+            bgset="None"
+        }
+    done
     debug "\n  Background to be set with $bgset"
     case "$bgset" in
         FEH     )   getFeh
@@ -764,6 +790,7 @@ function getBg(){    # find if feh or nitrogen was used. Save config file(s)
         NITROGEN)   getNitrogen
                     ;;
         None    )   echo "$0: No background-setting application found" >&2
+                    echo -e "Background cannot be set with nitrogen or feh\n" >> "$LISTMSG"
                     ;;
     esac
     echo "[BACKGROUND] $bgset" >> "$SETTINGS"
@@ -1900,8 +1927,10 @@ restoreSettings() {
             "[ICONS]"       )   #labels+=("$PICKICONS")
                                 values["$PICKICONS"]="$VAL"
                                 ;;
-            "[BACKGROUND]"  )   labels+=("$PICKBG")
-                                values["$PICKBG"]="$VAL"
+            "[BACKGROUND]"  )   [[ $VAL = None ]] || {
+                                    labels+=("$PICKBG")
+                                    values["$PICKBG"]="$VAL"
+                                }
                                 ;;
             "[CONKY]"       )   labels+=("$PICKCONKY")
                                 values["$PICKCONKY"]="$VAL"
@@ -1939,7 +1968,7 @@ restoreSettings() {
         esac
     done < "$THEMEPATH/settings.cfg"
 
-    select='FALSE'
+    select='TRUE'
     while true
     do
         columns=()
@@ -1949,7 +1978,7 @@ restoreSettings() {
         done
         CHOICE=$(yad "${yad_args[@]}" --list --checklist \
             --title="Choose the configs to restore..." \
-            --button="Select All:2" $CANCEL $OK \
+            --button="Unselect All:2" $CANCEL $OK \
             --height=400 --width=400 \
             --print-column=2 --separator='' \
             --column="Select" --column="Config" "${columns[@]}" )
@@ -1958,7 +1987,7 @@ restoreSettings() {
             debug " Cancelled restore of $themename"
             return
         elif (( ret == 2 ));then
-            select="TRUE"
+            select="FALSE"
             continue
         fi
         if [[ -z $CHOICE ]] ; then # entry field is empty, so try again
@@ -2182,9 +2211,9 @@ function displayBlobs(){
         CONFIG=$(yad "${yad_args[@]}" --list --title="$TITLE" \
             --text="Double-click selection, or \"Enter\", or use the \"Restore\" button to restore settings\n" \
             --separator=" " \
-            --button="About:5" \
-            --button="View image:4" --button="Add New:3" \
-            --button="Delete:2" --button="Restore:0" --button="gtk-quit:1" \
+            --button="_About:5" \
+            --button="View _Closeup:4" --button="_Save Current:3" \
+            --button="_Restore this Blob:0" --button="_Delete this Blob:2" --button="gtk-quit:1" \
             --always-print-result \
             --width=$DLGWIDTH --height=$DLGHEIGHT --center --image-preview \
             --expand-column=3 \
@@ -2252,10 +2281,10 @@ Do you want to save your current session before restoring <b>${themename}</b>?"
                         esac
                     done
                 }
-                SAVED="$THEMEPATH/LISTMSG.txt"
-                TEXT="These configs saved as $CONFIG can be restored:\n\n"
-                TEXT="$TEXT$(< "$SAVED")"
-                yad_prompt "$TEXT" || continue
+#                SAVED="$THEMEPATH/LISTMSG.txt"
+#                TEXT="These configs saved as $CONFIG can be restored:\n\n"
+#                TEXT="$TEXT$(< "$SAVED")"
+#                yad_prompt "$TEXT" || continue
                 debug "\n Restoring BLOB theme $themename"
                 restoreSettings
                 ;;
@@ -2359,6 +2388,6 @@ fi
 # store conky and tint2 commands in session files
 upgradeBlobs
 
-Intro
+Intro --one-view-only
 
 exit 0
