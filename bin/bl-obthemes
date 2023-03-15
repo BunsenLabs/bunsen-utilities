@@ -584,7 +584,7 @@ function Intro(){
 
     getCurrent # generates NUMDIRS and CURRENTSESSION
 
-    if [[ $1 = '--one-view-only' && -e $HOME/.config/bunsen/blob-intro-viewed ]];then
+    if [[ $1 = '--one-view-only' && -e $HOME/.config/bunsen/blob-intro-viewed && (( NUMDIRS > 0 )) ]];then
         displayBlobs
     else
         TXTINTRO='<big><b>BunsenLabs
