@@ -614,12 +614,12 @@ GUI Themes Manager</b></big>
         if (( NUMDIRS > 0 ));then
             yad "${yad_args[@]}" "--text=$TXTINTRO" \
             --title="$TITLE" --borders=30 \
-            --button="Save Settings:0" --button="View Blobs:2" $HLPBTN $CLOSE
+            --button="Save Current Blob:0" --button="View Saved Blobs:2" $HLPBTN $CLOSE
 
         else
             yad "${yad_args[@]}" "--text=$TXTINTRO" \
             --title="$TITLE" --borders=30 \
-            --button="Save Settings:0" $HLPBTN $CLOSE
+            --button="Save Current Blob:0" $HLPBTN $CLOSE
 
         fi
         case $? in
@@ -2213,9 +2213,9 @@ function displayBlobs(){
         CONFIG=$(yad "${yad_args[@]}" --list --title="$TITLE" \
             --text="Double-click selection, or \"Enter\", or use the \"Restore\" button to restore settings\n" \
             --separator=" " \
-            --button="_About:5" \
-            --button="View _Closeup:4" --button="_Save Current:3" \
-            --button="_Restore this Blob:0" --button="_Delete this Blob:2" --button="gtk-quit:1" \
+            --button="_Save Current Blob:3" --button="_View Selected Blob:4" \
+            --button="_Use Selected Blob:0" --button="_Delete Selected Blob:2" \
+            --button="_About:5" --button="gtk-quit:1" \
             --always-print-result \
             --width=$DLGWIDTH --height=$DLGHEIGHT --center --image-preview \
             --expand-column=3 \
