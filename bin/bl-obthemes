@@ -584,16 +584,15 @@ function Intro(){
 
     debug 'Welcome to BLOB!'
 
-    getCurrent # generates NUMDIRS and CURRENTSESSION
+    getCurrent # generates globals NUMDIRS and CURRENTSESSION
 
     if [[ $1 = '--one-view-only' && -e $HOME/.config/bunsen/blob-intro-viewed && (( NUMDIRS > 0 )) ]];then
         displayBlobs
     else
-        TXTINTRO='<big><b>BunsenLabs
-GUI Themes Manager</b></big>
+        TXTINTRO='<big><b>BLOB: BunsenLabs GUI Themes Manager</b></big>
 
 
-<b>Save or Restore settings for:</b>
+<b>Save or Restore settings for any or all of these:</b>
 
     Openbox theme
     GTK theme
