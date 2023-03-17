@@ -605,7 +605,9 @@ function Intro(){
     Terminal (if config file is known)
     Compositor (if config file exists)
     jgmenu (if config file exists)
-    + Screenshot'
+    + Screenshot
+
+'
 
         createFlag 'blob-intro-viewed'
 
@@ -2210,7 +2212,7 @@ function displayBlobs(){
     while true ;do
         UpdateDisplayDialog # generates DLGARR aand CURRENTSESSDIR
         CONFIG=$(yad "${yad_args[@]}" --list --title="$TITLE" \
-            --text="Double-click selection, or \"Enter\", or use the \"Restore\" button to restore settings\n" \
+            --text="Double-click the highlighted selection, or use \"Enter\" key, or the \"Use Selected Blob\" button to apply selected blob\n" \
             --separator=" " \
             --button="_Save Current Blob:3" --button="_View Selected Blob:4" \
             --button="_Use Selected Blob:0" --button="_Delete Selected Blob:2" \
