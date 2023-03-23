@@ -248,7 +248,7 @@ OK="--button=OK:0"
 CANCEL="--button=gtk-cancel:1"
 EXIT="--button=gtk-quit:1"
 CLOSE="--button=gtk-close:1"
-HLPBTN="--button=Help:10"
+HLPBTN="--button=_Help:10"
 
 ## USER READABLE LABELS
 PICKOB="OB theme"
@@ -615,12 +615,12 @@ function Intro(){
         if (( NUMDIRS > 0 ));then
             yad "${yad_args[@]}" "--text=$TXTINTRO" \
             --title="$TITLE" --borders=30 \
-            --button="Save Current Blob:0" --button="View Saved Blobs:2" $HLPBTN $CLOSE
+            --button="_Save Current Blob:0" --button="_View Saved Blobs:2" $HLPBTN $CLOSE
 
         else
             yad "${yad_args[@]}" "--text=$TXTINTRO" \
             --title="$TITLE" --borders=30 \
-            --button="Save Current Blob:0" $HLPBTN $CLOSE
+            --button="_Save Current Blob:0" $HLPBTN $CLOSE
 
         fi
         case $? in
