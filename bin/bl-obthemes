@@ -1257,6 +1257,7 @@ function getJgmenu(){
 }
 
 function getScrot(){
+    debug "\n Preparing to take screenshot..."
     local conkyFLAG tint2FLAG currDesktop scrot mons hiddenWins
     conkyFLAG=1
     tint2FLAG=1
@@ -1275,9 +1276,9 @@ function getScrot(){
         safeKill tint2
     }
     currDesktop=$(xdotool get_desktop)
+    debug "Current desktop is $currDesktop"
     scrot="$USRCONFIGPATH/$NEWNAME/${NEWNAME}.jpg"
     mons=$(xrandr -q | grep -c " connected")    # number of monitors
-    debug "Taking screenshot..."
 
     # set mouse position, for appearance of root-menu
     local -a dim
@@ -1294,6 +1295,7 @@ function getScrot(){
     appY=$(( (screenH/20)*4 ))
     menuY=$(( (screenH/20)*4 ))
 
+    debug "minimizing open windows"
     # minimize all visible non-sticky windows on current desktop (most conkys are sticky)
     sleep 0.5 # make sure previous yad window is completely closed before listing
     hiddenWins=()
@@ -1309,56 +1311,67 @@ function getScrot(){
     sleep 0.5
     # get lx window, make sure it loses focus, then move mouse and start root-menu
     LX=$(xdotool getwindowfocus)
-    xdotool windowmove --sync "$LX" "$appX" "$appY" && sleep 0.1 && \
+    xdotool windowmove --sync "$LX" "$appX" "$appY" && sleep 0.3 && \
     xdotool mousemove --sync --window "$LX" -- -50 0 && xdotool click 1
-
+    sleep 0.3
     xdotool mousemove --sync "$menuX" "$menuY"
+    sleep 0.1
     case $OBSESSION in
     bunsenlabs)
         jgmenu_run &
-        sleep 0.3
-        xdotool key --delay 50 Home
+        sleep 0.5
+        xdotool key --delay 100 Home
         i=1
         while (( i <= KEYDOWN ));do
-            xdotool key --delay 50 Down
+            xdotool key --delay 100 Down
             i=$(( i+1 ))
         done
-        xdotool key --delay 20 Right
-        xdotool key --delay 20 Right && sleep 0.3
+        xdotool key --delay 50 Right
+        xdotool key --delay 50 Right && sleep 0.5
         ;;
     openbox)
         xdotool key --clearmodifiers "$MENUMODIFIER"
         i=1
         while (( i <= KEYDOWN ));do
-            xdotool key --delay 50 Down
+            xdotool key --delay 100 Down
             i=$(( i+1 ))
         done
-        xdotool key --delay 20 Right && sleep 0.3
+        xdotool key --delay 50 Right && sleep 0.5
         ;;
     esac
+
+    debug "Taking screenshot..."
 
     # take scrot
     scrot -t 9 "$scrot"    # scrot thumbnail @9% fullsize
 
+    sleep 0.5
+
+    debug "restoring desktop"
+
     # close root menu
     xdotool mousemove_relative --sync --polar 0 10 "${MOUSECMD[@]}"
+    sleep 0.3
     # kill lxappearance
     pkill -P "$$" lxappearance
-
+    sleep 0.3
     # restore hidden windows
 
     for w in "${hiddenWins[@]}"
     do
         xdotool windowmap --sync "$w"
+        sleep 0.3
     done
     # if conkys or tint2s were killed, restore previously running session
     ((conkyFLAG)) || {
         bl-conky-session "$tmpConky"
         rm -f "$tmpConky"
+        sleep 0.3
     }
     ((tint2FLAG)) || {
         bl-tint2-session "$tmpTint"
         rm -f "$tmpTint"
+        sleep 0.3
     }
 }
 
@@ -2264,9 +2277,10 @@ differ () {
             mate-terminal.wrapper)
                 termcmd=(mate-terminal --disable-factory -t "$title" -x) # mate-terminal.wrapper does not support --disable-factory
                 ;;
-            gnome-terminal.wrapper)
-                termcmd=(gnome-terminal --wait -t "$title" --) # gnome-terminal.wrapper does not support --wait
-                ;;
+# gnome terminal now waits if invoked as x-terminal-emulator
+#            gnome-terminal.wrapper)
+#                termcmd=(gnome-terminal --wait -t "$title" --) # gnome-terminal.wrapper does not support --wait
+#                ;;
             tilix.wrapper)
                 termcmd=(tilix --new-process -t "$title" -e) # tilix.wrapper does not support --new-process
                 ;;
