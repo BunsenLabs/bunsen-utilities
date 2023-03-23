@@ -2301,7 +2301,7 @@ differ () {
 ######## Main BLOB list display function ###############################
 # sets globals THEMEPATH and BKP_SFX (via restoreSettings) for restore functions
 function displayBlobs(){
-    local DLGWIDTH DLGHEIGHT DLGARR RET CONFIG CURRENTSESSDIR themename TEXT difflist userfile
+    local DLGWIDTH DLGHEIGHT DLGARR RET CONFIG CURRENTSESSDIR themename SYSDIRTXT TEXT difflist userfile
     getActiveMonitorDimensions
     while true ;do
         UpdateDisplayDialog # generates DLGARR aand CURRENTSESSDIR
