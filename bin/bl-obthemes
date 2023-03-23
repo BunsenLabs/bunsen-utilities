@@ -800,9 +800,15 @@ function getBg(){    # Find if feh, nitrogen or other was used. Save config file
 
     debug "\n  Background to be set with $bgset"
     case "$bgset" in
-        FEH     )   getFeh
+        FEH     )   getFeh || {
+                        echo "$0: Failed to save feh config." >&2
+                        return 1
+                    }
                     ;;
-        NITROGEN)   getNitrogen
+        NITROGEN)   getNitrogen || {
+                        echo "$0: Failed to save nitrogen config." >&2
+                        return 1
+                    }
                     ;;
         None    )   echo "$0: No background-setting application found" >&2
                     echo -e "Background cannot be set with nitrogen or feh\n" >> "$LISTMSG"
@@ -815,7 +821,10 @@ function getBg(){    # Find if feh, nitrogen or other was used. Save config file
 # CONFIGDIR is global set by setName()
 function getFeh(){    # get Feh saved backgrounds
     local ffile="$CONFIGDIR/user/$FEHFILE"
-    saveFiles "$FEHFILE" || return 1
+    saveFiles "$FEHFILE" || {
+        echo "$0: Failed to save feh configs file $FEHFILE" >&2
+        return 1
+    }
     if [[ -f $ffile ]];then
         local bg=""
         # get fields between single quotes
@@ -834,7 +843,10 @@ function getFeh(){    # get Feh saved backgrounds
 # CONFIGDIR is global set by setName()
 function getNitrogen(){  # get Nitrogen saved backgrounds
     local nfile="$CONFIGDIR/user/$NITROFILE"
-    saveFiles "$NITROFILE" || return 1
+    saveFiles "$NITROFILE" || {
+        echo "$0: Failed to save nitrogen configs file $NITROFILE" >&2
+        return 1
+    }
     if [[ -f $nfile ]];then
         local bg=""
         while read -r line;do
@@ -851,6 +863,9 @@ function getNitrogen(){  # get Nitrogen saved backgrounds
 
 # generates command array idCmd from window id (hex or decimal)
 # WARNING WM_COMMAND is deprecated: https://www.x.org/releases/X11R7.6/doc/xorg-docs/specs/ICCCM/icccm.html#obsolete_session_manager_conventions
+# TODO switch to using mapfile with pids and /proc/${pid}/cmdline as in getTint()
+# but, need to handle conkys on specific desktops.
+
 # Usage: getIdCmd <id>
 # called in getConky() where idCmd is local array variable
 # NOTE: this works with conky windows, but not with tint2 which provides no WM_COMMAND data.
@@ -948,7 +963,11 @@ function getConky(){
                     debug "Found running conky file $conkyfile on Desktop $d"
                     ((save)) && debug "Saving copy of $conkyfile"
                 fi
-                ((save)) && { saveFiles "$conkyfile" || return 1; }
+                ((save)) && { saveFiles "$conkyfile" || {
+                    echo "$0: Failed to save conky config file $conkyfile" >&2
+                    return 1
+                    }
+                }
                 # line to start on specified desktop with bl-conky-session
                 conkyline="D[$d] $conkyfile"
                 CONKYCMDS="${CONKYCMDS}${conkyline};" # add semicolon separator here
@@ -973,7 +992,11 @@ function getConky(){
                 debug "Found running conky file $conkyfile"
                 ((save)) && debug "Saving copy of $conkyfile"
             fi
-            ((save)) && { saveFiles "$conkyfile" || return 1; }
+            ((save)) && { saveFiles "$conkyfile" || {
+                echo "$0: Failed to save conky config file $conkyfile" >&2
+                return 1
+                }
+            }
             conkyline="$conkyfile"
             CONKYCMDS="${CONKYCMDS}${conkyline};" # add semicolon separator here
             echo "$conkyline" >> "$saved_conkysession"
@@ -1042,7 +1065,10 @@ function getTint(){
             TINT2TXT="$TINT2TXT\n\t~/$tpath"
             debug "saving copy of $tpath"
         fi
-        saveFiles "$tpath" || return 1
+        saveFiles "$tpath" || {
+            echo "$0: Failed to save tint2 config file $tpath" >&2
+            return 1
+        }
     done < <(pgrep -x 'tint2' -u "$USER")
 
     ((save)) && {
@@ -1060,7 +1086,10 @@ function getOBtheme(){
         RCFILE="$OLDRCFILE"
         debug "Getting openbox theme from $OLDRCFILE instead of $RCFILE"
     }
-    [[ -r $RCFILE ]] || return 1
+    [[ -r $RCFILE ]] || {
+        echo "$0: Openbox config file $RCFILE not found" >&2
+        return 1
+    }
     xsl='<?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:ob="http://openbox.org/3.4/rc">
   <xsl:output method="xml" encoding="UTF-8" omit-xml-declaration="yes" />
@@ -1082,19 +1111,31 @@ function getOBtheme(){
 </xsl:stylesheet>
 '
     xmlstarlet transform <(cat <<<"$xsl") "$RCFILE" > "$obfile" || return 1
-    [[ -s $obfile ]] || return 1
+    [[ -s $obfile ]] || {
+        echo "$0: Failed to generate Openbox theme settings in $obfile" >&2
+        return 1
+    }
     # $obfile has no namespace declarations, so '_:' syntax unnecessary
     xpath='/theme/name/text()'
     obtheme=$(xmlstarlet sel --template --value-of "$xpath" "$obfile")
-    [[ -n $obtheme ]] || return 1
+    [[ -n $obtheme ]] || {
+        echo "$0: Failed to determine the Openbox theme name to be saved" >&2
+        return 1
+    }
     echo "Openbox theme:  $obtheme" >> "$LISTMSG"
     echo "[OBTHEME] $obtheme" >> "$SETTINGS"
     debug "copied Openbox theme (${obtheme}) section from $RCFILE"
 }
 
 function getGTKtheme(){
-    saveFiles "$GTK2" "$GTK2MINE" "$GTK3/settings.ini" "$GTK3/gtk.css" "$GTK3x" || return 1
-    getGTKname
+    saveFiles "$GTK2" "$GTK2MINE" "$GTK3/settings.ini" "$GTK3/gtk.css" "$GTK3x" || {
+        echo "$0: Failed to save the necessary GTK config files" >&2
+        return 1
+    }
+    getGTKname || {
+        echo "$0: Failed to parse $gtk3_settings" >&2
+        return 1
+    }
 }
 
 function getGTKname(){   # get saved GTK3 theme name and Icons name
@@ -1114,7 +1155,10 @@ function getGTKname(){   # get saved GTK3 theme name and Icons name
 
 function getDmenu(){
     local txt
-    saveFiles "$DMENU" || return 1
+    saveFiles "$DMENU" || {
+        echo "$0: Failed to save demenu config file $DMENU" >&2
+        return 1
+    }
     txt="dmenu config:  ~/$DMENU\n"
     debug "\n  Saved $txt"
     echo "[DMENU]" >> "$SETTINGS"
@@ -1123,7 +1167,10 @@ function getDmenu(){
 
 function getLightdm(){
     local txt
-    saveFileAbs "$LDMDIR/$LDM" "$CONFIGDIR/$LDM" || return 1
+    saveFileAbs "$LDMDIR/$LDM" "$CONFIGDIR/$LDM" || {
+        echo "$0: Failed to save LightDM config file $LDMDIR/$LDM to $CONFIGDIR/$LDM" >&2
+        return 1
+    }
     txt="Lightdm config:  $LDMDIR/$LDM\n(password will be needed to restore)\n"
     debug "\n  Saved $txt"
     echo "[LIGHTDM]" >> "$SETTINGS"
@@ -1135,13 +1182,19 @@ function getTerminal(){
     local termname termfile txt
     termfile="$1"
     termname="$2"
-    case "$termfile" in # dconf directories get prefixed with %dconf% in checkTerm()
+    case "$termfile" in # dconf "directories" get prefixed with %dconf% in checkTerm()
     '%dconf%'*)
-        saveDconf "${termfile#'%dconf%'}" "$termname"
+        saveDconf "${termfile#'%dconf%'}" "$termname" || {
+            echo "$0: Failed to save $termname dconf config: $termfile" >&2
+            return 1
+        }
         txt="$termname dconf config: ${termfile#'%dconf%'}\n"
         ;;
     *)
-        saveFiles "$termfile" || return 1
+        saveFiles "$termfile" || {
+            echo "$0: Failed to save $termname configs file $termfile" >&2
+            return 1
+        }
         txt="$termname config:  ~/$termfile\n"
         ;;
     esac
@@ -1152,7 +1205,10 @@ function getTerminal(){
 
 function getXconfig(){
     local txt
-    saveFiles "$XFILE" || return 1
+    saveFiles "$XFILE" || {
+        echo "$0: Failed to save X configs file $XFILE" >&2
+        return 1
+    }
     txt="X config:  ~/$XFILE\n"
     debug "\n  Saved $txt"
     echo "[XFILE]" >> "$SETTINGS"
@@ -1161,7 +1217,10 @@ function getXconfig(){
 
 function getBashRC(){
     local txt
-    saveFiles "$BASHRC" || return 1
+    saveFiles "$BASHRC" || {
+        echo "$0: Failed to save bash configs file $BASHRC" >&2
+        return 1
+    }
     txt="Bash config:  ~/$BASHRC\n"
     debug "\n  Saved $txt"
     echo "[BASHRC]" >> "$SETTINGS"
@@ -1171,7 +1230,10 @@ function getBashRC(){
 function getComp(){
     local txt
     [[ -r "$HOME/$COMPFILE" ]] || COMPFILE=$OLDCOMPFILE
-    saveFiles "$COMPFILE" || return 1
+    saveFiles "$COMPFILE" || {
+        echo "$0: Failed to save compositor configs file $COMPFILE" >&2
+        return 1
+    }
     txt="Compositor settings: ~/$COMPFILE\n"
     debug "\n  Saved $txt"
     echo "[COMPOSITOR] $COMPFILE" >> "$SETTINGS"
@@ -1184,7 +1246,10 @@ function getJgmenu(){
         debug "No jgmenu config file, not saving"
         return 0
     }
-    saveFiles "$JGMENURC" || return 1
+    saveFiles "$JGMENURC" || {
+        echo "$0: Failed to save jgmenu configs file $JGMENURC" >&2
+        return 1
+    }
     txt="jgmenu settings: ~/$JGMENURC\n"
     debug "\n  Saved $txt"
     echo "[JGMENU]" >> "$SETTINGS"
@@ -1404,6 +1469,7 @@ function saveSettings(){
 
 ###################### restore functions ###############################
 
+# pass icon theme name as $1
 function checkICONS(){ # check if icon theme is still present
     local FOUNDICONS=0
     local ICOTXT="Icon theme <b>$1</b> not found\n\n  The default icon theme will be used..."
@@ -1441,6 +1507,7 @@ function checkICONS(){ # check if icon theme is still present
     fi
 }
 
+# pass GTK theme name as $1
 function checkGTK(){    # check if gtk theme is still present
     local INSTGTKTXT="Needed GTK theme <b>$1</b> not found\n Would you like to install the package <b>${pkg}</b> which contains that theme?"
     local NOGTKTXT="GTK theme <b>$1</b> not found\n\n  The default GTK theme will be used..."
@@ -2096,6 +2163,7 @@ restoreSettings() {
 }
 
 # used in displayBlobs() below and intro()
+# NEWNAME CONFIGDIR and CONFIGDIR_BKP are globals set by setName()
 function saveNewBlob() {
     setName || return 1
     debug "\n  Saving settings as $NEWNAME"
