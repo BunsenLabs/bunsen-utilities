@@ -1138,17 +1138,17 @@ function getGTKtheme(){
     }
 }
 
-function getGTKname(){   # get saved GTK3 theme name and Icons name
-    local gtk3_settings gtktheme icons txt
+function getGTKname(){   # get saved GTK3 theme name and Icon theme name
+    local gtk3_settings gtktheme icontheme txt
     gtk3_settings="$CONFIGDIR/user/$GTK3/settings.ini"
     # parseKeyfile generates global associative array KEYS
     parseKeyfile "$gtk3_settings" || { yad_warning "Failed to parse $gtk3_settings."; return 1;}
     gtktheme=${KEYS[gtk-theme-name]}
     echo "[GTK] $gtktheme" >> "$SETTINGS"
-    icons=${KEYS[gtk-icon-theme-name]}
-    echo "[ICONS] $icons" >> "$SETTINGS"
+    icontheme=${KEYS[gtk-icon-theme-name]}
+    echo "[ICONS] $icontheme" >> "$SETTINGS"
     unset KEYS
-    txt="GTK theme:  $gtktheme;  Icon Theme: $icons\n"
+    txt="GTK theme:  $gtktheme;  Icon Theme: $icontheme\n"
     debug "\n  Saved $txt"
     echo  "$txt" >> "$LISTMSG"
 }
