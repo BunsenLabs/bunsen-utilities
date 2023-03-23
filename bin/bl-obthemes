@@ -762,23 +762,34 @@ function saveDconf(){ # passed dconf directory as #1 and name of app (for dumpfi
     fi
 }
 
-function getBg(){    # find if feh or nitrogen was used. Save config file(s)
-    local bgset unsupported_bgsetters
-    daemon_bgsetters=(xfdesktop) # If any of these are running, cannot use nitrogen or feh.
-    if [[ -e $HOME/$NITROFILE ]] && [[ -e $HOME/$FEHFILE ]];then  # see which was last used to set background
-        if [[ $HOME/$NITROFILE -nt $HOME/$FEHFILE ]];then # use most recent method
-            bgset="NITROGEN"
+# prints newest of files in "$@", returns 1 if no file is passed
+# used in getBG
+function newest()  {
+    [[ -n $1 ]] || return 1
+    local i candidate
+    for i in "$@"
+    do
+        [[ -f $i ]] || continue
+        if [[ -n $candidate ]]
+        then
+            [[ $i -nt $candidate ]] && candidate="$i"
         else
-            bgset="FEH"
+            candidate="$i"
         fi
-    elif [[ -e $HOME/$FEHFILE ]];then  # use feh for background
-        bgset="FEH"
-    elif [[ -e $HOME/$NITROFILE ]];then    # use nitrogen for background
-        bgset="NITROGEN"
-    else
+    done
+    [[ -n $candidate ]] || return 1
+    printf '%s' "$candidate"
+}
+
+function getBg(){    # Find if feh, nitrogen or other was used. Save config file(s) if possible.
+    local bgset daemon_bgsetters
+    daemon_bgsetters=(xfdesktop) # If any of these are running, cannot use nitrogen or feh.
+
+    bgset="$( newest "$HOME/$NITROFILE" "$HOME/$FEHFILE" )" || {
         echo "$0:  No nitrogen or feh files found" >&2
         bgset="None"
-    fi
+    }
+    
     for i in "${daemon_bgsetters[@]}"
     do
         pgrep -x "$i" -u "$USER" && {
@@ -786,6 +797,7 @@ function getBg(){    # find if feh or nitrogen was used. Save config file(s)
             bgset="None"
         }
     done
+
     debug "\n  Background to be set with $bgset"
     case "$bgset" in
         FEH     )   getFeh
