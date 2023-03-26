@@ -252,7 +252,7 @@ HLPBTN="--button=_Help:10"
 
 ## USER READABLE LABELS
 PICKOB="OB theme"
-PICKGTK="GTK theme and Icons"
+PICKGTK="GTK theme"
 PICKICONS="Icon theme"
 PICKBG="Background Wallpaper"
 PICKCONKY="Conky"
@@ -540,11 +540,11 @@ function safeKill() {
 # $1 is path to keyfile (eg gtk3 settings.ini)
 # global associative array KEYS will be generated
 parseKeyfile(){
-    [[ -f $1 ]] || { echo "$1 is not a file." >&2;return 1;}
+    [[ -f $1 ]] || { echo "$1 is not a file." >&2; return 1;}
     unset KEYS
     declare -Ag KEYS
     local entry_regex line key value
-    entry_regex="^[[:blank:]]*([A-Za-z0-9][A-Za-z0-9-]*)[[:blank:]]*=[[:blank:]]*('[^']+'|\"[^\"]+\"|[^#[:blank:]]+([[:blank:]]+[^#[:blank:]]+)*)[[:blank:]]*(#.*)*$"
+    entry_regex="^[[:blank:]]*([[:alnum:]_][[:alnum:]_-]*)[[:blank:]]*=[[:blank:]]*('[^']+'|\"[^\"]+\"|[^#[:blank:]]+([[:blank:]]+[^#[:blank:]]+)*)[[:blank:]]*(#.*)*$"
     while read -r line
     do
         [[ -n $line ]] || continue
@@ -559,7 +559,52 @@ parseKeyfile(){
         esac
         KEYS["${key}"]="${value}"
     done < "$1"
+    [[ -v KEYS[@] ]] || { echo "$0: parsing file ${1}: global array KEYS is empty" >&2; return 1;}
 }
+
+# This function is used when restoring icons without GTK or vice versa.
+# It's placed here because it's related to parseKeyfile.
+# editKeyfile [--gtk2] file name=value [name2=value2...]
+# --gtk2 puts quotes around written string values
+editKeyfile(){
+    local type=gtk3 file name value sed_pattern sed_replace sed_args
+    [[ $1 = '--gtk2' ]] && {
+        type=gtk2
+        shift
+    }
+    [[ -f $1 ]] || { echo "$1 is not a file." >&2; return 1;}
+    file=$1
+    shift
+    parseKeyfile "$file" # generates KEYS for the two checks
+    boolean_enum_re='^([01]|GTK_[[:upper:]_]*)$' # in GTK2 gtkrc files these values are not quoted
+    sed_args=()
+    while [[ $1 ]]; do
+        unset name value sed_pattern sed_replace
+        name="${1%%=*}"
+        value="${1#*=}"
+        shift
+        [[ -v KEYS["$name"] ]] || {
+            echo "$0: config key $name does not exist" >&2
+            return 1
+        }
+        [[ ${KEYS["$name"]} = "${value}" ]] && {
+            debug "Key KEYS[$name] is already set to ${value}"
+            continue
+        }
+        [[ $type = gtk2 ]] && {
+            [[ $value =~ $boolean_enum_re ]] || { # quote strings for gtk2 file
+                value="\"$value\""
+            }
+        }
+        (( ${#sed_args[@]} == 0 )) && sed_args=("-ri")
+        sed_pattern="^[[:blank:]]*${name}[[:blank:]]*=[[:blank:]]*('[^']+'|\"[^\"]+\"|[^#[:blank:]]+([[:blank:]]+[^#[:blank:]]+)*)[[:blank:]]*(#.*)*$"
+        sed_replace+="${name}=${value}"
+        sed_args+=("-e")
+        sed_args+=("s/$sed_pattern/$sed_replace/")
+    done
+    (( ${#sed_args[@]} )) && sed "${sed_args[@]}" "$file" || { echo "$0: sed error" >&2; return 1;}
+}
+
 
 # sets globals NUMDIRS and CURRENTSESSION, inside intro() and UpdateDisplayDialog()
 function getCurrent(){      # get name of currently set BLOB config
@@ -789,7 +834,7 @@ function getBg(){    # Find if feh, nitrogen or other was used. Save config file
         echo "$0:  No nitrogen or feh files found" >&2
         bgset="None"
     }
-    
+
     for i in "${daemon_bgsetters[@]}"
     do
         pgrep -x "$i" -u "$USER" && {
@@ -1138,7 +1183,7 @@ function getGTKtheme(){
     }
 }
 
-function getGTKname(){   # get saved GTK3 theme name and Icon theme name
+function getGTKname(){ # get saved GTK3 theme name and Icon theme name
     local gtk3_settings gtktheme icontheme txt
     gtk3_settings="$CONFIGDIR/user/$GTK3/settings.ini"
     # parseKeyfile generates global associative array KEYS
@@ -1484,46 +1529,45 @@ function saveSettings(){
 
 # pass icon theme name as $1
 function checkICONS(){ # check if icon theme is still present
-    local FOUNDICONS=0
-    local ICOTXT="Icon theme <b>$1</b> not found\n\n  The default icon theme will be used..."
+#    local ICOTXT="Icon theme <b>$1</b> not found\n\n  The default icon theme will be used..."
+    debug "Checking for icon theme $1"
     for i in "${iconPaths[@]}";do # iconPaths defined at top
         if [[ -d "$i/$1" ]];then
             debug "\n  Found $1 icon theme"
-            FOUNDICONS=1
-            break
+            return 0
         fi
     done
-    if (( FOUNDICONS == 0 ));then
-        local pkg="${icon_pkgs[$1]}"
-        if [[ -n "${pkg}" ]] && hash bl-install >/dev/null
+    local pkg="${icon_pkgs[$1]}"
+    if [[ -n "${pkg}" ]] && hash bl-install >/dev/null
+    then
+        debug "\n  Icon theme  $1  was not found\n  Offering to install $pkg..."
+        local INSTICOTXT="Needed icon theme <b>$1</b> not found\n Would you like to install the package <b>${pkg}</b> which contains that theme?"
+        if yad_question "$INSTICOTXT"
         then
-            debug "\n  Icon theme  $1  was not found\n  Offering to install $pkg..."
-            local INSTICOTXT="Needed icon theme <b>$1</b> not found\n Would you like to install the package <b>${pkg}</b> which contains that theme?"
-            if yad_question "$INSTICOTXT"
+            local retfile retval
+            retfile="$( mktemp )"
+            bl-install -f "$retfile" "$pkg"
+            # sleep 0.3 # allow time for bl-install to write to $retfile (now done in bl-install)
+            retval="$(<"$retfile")"
+            rm "$retfile"
+            if [[ "$retval" = 0 ]]
             then
-                local retfile retval
-                retfile="$( mktemp )"
-                bl-install -f "$retfile" "$pkg"
-                # sleep 0.3 # allow time for bl-install to write to $retfile (now done in bl-install)
-                retval="$(<"$retfile")"
-                rm "$retfile"
-                if [[ "$retval" = 0 ]]
-                then
-                    return 0
-                else
-                    yad_warning "Package install failed."
-                fi
+                return 0
+            else
+                yad_warning "Package install failed."
             fi
         fi
-        debug "\n  Icon theme  $1  was not found\n  The default Icon theme will be used..."
-        yad_warning "$ICOTXT"
     fi
+    debug "\n  Icon theme  $1  was not found"
+#        yad_warning "$ICOTXT"
+    return 1
 }
 
 # pass GTK theme name as $1
 function checkGTK(){    # check if gtk theme is still present
     local INSTGTKTXT="Needed GTK theme <b>$1</b> not found\n Would you like to install the package <b>${pkg}</b> which contains that theme?"
-    local NOGTKTXT="GTK theme <b>$1</b> not found\n\n  The default GTK theme will be used..."
+    local NOGTKTXT="GTK theme <b>$1</b> not found\n\n  Continue with the current GTK theme, or exit?"
+    debug "Checking for GTK theme $1"
     for i in "${gtkPaths[@]}";do # gtkPaths defined at top
         if [[ -d "$i/$1" ]];then
             debug "\n  Found $1 GTK theme"
@@ -1550,19 +1594,91 @@ function checkGTK(){    # check if gtk theme is still present
             fi
         fi
     fi
-    debug "\n  GTK theme  $1  was not found\n  The default GTK theme will be used..."
-    yad_warning "$NOGTKTXT"
+    debug "\n  GTK theme  $1  was not found"
+#    yad_warning_option "$NOGTKTXT"
     return 1
 }
 
+# restoreIcons <icontheme>
+# $1 is $VAL from restoreSettings()
+# This function is used only when not restoring GTK settings, icon theme is included there.
+function restoreIcons(){
+    local new_icon_theme new_gtk3_settings new_icon_theme
+#    new_icon_theme=$1
+    new_gtk3_settings="$THEMEPATH/user/$GTK3/settings.ini"
+    parseKeyfile "$new_gtk3_settings" # GTK settings will not be restored, reading icon theme only
+    new_icon_theme=${KEYS[gtk-icon-theme-name]}
+    debug "Setting icon theme $new_icon_theme found in $new_gtk3_settings"
+    checkICONS "$new_icon_theme" || {
+        local NOICOTXT="Icon theme <b>$new_icon_theme</b> not found\n\n  The current icon theme will be used."
+        yad_warning "$NOICOTXT"
+        debug "Icon theme $new_icon_theme was not found, continuing to use the current icon theme."
+        return 0
+    }
+    debug "\nSetting icon theme to $new_icon_theme, GTK theme is unchanged."
+    editKeyfile "$current_gtk3_settings" "gtk-icon-theme-name=$new_icon_theme"
+    unset KEYS
+    reloadGTK
+}
+
+
 # THEMEPATH is global set by displayBlobs()
+# restoreGTK [--noicons] <gtktheme> <icontheme>
+# gtk/icon themes to be restored are $VAL from restoreSettings()
+#  (these could be parsed from "$THEMEPATH/user/$GTK3/settings.ini" instead)
+# option --noicons causes icon theme to be reset to current setting
 function restoreGTK(){
+    local restore_icons current_gtk3_settings new_gtk3_settings current_gtk_theme new_gtk_theme current_icon_theme new_icon_theme
+    restore_icons=true
+    [[ $1 = '--noicons' ]] && { restore_icons=false; debug "Not setting a new icon theme."; shift; }
+#    new_gtk_theme=$1
+#    [[ -n $2 ]] && new_icon_theme=$2
+    current_gtk3_settings="$HOME/$GTK3/settings.ini"
+    new_gtk3_settings="$THEMEPATH/user/$GTK3/settings.ini"
+    parseKeyfile "$current_gtk3_settings" # settings before restoring files with new theme
+    current_gtk_theme=${KEYS[gtk-theme-name]}
+    current_icon_theme=${KEYS[gtk-icon-theme-name]}
+    debug "current gtk theme is ${current_gtk_theme}, icon theme is $current_icon_theme"
+    parseKeyfile "$new_gtk3_settings" # settings before restoring files with new theme
+    new_gtk_theme=${KEYS[gtk-theme-name]}
+    new_icon_theme=${KEYS[gtk-icon-theme-name]}
+
+    debug "Setting GTK theme $new_gtk_theme found in $new_gtk3_settings"
+    checkGTK "$new_gtk_theme" || {
+        local NOGTKTXT="GTK theme <b>$new_gtk_theme</b> not found\n\n  Continue with the current GTK theme, or exit?"
+        if yad_warning_option "$NOGTKTXT"; then
+            debug "$new_gtk_theme not found, continuing with current GTK theme $current_gtk_theme"
+            if [[ $restore_icons = 'true' ]]; then
+                debug "icon theme will be restored"
+                restoreIcons "$new_icon_theme" || return 1
+            fi
+            return 0
+        else
+            exit 1
+        fi
+    }
+
+    [[ $restore_icons = 'true' ]] && {
+        debug "Setting icon theme $new_icon_theme found in $new_gtk3_settings"
+        checkICONS "$new_icon_theme" || {
+            local NOICOTXT="Icon theme <b>$new_icon_theme</b> not found\n\n  The current icon theme will be used."
+            yad_warning "$NOICOTXT"
+            restore_icons=false
+        }
+    }
+
     safeKill jgmenu # If jgmenu is not running, GTK3 file edit will not trigger hook.
     restoreFiles "$GTK2" "$GTK2MINE" "$GTK3" "$GTK3x"
+    # $HOME/$GTK3/settings.ini has now been updated, need to parse again
+    [[ $restore_icons = 'false' ]] && {
+        debug "Setting icon theme back to current $current_icon_theme"
+        editKeyfile "$current_gtk3_settings" "gtk-icon-theme-name=$current_icon_theme"
+    }
+    unset KEYS # global KEYS is set by parseKeyfile in editKeyfile
     # If jgmenu cache is set, restart will not trigger GTK sync.
     # This means GTK sync will have to be done in this script, if wanted.
     # Currently done in restoreSettings().
-    jgmenu_write_gtkcache "$THEMEPATH/user/$GTK3/settings.ini"
+    jgmenu_write_gtkcache "$current_gtk3_settings"
     reloadGTK
     reloadXfceNotifyd
     # restartThunar # not needed now that bl-reload-gtk23 updates xsettings
@@ -2019,7 +2135,7 @@ restoreSettings() {
             "[GTK]"         )   labels+=("$PICKGTK")
                                 values["$PICKGTK"]="$VAL"
                                 ;;
-            "[ICONS]"       )   #labels+=("$PICKICONS")
+            "[ICONS]"       )   labels+=("$PICKICONS")
                                 values["$PICKICONS"]="$VAL"
                                 ;;
             "[BACKGROUND]"  )   [[ $VAL = None ]] || {
@@ -2104,6 +2220,8 @@ restoreSettings() {
     jgmenu_sync=true
     jgmenu_sync_ob=false
     jgmenu_sync_gtk=false
+    restore_gtk=false
+    restore_icons=false
     # Go through user's selected choices.
     while read -r label
     do
@@ -2115,18 +2233,22 @@ restoreSettings() {
                                 restoreOBrc
                                 jgmenu_sync_ob=true
                                 ;;
-            "$PICKGTK"      )   [[ -n $VAL ]] && checkGTK "$VAL"
-                                [[ -n ${values[$PICKICONS]} ]] && {
-                                    debug "\n Restoring $PICKICONS with ${values[$PICKICONS]}"
-                                    checkICONS "${values[$PICKICONS]}"
-                                }
-                                restoreGTK
-                                jgmenu_sync_gtk=true
-                                # reloadGTK now called in restoreGTK
-                                # jgmenu GTK syncing will be inhibited unless OB is not restored
-                                ;;
+#            "$PICKGTK"      )   [[ -n $VAL ]] && checkGTK "$VAL"
+#                                [[ -n ${values[$PICKICONS]} ]] && {
+#                                    debug "\n Restoring $PICKICONS with ${values[$PICKICONS]}"
+#                                    checkICONS "${values[$PICKICONS]}"
+#                                }
+#                                restoreGTK
+#                                jgmenu_sync_gtk=true
+#                                # reloadGTK now called in restoreGTK
+#                                # jgmenu GTK syncing will be inhibited unless OB is not restored
+#                                ;;
 #            "$PICKICONS"    )   [[ -n $VAL ]] && checkICONS "$VAL"
 #                                ;;
+            "$PICKGTK"      )   restore_gtk="${VAL:-true}"
+                                ;;
+            "$PICKICONS"    )   restore_icons="${VAL:-true}"
+                                ;;
             "$PICKBG"       )   if [[ $VAL = FEH ]];then
                                     restoreFiles "$FEHFILE"
                                     source "$HOME/$FEHFILE"
@@ -2160,11 +2282,26 @@ restoreSettings() {
                                 ;;
         esac
     done <<< "$CHOICE"
-    hash jgmenu_run 2>/dev/null && [[ $jgmenu_sync = true ]] && {
-        if [[ $jgmenu_sync_ob = true ]]
+    
+    if [[ $restore_gtk != 'false' ]]; then
+        if [[ $restore_icons != 'false' ]]; then
+            restoreGTK "$restore_gtk" "$restore_icons" # restoreGTK will restore GTK settings including icons
+            jgmenu_sync_gtk=true
+        else
+            restoreGTK --noicons "$restore_gtk" # icon theme will be reset to current theme
+            jgmenu_sync_gtk=true
+        fi
+    else
+        if [[ $restore_icons != 'false' ]]; then
+            restoreIcons "$restore_icons" # only icon theme will be set
+        fi
+    fi
+    
+    hash jgmenu_run 2>/dev/null && [[ $jgmenu_sync = 'true' ]] && {
+        if [[ $jgmenu_sync_ob = 'true' ]]
         then
             jgmenu_run init --apply-obtheme && debug "\n jgmenu synced with openbox theme"
-        elif [[ $jgmenu_sync_gtk = true ]]
+        elif [[ $jgmenu_sync_gtk = 'true' ]]
         then
             jgmenu_run init --apply-gtktheme && debug "\n jgmenu synced with gtk theme"
         else
