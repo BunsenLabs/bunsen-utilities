@@ -309,7 +309,7 @@ yad_fatal_error() {
 # and the command run on that line as $2.
 # This should not be needed once error handling is all done separately.
 trap_error(){
-    local msg="An error ocurred on line ${1}, running command '${2}'.\nPlease consider reporting this to the developers."
+    local msg="An error ocurred on line ${1}, running function '${2}', command '${3}'.\nPlease consider reporting this to the developers."
     echo -e "$0: $msg" >&2
     if yad_warning_option "$msg"
     then
@@ -2215,7 +2215,7 @@ restoreSettings() {
 
     # Offer to exit if any restore function fails.
     # TODO: add 'return 1' to functions as needed
-    trap 'trap_error $LINENO "$BASH_COMMAND"' ERR
+    trap 'trap_error $LINENO "$FUNCNAME" "$BASH_COMMAND"' ERR
 
     jgmenu_sync=true
     jgmenu_sync_ob=false
