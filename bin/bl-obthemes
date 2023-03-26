@@ -2126,6 +2126,8 @@ restoreSettings() {
     # Conky and Tint2 will be killed by their restore functions, if called.
     BKP_SFX=".$(date +"%Y%m%d-%H%M%S").blob~" # global: unified backup suffix that restore functions will use
     local TAG VAL labels label columns select ret CHOICE jgmenu_sync jgmenu_sync_ob jgmenu_sync_gtk
+    daemon_bgsetters=(xfdesktop) # If any of these are running, cannot use nitrogen or feh.
+    labels=()
     declare -A values
     while read -r TAG VAL; do
         case "$TAG" in
@@ -2138,7 +2140,14 @@ restoreSettings() {
             "[ICONS]"       )   labels+=("$PICKICONS")
                                 values["$PICKICONS"]="$VAL"
                                 ;;
-            "[BACKGROUND]"  )   [[ $VAL = None ]] || {
+            "[BACKGROUND]"  )   for i in "${daemon_bgsetters[@]}"
+                                do
+                                    pgrep -x "$i" -u "$USER" && {
+                                        debug "$0: unsupported background setter $i is running"
+                                        VAL="None"
+                                    }
+                                done
+                                [[ $VAL = None ]] || {
                                     labels+=("$PICKBG")
                                     values["$PICKBG"]="$VAL"
                                 }
