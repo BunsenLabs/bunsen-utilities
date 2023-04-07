@@ -2,7 +2,8 @@
 #
 #    bl-xinerama-prop: script to get xinerama properties in a shell script
 #    Copyright (C) 2016 xaos52 <xaos52@bunsenlabs.org>
-#    Copyright (C) 2020 2ion <twoion@bunsenlabs.org>
+#                  2020 2ion <twoion@bunsenlabs.org>
+#                  2023 John Crawley <john@bunsenlabs.org>
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -26,12 +27,13 @@ import gi # type: ignore
 gi.require_version("Gdk", "3.0")
 from gi.repository import Gdk # type: ignore
 
-DESCRIPTION = """Using the current cursor position, print the dimensions of the monitor the cursor is on."""
+DESCRIPTION = """Using the current cursor position, print the dimensions of the monitor the cursor is on, or the monitor name."""
 LOG_FORMAT = "%(asctime)s %(levelname)s %(module)s %(funcName)s() : %(message)s"
 
 def getopts() -> Namespace:
     ap = ArgumentParser(description=DESCRIPTION)
-    ap.add_argument("-d", "--debug", action="store_true", default=False, help="Print debug information")
+    ap.add_argument("-d", "--debug", action="store_true", default=False, help="print debug information")
+    ap.add_argument("-m", "--monitor", action="store_true", default=False, help="print current monitor name instead of dimensions")
     opts = ap.parse_args()
     if opts.debug:
         logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT)
@@ -39,8 +41,8 @@ def getopts() -> Namespace:
         logging.basicConfig(level=logging.WARN, format=LOG_FORMAT)
     return opts
 
-def main() -> int:
-    getopts()
+def main() -> str:
+    opts = getopts()
 
     display = os.getenv("DISPLAY", None)
     if display:
@@ -65,8 +67,11 @@ def main() -> int:
     mon = dsp.get_monitor_at_point(x, y)
     logging.debug("Using monitor: %s (%s)", mon.get_model(), mon.get_manufacturer())
 
-    rect = mon.get_geometry()
-    print(f"{rect.width} {rect.height}")
+    if opts.monitor:
+        print(f"{mon.get_model()}")
+    else:
+        rect = mon.get_geometry()
+        print(f"{rect.width} {rect.height}")
 
     return 0
 
