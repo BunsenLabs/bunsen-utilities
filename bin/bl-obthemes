@@ -140,6 +140,10 @@ do
         }
         DEBUG_FLAG=1
         ;;
+    *)
+        echo "${0}: ${i}: no such option"
+        exit 1
+        ;;
     esac
 done
 
@@ -511,6 +515,8 @@ function upgradeBlobs(){
                                     ;;
                 '['*']'         )   printf '%s %s\n' "$TAG" "$VAL" >> "$i/newsettings"
                                     ;;
+                '('*')'         )   printf '%s %s\n' "$TAG" "$VAL" >> "$i/newsettings"
+                                    ;;
                 *               )   echo -e "Upgrading ${i}: ${TAG}:  Unknown value!" >&2
                                     continue
                                     ;;
@@ -575,7 +581,7 @@ editKeyfile(){
     [[ -f $1 ]] || { echo "$1 is not a file." >&2; return 1;}
     file=$1
     shift
-    parseKeyfile "$file" || { echo "$0: editKeyfile() Failed to parse ${file}." 2>&1; return 1;}# generates global KEYS for the two checks
+    parseKeyfile "$file" || { echo "$0: editKeyfile() Failed to parse ${file}." 2>&1; return 1;} # generates global KEYS for the two checks
     boolean_enum_re='^([01]|GTK_[[:upper:]_]*)$' # in GTK2 gtkrc files these values are not quoted
     sed_args=()
     while [[ $1 ]]; do
@@ -817,7 +823,7 @@ function saveDconf(){ # passed dconf directory as #1 and name of app (for dumpfi
 }
 
 # prints newest of files in "$@", returns 1 if no file is passed
-# used in getBG
+# used in getBg
 function newest()  {
     [[ -n $1 ]] || return 1
     local i candidate
@@ -836,61 +842,76 @@ function newest()  {
 }
 
 function getBg(){    # Find if feh, nitrogen or other was used. Save config file(s) if possible.
-    local bgset daemon_bgsetters
-    daemon_bgsetters=(xfdesktop) # If any of these are running, cannot use nitrogen or feh.
+    local bgsetter='' daemon_bgsetters bgsetterfile img
+    daemon_bgsetters=('XFDESKTOP' 'PCMANFM') # If any of these are running, cannot use nitrogen or feh.
 
-    bgset="$( newest "$HOME/$NITROFILE" "$HOME/$FEHFILE" )" || {
-        echo "$0:  No nitrogen or feh files found" >&2
-        bgset="None"
-    }
-
+    # Check for a daemon first.
+    # (If more than one daemon bgsetter is running there is a problem!)
     for i in "${daemon_bgsetters[@]}"
     do
-        pgrep -x "$i" -u "$USER" && {
-            echo "$0: unsupported background setter $i is running" >&2
-            bgset="None"
+        case $i in
+        XFDESKTOP)
+            re='xfdesktop'
+            ;;
+        PCMANFM)
+            re='pcmanfm[[:blank:]].*--desktop'
+            ;;
+        esac
+        pgrep -fx "$re" -u "$USER" >/dev/null && {
+            bgsetter="$i"
+            break
         }
     done
 
-    debug "\n  Background to be set with $bgset"
-    case "$bgset" in
-        FEH     )   getFeh || {
-                        echo "$0: Failed to save feh config." >&2
-                        return 1
-                    }
-                    ;;
-        NITROGEN)   getNitrogen || {
-                        echo "$0: Failed to save nitrogen config." >&2
-                        return 1
-                    }
-                    ;;
-        None    )   echo "$0: No background-setting application found" >&2
-                    echo -e "Background cannot be set with nitrogen or feh\n" >> "$LISTMSG"
-                    ;;
-    esac
-    echo "[BACKGROUND] $bgset" >> "$SETTINGS"
-}
-
-# FEHFILE is config global
-# CONFIGDIR is global set by setName()
-function getFeh(){    # get Feh saved backgrounds
-    local ffile="$CONFIGDIR/user/$FEHFILE"
-    saveFiles "$FEHFILE" || {
-        echo "$0: Failed to save feh configs file $FEHFILE" >&2
-        return 1
+    [[ -z $bgsetter ]] && {
+        if bgsetterfile="$( newest "$HOME/$NITROFILE" "$HOME/$FEHFILE" )"; then
+            case $bgsetterfile in
+            "$HOME/$NITROFILE")
+                bgsetter=NITROGEN
+                ;;
+            "$HOME/$FEHFILE")
+                bgsetter=FEH
+                ;;
+            esac
+        else
+            echo "$0:  No nitrogen or feh files found" >&2
+            bgsetter="None"
+        fi
     }
-    if [[ -f $ffile ]];then
-        local bg=""
-        # get fields between single quotes
-        while read -r line;do
-            bg="$bg$line;\n\t"
-        done < <(grep -o "'[^']*'" "$ffile" | sed "s/'//g" 2>/dev/null)
-        debug "\n  Backgrounds set with Feh, using:\t$CONFIGDIR/user/$FEHFILE"
-        debug "\t$bg"
-        echo -e "Background set with feh:\n\t$bg" >> "$LISTMSG"
-    else
-        echo "$0:  $ffile not found" >&2
-    fi
+
+    debug "\nBackground to be set with $bgsetter"
+    case "$bgsetter" in
+    NITROGEN)
+        getNitrogen || {
+            echo "$0: Failed to save nitrogen config." >&2
+            return 1
+        }
+        ;;
+    FEH)
+        getFeh || {
+            echo "$0: Failed to save feh config." >&2
+            return 1
+        }
+        ;;
+    XFDESKTOP)
+        getXfdesktop || {
+            echo "$0: Failed to save xfdesktop config." >&2
+            return 1
+        }
+        ;;
+    PCMANFM)
+        getPcmanfm || {
+            echo "$0: Failed to save pcmanfm config." >&2
+            return 1
+        }
+        ;;
+    None)
+        echo "$0: No background-setting application found" >&2
+        echo -e "Background cannot be set\n" >> "$LISTMSG"
+        ;;
+    esac
+    echo "[BACKGROUND] $bgsetter" >> "$SETTINGS"
+    echo "(wallpaper) $img" >> "$SETTINGS" # restore functions will be able to access this
 }
 
 # NITROFILE is config global
@@ -902,19 +923,107 @@ function getNitrogen(){  # get Nitrogen saved backgrounds
         return 1
     }
     if [[ -f $nfile ]];then
-        local bg=""
+        img="" # img is local to getBg
         while read -r line;do
             [[ $line = 'file='* ]] || continue
-            bg="$bg${line#file=};\n\t"
+            img="$img${line#file=};\n\t"
         done < "$nfile"
-        debug "\n  Backgrounds set with Nitrogen, using:\t$CONFIGDIR/user/$NITROFILE"
-        debug "\t$bg"
-        echo -e "Background set with nitrogen:\n\t$bg" >> "$LISTMSG"
+        debug "\nBackgrounds set with Nitrogen, using:\t$CONFIGDIR/user/$NITROFILE"
+        debug "\t$img"
+        echo -e "Background set with nitrogen:\n\t$img\n" >> "$LISTMSG"
     else
         echo "$0:  $nfile not found" >&2
     fi
 }
 
+# FEHFILE is config global
+# CONFIGDIR is global set by setName()
+function getFeh(){    # get Feh saved backgrounds
+    local ffile="$CONFIGDIR/user/$FEHFILE"
+    saveFiles "$FEHFILE" || {
+        echo "$0: Failed to save feh configs file $FEHFILE" >&2
+        return 1
+    }
+    if [[ -f $ffile ]];then
+        img="" # img is local to getBg
+        # get fields between single quotes
+        while read -r line;do
+            img="$img$line;\n\t"
+        done < <(grep -o "'[^']*'" "$ffile" | sed "s/'//g" 2>/dev/null)
+        debug "\nBackgrounds set with Feh, using:\t$CONFIGDIR/user/$FEHFILE"
+        debug "\t$img"
+        echo -e "Background set with feh:\n\t$img\n" >> "$LISTMSG"
+    else
+        echo "$0:  $ffile not found" >&2
+    fi
+}
+
+function getXfdesktop(){
+    local mon ws props prop
+    debug "Getting wallpaper set by xfdesktop"
+    mon=$(bl-xinerama-prop --monitor) || return 1 # monitor where pointer is
+    debug "on monitor $mon"
+    ws=$(xdotool get_desktop)
+    debug "on desktop $ws"
+    props=$(xfconf-query -c xfce4-desktop -l | grep --fixed-strings "/monitor${mon}/workspace${ws}/last-image")
+    [[ -z $props ]] && return 1
+    # save first image found on connected monitor, current workspace
+    while read -r prop
+    do
+        img=$(xfconf-query -c xfce4-desktop -p "$prop") # img is local to getBg
+        [[ -r "$img" ]] && break
+    done <<< "$props"   
+    debug "\nBackground set with xfdesktop:"
+    debug "\t$img"
+    echo -e "Background set with xfdesktop:\n\t$img\n" >> "$LISTMSG"
+}    
+
+# get profile currently running pcmanfm is using
+function getPcmanfmProfile(){
+    local cmdline profile
+    debug "Getting pcmanfm profile being used"
+    cmdline=$(pgrep -afx 'pcmanfm[[:blank:]].*') || {
+        echo "$0: pcmanfm is not running" >&2
+        return 1
+    }
+    cmdline=${cmdline#* } # remove pid
+    if [[ $cmdline =~ [[:blank:]]-p[[:blank:]]([^[:blank:]]+) ]]
+    then
+        profile="${BASH_REMATCH[1]}"
+    elif [[ $cmdline =~ [[:blank:]]--profile(=|[[:blank:]]+)([^[:blank:]]+) ]]
+    then
+        profile="${BASH_REMATCH[2]}"
+    else
+        profile=default
+    fi
+    debug "pcmanfm profile is $profile"
+    printf '%s' "$profile"
+}
+
+function getPcmanfm(){
+    local profile ws line
+    debug "Getting wallpaper set by pcmanfm"
+    profile=$(getPcmanfmProfile) || {
+        echo "$0: failed to get pcmanfm profile"
+        return 1
+    }
+    ws=$(xdotool get_desktop)
+    debug "on desktop $ws"
+    for i in "$HOME/.config/pcmanfm/$profile/"desktop-items-*.conf
+    do
+        while read -r line
+        do
+            [[ $line =~ wallpaper=(.*)$ || $line =~ wallpaper${ws}=(.*)$ ]] && {
+                img="${BASH_REMATCH[1]}"       # img is local to getBg
+                [[ -r "$img" ]] && break 2
+            }
+        done
+    done
+    debug "\nBackground set with pcmanfm:"
+    debug "\t$img"
+    echo -e "Background set with pcmanfm:\n\t$img\n" >> "$LISTMSG"
+}
+        
 # generates command array idCmd from window id (hex or decimal)
 # WARNING WM_COMMAND is deprecated: https://www.x.org/releases/X11R7.6/doc/xorg-docs/specs/ICCCM/icccm.html#obsolete_session_manager_conventions
 # TODO switch to using mapfile with pids and /proc/${pid}/cmdline as in getTint()
@@ -1202,7 +1311,7 @@ function getGTKname(){ # get saved GTK3 theme name and Icon theme name
     icontheme=${KEYS[gtk-icon-theme-name]}
     echo "[ICONS] $icontheme" >> "$SETTINGS"
     unset KEYS
-    txt="GTK theme:  $gtktheme;  Icon Theme: $icontheme\n"
+    txt="GTK theme:  $gtktheme\nIcon Theme: $icontheme\n"
     debug "\n  Saved $txt"
     echo  "$txt" >> "$LISTMSG"
 }
@@ -1818,6 +1927,74 @@ function restoreOBrc(){
     debug "\n Openbox reconfigured"
 }
 
+# pass path to image as $1
+# This function might be extended in the future to offer to install
+# image package holding a missing wallpaper.
+function checkWallpaper(){
+    [[ -r "$1" ]] || return 1
+    return 0
+}
+
+function restoreBg(){    # $1 = $VAL from restoreSettings()
+    case $1 in
+    NITROGEN)
+        restoreFiles "$NITROFILE" || true
+        nitrogen --restore
+        ;;
+    FEH)
+        restoreFiles "$FEHFILE" || true
+        source "$HOME/$FEHFILE"
+        ;;
+    XFDESKTOP)
+        restoreXfdesktop || true
+        ;;
+    PCMANFM)
+        restorePcmanfm || true
+        ;;
+    esac
+}
+
+function restoreXfdesktop(){
+    local img ws
+    img=${values[wallpaper]}
+    checkWallpaper "$img" || {
+        echo "$0: cannot find wallpaper $img" >&2
+        return 1
+    }
+    ws=$(xdotool get_desktop)
+    debug "Using xfdesktop to set wallpaper $img on desktop ${ws}"
+    props=$(xfconf-query -c xfce4-desktop -l | grep --fixed-strings "/workspace${ws}/last-image")
+    [[ -z $props ]] && {
+        debug "failed to find xfdesktop property holding /workspace${ws}/last-image"
+        return 1
+    }
+    while read -r prop
+    do
+        xfconf-query -c xfce4-desktop -p "$prop" --set "$img" || {
+            echo "$0: failed to set $img to $prop" >&2
+        }
+    done <<< "$props"
+}
+
+function restorePcmanfm(){
+    local img re
+    img=${values[wallpaper]}
+    checkWallpaper "$img" || {
+        echo "$0: cannot find wallpaper $img" >&2
+        return 1
+    }
+    re='pcmanfm[[:blank:]].*--desktop'
+    pgrep -fx "$re" -u "$USER" >/dev/null || {
+        echo "$0: pcmanfm is not setting the wallpaper"
+        return 1
+    }
+    debug "Using pcmanfm to set wallpaper $img"
+    pcmanfm --set-wallpaper="$img" || {
+        echo "$0: pcmanfm failed to set $img as wallpaper"
+        return 1
+    }
+}
+    
 function restoreConky(){    # $1 = $VAL from restoreSettings()
     local conkycmds currDesktop user_conkysession saved_conkysession
     conkycmds="${1//;/$'\n'}" # only used as fallback if there is no sessionfile
@@ -2159,14 +2336,7 @@ restoreSettings() {
             "[ICONS]"       )   labels+=("$PICKICONS")
                                 values["$PICKICONS"]="$VAL"
                                 ;;
-            "[BACKGROUND]"  )   for i in "${daemon_bgsetters[@]}"
-                                do
-                                    pgrep -x "$i" -u "$USER" && {
-                                        debug "$0: unsupported background setter $i is running"
-                                        VAL="None"
-                                    }
-                                done
-                                [[ $VAL = None ]] || {
+            "[BACKGROUND]"  )   [[ $VAL = None ]] || {
                                     labels+=("$PICKBG")
                                     values["$PICKBG"]="$VAL"
                                 }
@@ -2200,6 +2370,10 @@ restoreSettings() {
             '['*']'         )   TAG="${TAG#[}" # strip outside brackets
                                 TAG="${TAG%]}"
                                 labels+=("$TAG")
+                                values["$TAG"]="$VAL"
+                                ;;
+            '('*')'         )   TAG="${TAG#(}" # "hidden" tags not added to labels, but may be used when restoring
+                                TAG="${TAG%)}"
                                 values["$TAG"]="$VAL"
                                 ;;
             *               )   echo "$0: Ignoring unknown value: ${TAG} in $THEMEPATH/settings.cfg" >&2
@@ -2261,29 +2435,11 @@ restoreSettings() {
                                 restoreOBrc
                                 jgmenu_sync_ob=true
                                 ;;
-#            "$PICKGTK"      )   [[ -n $VAL ]] && checkGTK "$VAL"
-#                                [[ -n ${values[$PICKICONS]} ]] && {
-#                                    debug "\n Restoring $PICKICONS with ${values[$PICKICONS]}"
-#                                    checkICONS "${values[$PICKICONS]}"
-#                                }
-#                                restoreGTK
-#                                jgmenu_sync_gtk=true
-#                                # reloadGTK now called in restoreGTK
-#                                # jgmenu GTK syncing will be inhibited unless OB is not restored
-#                                ;;
-#            "$PICKICONS"    )   [[ -n $VAL ]] && checkICONS "$VAL"
-#                                ;;
             "$PICKGTK"      )   restore_gtk="${VAL:-true}"
                                 ;;
             "$PICKICONS"    )   restore_icons="${VAL:-true}"
                                 ;;
-            "$PICKBG"       )   if [[ $VAL = FEH ]];then
-                                    restoreFiles "$FEHFILE"
-                                    source "$HOME/$FEHFILE"
-                                else
-                                    restoreFiles "$NITROFILE"
-                                    nitrogen --restore
-                                fi
+            "$PICKBG"       )   restoreBg "$VAL"
                                 ;;
             "$PICKCONKY"    )   restoreConky "$VAL"
                                 ;;
@@ -2442,10 +2598,6 @@ differ () {
             mate-terminal.wrapper)
                 termcmd=(mate-terminal --disable-factory -t "$title" -x) # mate-terminal.wrapper does not support --disable-factory
                 ;;
-# gnome terminal now waits if invoked as x-terminal-emulator
-#            gnome-terminal.wrapper)
-#                termcmd=(gnome-terminal --wait -t "$title" --) # gnome-terminal.wrapper does not support --wait
-#                ;;
             tilix.wrapper)
                 termcmd=(tilix --new-process -t "$title" -e) # tilix.wrapper does not support --new-process
                 ;;
