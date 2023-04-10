@@ -488,7 +488,7 @@ function upgradeBlobs(){
                                     ;;
                 "[BACKGROUND]"  )   if [[ $VAL = FEH ]];then
                                         moveFile "$i/.fehbg" "$i/user"
-                                    else
+                                    elif [[ $VAL = NITROGEN ]];then
                                         moveFile "$i/bg-saved.cfg" "$i/user/.config/nitrogen"
                                     fi
                                     printf '%s %s\n' "$TAG" "$VAL" >> "$i/newsettings"
@@ -565,7 +565,7 @@ parseKeyfile(){
         esac
         KEYS["${key}"]="${value}"
     done < "$1"
-    [[ -v KEYS[@] ]] || { echo "$0: parsing file ${1}: global array KEYS is empty" >&2; return 1;}
+    (( ${#KEYS[@]} > 0 )) || { echo "$0: parsing file ${1}: global array KEYS is empty" >&2; return 1;}
 }
 
 # This function is used when restoring icons without GTK or vice versa.
