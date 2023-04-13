@@ -842,26 +842,9 @@ function newest()  {
 }
 
 function getBg(){    # Find if feh, nitrogen or other was used. Save config file(s) if possible.
-    local bgsetter='' daemon_bgsetters bgsetterfile img
-    daemon_bgsetters=('XFDESKTOP' 'PCMANFM') # If any of these are running, cannot use nitrogen or feh.
+    local bgsetter='' bgsetterfile img # img is set by the child get* functions
 
-    # Check for a daemon first.
-    # (If more than one daemon bgsetter is running there is a problem!)
-    for i in "${daemon_bgsetters[@]}"
-    do
-        case $i in
-        XFDESKTOP)
-            re='xfdesktop'
-            ;;
-        PCMANFM)
-            re='pcmanfm[[:blank:]].*--desktop'
-            ;;
-        esac
-        pgrep -fx "$re" -u "$USER" >/dev/null && {
-            bgsetter="$i"
-            break
-        }
-    done
+    bgsetter=$(checkBgDaemon) || debug "no background setting daemons running"
 
     [[ -z $bgsetter ]] && {
         if bgsetterfile="$( newest "$HOME/$NITROFILE" "$HOME/$FEHFILE" )"; then
@@ -917,20 +900,24 @@ function getBg(){    # Find if feh, nitrogen or other was used. Save config file
 # NITROFILE is config global
 # CONFIGDIR is global set by setName()
 function getNitrogen(){  # get Nitrogen saved backgrounds
-    local nfile="$CONFIGDIR/user/$NITROFILE"
+    local nfile="$CONFIGDIR/user/$NITROFILE" imgfile imglist
     saveFiles "$NITROFILE" || {
         echo "$0: Failed to save nitrogen configs file $NITROFILE" >&2
         return 1
     }
     if [[ -f $nfile ]];then
         img="" # img is local to getBg
+        imgfile=""
+        imglist=""
         while read -r line;do
             [[ $line = 'file='* ]] || continue
-            img="$img${line#file=};\n\t"
+            imgfile=${line#file=}
+            imglist="${imglist}${imgfile}\n\t"
+            img="${img}${imgfile}"$'\n'
         done < "$nfile"
         debug "\nBackgrounds set with Nitrogen, using:\t$CONFIGDIR/user/$NITROFILE"
-        debug "\t$img"
-        echo -e "Background set with nitrogen:\n\t$img\n" >> "$LISTMSG"
+        debug "$img"
+        echo -e "Background set with nitrogen:\n\t$imglist\n" >> "$LISTMSG"
     else
         echo "$0:  $nfile not found" >&2
     fi
@@ -939,7 +926,7 @@ function getNitrogen(){  # get Nitrogen saved backgrounds
 # FEHFILE is config global
 # CONFIGDIR is global set by setName()
 function getFeh(){    # get Feh saved backgrounds
-    local ffile="$CONFIGDIR/user/$FEHFILE"
+    local ffile="$CONFIGDIR/user/$FEHFILE" imglist
     saveFiles "$FEHFILE" || {
         echo "$0: Failed to save feh configs file $FEHFILE" >&2
         return 1
@@ -948,11 +935,12 @@ function getFeh(){    # get Feh saved backgrounds
         img="" # img is local to getBg
         # get fields between single quotes
         while read -r line;do
-            img="$img$line;\n\t"
+            imglist="${imglist}${line}\n\t"
+            img="${img}${line}"$'\n'
         done < <(grep -o "'[^']*'" "$ffile" | sed "s/'//g" 2>/dev/null)
         debug "\nBackgrounds set with Feh, using:\t$CONFIGDIR/user/$FEHFILE"
-        debug "\t$img"
-        echo -e "Background set with feh:\n\t$img\n" >> "$LISTMSG"
+        debug "$img"
+        echo -e "Background set with feh:\n\t$imglist\n" >> "$LISTMSG"
     else
         echo "$0:  $ffile not found" >&2
     fi
@@ -1956,13 +1944,12 @@ function restoreBg(){    # $1 = $VAL from restoreSettings()
 }
 
 function restoreXfdesktop(){
-    local img ws
-    img=${values[wallpaper]}
-    checkWallpaper "$img" || {
-        echo "$0: cannot find wallpaper $img" >&2
+    local ws # img is inherited from restoreBg()
+    ws=$(xdotool get_desktop)
+    pgrep -fx "xfdesktop" -u "$USER" >/dev/null || {
+        echo "$0: xfdesktop is not running"
         return 1
     }
-    ws=$(xdotool get_desktop)
     debug "Using xfdesktop to set wallpaper $img on desktop ${ws}"
     props=$(xfconf-query -c xfce4-desktop -l | grep --fixed-strings "/workspace${ws}/last-image")
     [[ -z $props ]] && {
@@ -1973,18 +1960,14 @@ function restoreXfdesktop(){
     do
         xfconf-query -c xfce4-desktop -p "$prop" --set "$img" || {
             echo "$0: failed to set $img to $prop" >&2
+            return 1
         }
     done <<< "$props"
     xfdesktop --restart
 }
 
 function restorePcmanfm(){
-    local img re
-    img=${values[wallpaper]}
-    checkWallpaper "$img" || {
-        echo "$0: cannot find wallpaper $img" >&2
-        return 1
-    }
+    local re # img is inherited from restoreBg()
     re='pcmanfm[[:blank:]].*--desktop'
     pgrep -fx "$re" -u "$USER" >/dev/null || {
         echo "$0: pcmanfm is not setting the wallpaper"
@@ -2316,6 +2299,29 @@ function getActiveMonitorDimensions(){
     }
 }
 
+# Check for a running background-setting daemon.
+# (There should not be more than one!)
+function checkBgDaemon(){
+    local daemon_bgsetters
+    daemon_bgsetters=('XFDESKTOP' 'PCMANFM') # If any of these are running they can set a wallpaper just by its filepath.
+    for i in "${daemon_bgsetters[@]}"
+    do
+        case $i in
+        XFDESKTOP)
+            re='xfdesktop'
+            ;;
+        PCMANFM)
+            re='pcmanfm[[:blank:]].*--desktop'
+            ;;
+        esac
+        pgrep -fx "$re" -u "$USER" >/dev/null && {
+            printf '%s' "$i"
+            return 0
+        }
+    done
+    return 1
+}
+
 # This function is run in displayBlobs() below
 # global THEMEPATH is set there
 # themename is local to displayBlobs()
@@ -2323,8 +2329,22 @@ restoreSettings() {
     # get chosen saved configs and restore them
     # Conky and Tint2 will be killed by their restore functions, if called.
     BKP_SFX=".$(date +"%Y%m%d-%H%M%S").blob~" # global: unified backup suffix that restore functions will use
-    local TAG VAL labels label columns select ret CHOICE jgmenu_sync jgmenu_sync_ob jgmenu_sync_gtk
-    daemon_bgsetters=(xfdesktop) # If any of these are running, cannot use nitrogen or feh.
+    local TAG VAL labels label columns select ret CHOICE jgmenu_sync jgmenu_sync_ob jgmenu_sync_gtk bgsetter orig_bgsetter img
+    # img will be inherited by restoreBg and its children
+
+    # pass label to be removed from restore dialog list
+    unset_label(){
+        local i label
+        label=$1
+        for i in "${!labels[@]}"; do
+            [[ ${labels[i]} = "$label" ]] && {
+                unset 'labels[i]'
+                return 0 # first instance will be unset (there should only be one)
+            }
+        done
+        return 1 # label not found
+    }
+
     labels=()
     declare -A values
     while read -r TAG VAL; do
@@ -2383,6 +2403,52 @@ restoreSettings() {
         esac
     done < "$THEMEPATH/settings.cfg"
 
+    # check if wallpaper can be restored by currently running daemon instead of original bgsetter
+    img=${values[wallpaper]} # only set by recent versions of BLOB
+    [[ -n $img ]] && {
+        checkWallpaper "$img" || {
+            echo "$0: cannot find wallpaper $img" >&2
+            yad_warning_option "Cannot restore wallpaper $img" || exit
+            img='not_found'
+        }
+    }
+    orig_bgsetter=${values["$PICKBG"]} # one of NITROGEN, FEH, XFDESKTOP, PCMANFM or possibly others, from settings.cfg
+    if bgsetter="$(checkBgDaemon)"; then # not using nitrogen or feh
+        if [[ -z $img || $img = 'not_found' ]]; then
+            debug "$bgsetter cannot restore wallpaper without an image set in settings.cfg"
+            unset_label "$PICKBG" # restore background will not be offered
+        else
+            debug "$bgsetter using image $img to draw wallpaper, set by $orig_bgsetter"
+            values["$PICKBG"]="$bgsetter"
+        fi
+    else
+        debug "not using a background setting daemon"
+        if [[ $img = 'not_found' ]]; then # nitrogen and feh do not need $img to restore, but if $img is set it should be available
+            unset_label "$PICKBG"
+        else
+            debug "can restore background ${img:+$img }with $orig_bgsetter"
+            case "$orig_bgsetter" in
+            NITROGEN)
+                hash nitrogen || {
+                    debug "cannot restore wallpaper: nitrogen not found"
+                    unset_label "$PICKBG"
+                }
+                ;;
+            FEH)
+                hash feh || {
+                    debug "cannot restore wallpaper: feh not found"
+                    unset_label "$PICKBG"
+                }
+                ;;
+            *)
+                debug "cannot restore wallpaper set by $orig_bgsetter"
+                unset_label "$PICKBG"
+                ;;
+            esac
+        fi
+    fi    
+
+    
     select='TRUE'
     while true
     do
