@@ -21,7 +21,6 @@ Package: bunsen-utilities
 Architecture: all
 Depends: ${misc:Depends},
   bunsen-common,
-  dconf-cli,
   gir1.2-gtk-3.0,
   libnotify-bin,
   python3 (>= 3.7),
@@ -32,11 +31,11 @@ Depends: ${misc:Depends},
   python3-xlib,
   wmctrl,
   xdotool (>=1:2.20110530.1-3),
-  xmlstarlet,
   yad
 Conflicts: bunsen-lock, bunsen-user-setup
 Recommends: at,
   bunsen-exit (>= 9.1-1),
+  bunsen-blob,
   bunsen-conky,
   colordiff,
   conky-all,
@@ -64,7 +63,6 @@ Description: Small scripts to use with BunsenLabs.
   - bl-kb: Script to manage openbox keyboard shortcuts.
   - bl-lock: Script to lock the display.
   - bl-notify-broadcast: Script to send user notifications from root processes.
-  - bl-obthemes: Script to save or restore desktop gui theme configurations.
   - bl-pkg-versions: Utility to display the versions of BunsenLabs packages.
   - bl-reload-gtk23: Script to notify clients of GTK2/3 configuration changes.
   - bl-restart: Script to restart all instances of a process name.
