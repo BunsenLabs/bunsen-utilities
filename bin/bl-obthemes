@@ -2567,6 +2567,7 @@ restoreSettings() {
 # used in displayBlobs() below and intro()
 # NEWNAME CONFIGDIR and CONFIGDIR_BKP are globals set by setName()
 function saveNewBlob() {
+    need_restart=( xfdesktop ) # Hack because xfdesktop sometimes gets confused after getScrot - can add others if necessary.
     setName || return 1
     debug "\n  Saving settings as $NEWNAME"
     saveSettings || return 1
@@ -2576,6 +2577,14 @@ function saveNewBlob() {
         rm -rf "$CONFIGDIR_BKP"
         debug "\n  Temporary backup of $CONFIGDIR deleted\n"
     fi
+    hash bl-restart && {
+        for i in "${need_restart[@]}"
+        do
+            if pgrep -x -u "$USER" "$i" >/dev/null ; then # avoid noisy "not running" messages from bl-restart
+                bl-restart "$i"
+            fi
+        done
+    }
 }
 
 # used in displayBlobs() below
