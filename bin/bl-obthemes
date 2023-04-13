@@ -1514,27 +1514,27 @@ function getScrot(){
 
     # close root menu
     xdotool mousemove_relative --sync --polar 0 10 "${MOUSECMD[@]}"
-    sleep 0.3
+    sleep 0.5
     # kill lxappearance
     pkill -P "$$" lxappearance
-    sleep 0.3
+    sleep 0.5
     # restore hidden windows
 
     for w in "${hiddenWins[@]}"
     do
         xdotool windowmap --sync "$w"
-        sleep 0.3
+        sleep 0.5
     done
     # if conkys or tint2s were killed, restore previously running session
     ((conkyFLAG)) || {
         bl-conky-session "$tmpConky"
         rm -f "$tmpConky"
-        sleep 0.3
+        sleep 0.5
     }
     ((tint2FLAG)) || {
         bl-tint2-session "$tmpTint"
         rm -f "$tmpTint"
-        sleep 0.3
+        sleep 0.5
     }
 }
 
