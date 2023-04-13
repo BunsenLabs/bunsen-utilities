@@ -1005,6 +1005,7 @@ function getPcmanfm(){
         echo "$0: failed to get pcmanfm profile"
         return 1
     }
+    debug "pcmanfm profile is $profile"
     ws=$(xdotool get_desktop)
     debug "on desktop $ws"
     for i in "$HOME/.config/pcmanfm/$profile/"desktop-items-*.conf
@@ -1015,7 +1016,7 @@ function getPcmanfm(){
                 img="${BASH_REMATCH[1]}"       # img is local to getBg
                 [[ -r "$img" ]] && break 2
             }
-        done
+        done < "$i"
     done
     debug "\nBackground set with pcmanfm:"
     debug "\t$img"
@@ -1936,18 +1937,20 @@ function checkWallpaper(){
 function restoreBg(){    # $1 = $VAL from restoreSettings()
     case $1 in
     NITROGEN)
-        restoreFiles "$NITROFILE" || true
+        debug "Using nitrogen to set wallpaper $img"
+        restoreFiles "$NITROFILE" || { echo "$0: failed to restore $NITROFILE" >&2; return 1; }
         nitrogen --restore
         ;;
     FEH)
-        restoreFiles "$FEHFILE" || true
+        debug "Using feh to set wallpaper $img"
+        restoreFiles "$FEHFILE" || { echo "$0: failed to restore $FEHFILE" >&2; return 1; }
         source "$HOME/$FEHFILE"
         ;;
     XFDESKTOP)
-        restoreXfdesktop || true
+        restoreXfdesktop || { echo "$0: failed to restore wallpaper with xfdesktop" >&2; return 1; }
         ;;
     PCMANFM)
-        restorePcmanfm || true
+        restorePcmanfm || { echo "$0: failed to restore wallpaper with pcmanfm" >&2; return 1; }
         ;;
     esac
 }
@@ -1972,6 +1975,7 @@ function restoreXfdesktop(){
             echo "$0: failed to set $img to $prop" >&2
         }
     done <<< "$props"
+    xfdesktop --restart
 }
 
 function restorePcmanfm(){
@@ -2301,7 +2305,7 @@ function UpdateDisplayDialog(){   # list saved theme collections for yad as DLGA
 
 # This function is run in displayBlobs() below to set width and height for View dialog.
 # generates DLGWIDTH and DLGHEIGHT, local to displayBlobs()
-function getActiveMonitorDimensions(){   #
+function getActiveMonitorDimensions(){
     local -a dim
     read -r -a dim < <(bl-xinerama-prop)
     DLGWIDTH=$(( dim[0] / 3 ))
