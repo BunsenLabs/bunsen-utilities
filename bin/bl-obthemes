@@ -565,7 +565,7 @@ parseKeyfile(){
         esac
         KEYS["${key}"]="${value}"
     done < "$1"
-    (( ${#KEYS[@]} > 0 )) || { echo "$0: parsing file ${1}: global array KEYS is empty" >&2; return 1;}
+    (( ${#KEYS[@]} )) || { echo "$0: parsing file ${1}: global array KEYS is empty" >&2; return 1;}
 }
 
 # This function is used when restoring icons without GTK or vice versa.
@@ -981,7 +981,6 @@ function getXfdesktop(){
 # get profile currently running pcmanfm is using
 function getPcmanfmProfile(){
     local cmdline profile
-    debug "Getting pcmanfm profile being used"
     cmdline=$(pgrep -afx 'pcmanfm[[:blank:]].*') || {
         echo "$0: pcmanfm is not running" >&2
         return 1
@@ -996,7 +995,6 @@ function getPcmanfmProfile(){
     else
         profile=default
     fi
-    debug "pcmanfm profile is $profile"
     printf '%s' "$profile"
 }
 
@@ -1313,7 +1311,7 @@ function getGTKname(){ # get saved GTK3 theme name and Icon theme name
     unset KEYS
     txt="GTK theme:  $gtktheme\nIcon Theme: $icontheme\n"
     debug "\n  Saved $txt"
-    echo  "$txt" >> "$LISTMSG"
+    echo -e "$txt" >> "$LISTMSG"
 }
 
 function getDmenu(){
@@ -1325,7 +1323,7 @@ function getDmenu(){
     txt="dmenu config:  ~/$DMENU\n"
     debug "\n  Saved $txt"
     echo "[DMENU]" >> "$SETTINGS"
-    echo "$txt" >> "$LISTMSG"
+    echo -e "$txt" >> "$LISTMSG"
 }
 
 function getLightdm(){
@@ -1337,7 +1335,7 @@ function getLightdm(){
     txt="Lightdm config:  $LDMDIR/$LDM\n(password will be needed to restore)\n"
     debug "\n  Saved $txt"
     echo "[LIGHTDM]" >> "$SETTINGS"
-    echo "$txt" >> "$LISTMSG"
+    echo -e "$txt" >> "$LISTMSG"
 }
 
 # passed termfile as $1 and pickterm as $2 by saveSettings()
@@ -1363,7 +1361,7 @@ function getTerminal(){
     esac
     debug "\n  Saved $txt"
     echo "[$termname] $termfile" >> "$SETTINGS"
-    echo "$txt" >> "$LISTMSG"
+    echo -e "$txt" >> "$LISTMSG"
 }
 
 function getXconfig(){
@@ -1375,7 +1373,7 @@ function getXconfig(){
     txt="X config:  ~/$XFILE\n"
     debug "\n  Saved $txt"
     echo "[XFILE]" >> "$SETTINGS"
-    echo "$txt" >> "$LISTMSG"
+    echo -e "$txt" >> "$LISTMSG"
 }
 
 function getBashRC(){
@@ -1387,7 +1385,7 @@ function getBashRC(){
     txt="Bash config:  ~/$BASHRC\n"
     debug "\n  Saved $txt"
     echo "[BASHRC]" >> "$SETTINGS"
-    echo "$txt" >> "$LISTMSG"
+    echo -e "$txt" >> "$LISTMSG"
 }
 
 function getComp(){
@@ -1400,7 +1398,7 @@ function getComp(){
     txt="Compositor settings: ~/$COMPFILE\n"
     debug "\n  Saved $txt"
     echo "[COMPOSITOR] $COMPFILE" >> "$SETTINGS"
-    echo "$txt" >> "$LISTMSG"
+    echo -e "$txt" >> "$LISTMSG"
 }
 
 function getJgmenu(){
@@ -1416,7 +1414,7 @@ function getJgmenu(){
     txt="jgmenu settings: ~/$JGMENURC\n"
     debug "\n  Saved $txt"
     echo "[JGMENU]" >> "$SETTINGS"
-    echo "$txt" >> "$LISTMSG"
+    echo -e "$txt" >> "$LISTMSG"
 }
 
 function getScrot(){
