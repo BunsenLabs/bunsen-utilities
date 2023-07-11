@@ -44,6 +44,7 @@ Recommends: at,
   openbox,
   tint2,
   scrot,
+  xsel,
   xsettingsd
 Breaks: bunsen-pipemenus (<< 11.2-1)
 Description: Small scripts to use with BunsenLabs.
