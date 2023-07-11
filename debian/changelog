@@ -1,3 +1,9 @@
+bunsen-utilities (12.2-2) boron; urgency=medium
+
+  * Add Recommends: xsel, needed for image upload utilities.
+
+ -- John Crawley <john@bunsenlabs.org>  Tue, 11 Jul 2023 09:50:13 +0900
+
 bunsen-utilities (12.2-1) boron; urgency=medium
 
   * Remove files associated with bl-obthemes, now in separate package
