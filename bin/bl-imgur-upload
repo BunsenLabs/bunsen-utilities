@@ -791,9 +791,10 @@ elif ! . "${CREDENTIALS_FILE}" 2> /dev/null; then
     fi
 fi
 
-declareDependencies "${APPS[@]}"    # see if system has the required commands installed
-
 getargs "${@}"                      # get script parameters
+
+# Testing for an Imgur account uses none of the dependencies, and the yad error window crashes jgmenu, so do the account test first.
+# See: https://forums.bunsenlabs.org/viewtopic.php?pid=128284#p128284 and following posts.
 
 # See if user has Imgur credentials, return exit code.
 if (( TEST == 1 ));then
@@ -803,6 +804,8 @@ if (( TEST == 1 ));then
         exit 0
     fi
 fi
+
+declareDependencies "${APPS[@]}"    # see if system has the required commands installed
 
 # Registering for account
 if (( REGISTER == 1 )) && [[ ! -f "${CREDENTIALS_FILE}" ]];then
