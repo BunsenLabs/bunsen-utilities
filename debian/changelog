@@ -3,7 +3,7 @@ bunsen-utilities (12.2.1-1) boron; urgency=medium
   * Bugfix: bl-imgur-upload: test for imgur account, and exit,
      before checking for missing dependencies.
      See: https://forums.bunsenlabs.org/viewtopic.php?pid=128284#p128284
-     and following posts. 
+     and following posts.
 
  -- John Crawley <john@bunsenlabs.org>  Wed, 12 Jul 2023 11:50:17 +0900
 
