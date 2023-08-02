@@ -102,9 +102,11 @@ choice=$( $DLGDEC $WINICON --list --title="$TITLE" \
 if [[ $? == 1 ]]; then # cancel button pressed
     exit 0
 else
+    paths=()
     while read -r path
     do
         [[ -r $path ]] || continue
-        bl-text-editor "$path"
+        paths+=("$path")
     done <<< "$choice"
+    bl-text-editor "${paths[@]}"
 fi

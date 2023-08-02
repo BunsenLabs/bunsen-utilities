@@ -97,12 +97,14 @@ choice=$( $DLGDEC $WINICON --list --title="$TITLE" \
     --column="Select:CHK" --column="Tint2 Name:TEXT" --column="path:HD" "${LISTTINT[@]}" \
     --print-column=3 $OK $CANCEL )
 
-if (( $? == 1 )); then # cancel button pressed
+if [[ $? == 1 ]]; then # cancel button pressed
     exit 0
 else
+    paths=()
     while read -r path
     do
         [[ -r $path ]] || continue
-        bl-text-editor "$path"
+        paths+=("$path")
     done <<< "$choice"
+    bl-text-editor "${paths[@]}"
 fi
