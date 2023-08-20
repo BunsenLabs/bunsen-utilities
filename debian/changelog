@@ -1,3 +1,10 @@
+bunsen-utilities (12.2.2-1) boron; urgency=medium
+
+  * Conky and Tint2 editors: allow multiple files to be opened.
+     See: https://forums.bunsenlabs.org/viewtopic.php?id=8619
+
+ -- John Crawley <john@bunsenlabs.org>  Sun, 20 Aug 2023 15:35:16 +0900
+
 bunsen-utilities (12.2.1-1) boron; urgency=medium
 
   * Bugfix: bl-imgur-upload: test for imgur account, and exit,
