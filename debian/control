@@ -46,7 +46,7 @@ Recommends: at,
   scrot,
   xsel,
   xsettingsd
-Breaks: bunsen-pipemenus (<< 11.2-1)
+Breaks: bunsen-pipemenus (<< 12.2-1)
 Description: Small scripts to use with BunsenLabs.
  A collection of small scripts to provide various functions
  which might be useful to BunsenLinux users and system administrators.
@@ -59,7 +59,6 @@ Description: Small scripts to use with BunsenLabs.
   - bl-image-upload: Generic image upload utility.
   - bl-imgbb-upload: Screenshot and image upload utility for imgbb.
   - bl-imgur-upload: Screenshot and image upload utility for imgur.
-  - bl-kb: Script to manage openbox keyboard shortcuts.
   - bl-lock: Script to lock the display.
   - bl-notify-broadcast: Script to send user notifications from root processes.
   - bl-pkg-versions: Utility to display the versions of BunsenLabs packages.
@@ -70,5 +69,4 @@ Description: Small scripts to use with BunsenLabs.
   - bl-tint2-manager: Yad-based tint2 manager.
   - bl-tint2-session: Script to handle multiple tint2 sessions.
   - bl-urxlx: Script to convert Xresources colours to rgb for lxterminal.
-  - bl-xbk: Script to manage xbindkeys keyboard shortcuts.
   - bl-xinerama-prop: Script to get xinerama properties in a shell script.
