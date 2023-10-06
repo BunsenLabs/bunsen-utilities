@@ -1,3 +1,10 @@
+bunsen-utilities (12.3-1) boron; urgency=medium
+
+  * Move bl-kb and bl-xbk to bunsen-pipemenus where they are used by
+     bl-kb.pipemenu. 
+
+ -- John Crawley <john@bunsenlabs.org>  Fri, 06 Oct 2023 15:52:22 +0900
+
 bunsen-utilities (12.2.2-1) boron; urgency=medium
 
   * Conky and Tint2 editors: allow multiple files to be opened.
