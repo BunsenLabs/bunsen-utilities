@@ -45,6 +45,7 @@ If a filepath is passed it is used as the session file,
 multiple sessions can be loaded.
 
 If not absolute, sessionfile paths are assumed to be relative to ~/.config/tint2/
+
 Relative tint2 paths are checked against HOME and ~/.config/tint2/,
 with the latter having priority.
 
