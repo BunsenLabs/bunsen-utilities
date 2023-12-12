@@ -1,3 +1,9 @@
+bunsen-utilities (12.3.1-1) boron; urgency=medium
+
+  * bl-tint2-session: improve formatting of help.
+
+ -- John Crawley <john@bunsenlabs.org>  Tue, 12 Dec 2023 18:43:07 +0900
+
 bunsen-utilities (12.3-1) boron; urgency=medium
 
   * Move bl-kb and bl-xbk to bunsen-pipemenus where they are used by
