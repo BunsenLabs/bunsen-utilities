@@ -87,13 +87,13 @@ fi
 # pangoEscape() for yad text display of filenames
 # is provided in bl-includes
 
-# get tint2s in $TINT2PATH, recursively, add to array LISTTINT
+# get tint2s in TINT2PATH, recursively, add to array LISTTINT
 findTints
 
 ## Populate yad dialog from array, get choice(s)
 choice=$( $DLGDEC $WINICON --list --title="$TITLE" \
     --text="Select Tint2s to edit from the list\nMultiple Tint2s can be chosen\n" \
-    --checklist  --separator='' \
+    --checklist --separator='' --no-selection \
     --column="Select:CHK" --column="Tint2 Name:TEXT" --column="path:HD" "${LISTTINT[@]}" \
     --print-column=3 $OK $CANCEL )
 

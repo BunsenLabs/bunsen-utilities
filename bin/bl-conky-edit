@@ -95,9 +95,9 @@ findConkys
 ## Populate yad dialog from array, get choice(s)
 choice=$( $DLGDEC $WINICON --list --title="$TITLE" \
     --text="Select Conkys to edit from the list\nMultiple Conkys can be chosen" \
-    --checklist \
+    --checklist --separator='' --no-selection \
     --column="Select:CHK" --column="Conky Name:TEXT" --column="path:HD" "${LISTCONKY[@]}" \
-    --separator='' --print-column=3 $OK $CANCEL )
+    --print-column=3 $OK $CANCEL )
 
 if [[ $? == 1 ]]; then # cancel button pressed
     exit 0
