@@ -109,7 +109,7 @@ fullPath(){
 loadSession(){
     local sessfile=$1
     [[ $sessfile = /* ]] || sessfile="$TINT2PATH/$sessfile" # was relative path
-    if [[ -f "$sessfile" ]]; then
+    if [[ -f $sessfile ]] && grep -q '[^[:space:]]' "$sessfile"; then
         safeKill tint2
         set -m
         while read -r path;do
@@ -121,7 +121,7 @@ loadSession(){
         done < "$sessfile"
         set +m
     else
-        echo "$0: ERROR: session file $sessfile does not exist." >&2
+        echo "$0: ERROR: session file $sessfile is empty or does not exist." >&2
         exit 1
     fi
 }
