@@ -113,6 +113,7 @@ loadSession(){
         safeKill tint2
         set -m
         while read -r path;do
+            [[ -z $path ]] && continue ## ignore empty line
             path=$( fullPath "$path" ) || continue
             tint2 -c "$path" >/dev/null 2>&1 &
             disown
