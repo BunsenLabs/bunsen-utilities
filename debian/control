@@ -12,7 +12,7 @@ Build-Depends: debhelper-compat (= 13),
   python3-xdg (>= 0.25),
   python3-xlib
 Rules-Requires-Root: no
-Standards-Version: 4.6.1.0
+Standards-Version: 4.6.2
 Homepage: https://github.com/BunsenLabs/bunsen-utilities
 Vcs-Git: https://github.com/BunsenLabs/bunsen-utilities.git
 Vcs-Browser: https://github.com/BunsenLabs/bunsen-utilities
