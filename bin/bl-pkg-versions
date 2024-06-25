@@ -23,10 +23,10 @@ Usage:
 
 Options:
         -h, --help      Show this message.
-        <empty>|beryllium   Check the Beryllium packages.
+        carbon          Check the Carbon packages.
+        <empty>|boron   Check the Boron packages.
+        beryllium   Check the Beryllium packages.
         lithium         Check the Lithium packages.
-        helium          Check the Helium packages.
-        hydrogen        Check the Hydrogen packages.
 
 It will display the versions of bunsen packages
 on the BunsenLabs package and GitHub source repositories.
@@ -43,7 +43,17 @@ case $1 in
     echo "$HELP"
     exit
     ;;
-''|beryllium)
+carbon)
+    readonly GITHUB_BRANCH=carbon
+    readonly SERVER=http://pkg.bunsenlabs.org
+    readonly RELEASE=carbon
+    ;;
+''|boron)
+    readonly GITHUB_BRANCH=boron
+    readonly SERVER=http://pkg.bunsenlabs.org
+    readonly RELEASE=boron
+    ;;
+beryllium)
     readonly GITHUB_BRANCH=beryllium
     readonly SERVER=http://pkg.bunsenlabs.org
     readonly RELEASE=beryllium
@@ -57,16 +67,6 @@ lithium)
     readonly GITHUB_BRANCH=lithium
     readonly SERVER=http://pkg.bunsenlabs.org
     readonly RELEASE=lithium
-    ;;
-helium)
-    readonly GITHUB_BRANCH=helium
-    readonly SERVER=http://pkg.bunsenlabs.org
-    readonly RELEASE=helium
-    ;;
-hydrogen)
-    readonly GITHUB_BRANCH=hydrogen
-    readonly SERVER=http://pkg.bunsenlabs.org
-    readonly RELEASE=bunsen-hydrogen
     ;;
 *)
     echo "$1: no such option" >&2
