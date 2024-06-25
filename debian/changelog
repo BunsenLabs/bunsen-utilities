@@ -1,3 +1,11 @@
+bunsen-utilities (13.0-1) carbon; urgency=medium
+
+  * Migrate for Debian Trixie
+   - debian/control: Bump Standards-Version to 4.6.2 - no changes required.
+  * bl-pkg-versions: update release names.
+ 
+ -- John Crawley <john@bunsenlabs.org>  Tue, 25 Jun 2024 16:11:02 +0900
+
 bunsen-utilities (12.3.2-1) boron; urgency=medium
 
   * bl-{conky,tint2}-edit: suppress misleading selection of row.
