@@ -20,6 +20,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 LOCK_COMMAND=(light-locker-command -l)
+[[ -n "$WAYLAND_DISPLAY" ]] && LOCK_COMMAND=(gtklock -d)
 
 HELP="bl-lock is a wrapper for the configured screenlock command
 
