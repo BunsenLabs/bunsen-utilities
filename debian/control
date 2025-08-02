@@ -42,7 +42,6 @@ Recommends: at,
   libglib2.0-bin,
   light-locker,
   openbox,
-  tint2,
   scrot,
   xsel,
   xsettingsd
