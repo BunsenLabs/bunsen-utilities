@@ -17,7 +17,7 @@ bl-conky-session:       Handle multiple conky sessions.
 
 bl-kb:                  Read openbox keyboard shortcuts and write them to a text file.
 bl-xbk:                 Parse xbindkeys configs and write them to the same text file as bl-kb.
-bl-lock:                Lock the display.
+bl-lock:                Lock the display (requires bunsen-exit).
 bl-setlocale:           Yad-based script to allow users to choose their locale.
 
 bl-pkg-versions:        Utility to display the versions of BunsenLabs packages in the apt repository and on GitHub.

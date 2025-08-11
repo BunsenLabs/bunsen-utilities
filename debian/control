@@ -58,7 +58,7 @@ Description: Small scripts to use with BunsenLabs.
   - bl-image-upload: Generic image upload utility.
   - bl-imgbb-upload: Screenshot and image upload utility for imgbb.
   - bl-imgur-upload: Screenshot and image upload utility for imgur.
-  - bl-lock: Script to lock the display.
+  - bl-lock: Script to lock the display (requires bunsen-exit).
   - bl-notify-broadcast: Script to send user notifications from root processes.
   - bl-pkg-versions: Utility to display the versions of BunsenLabs packages.
   - bl-reload-gtk23: Script to notify clients of GTK2/3 configuration changes.
