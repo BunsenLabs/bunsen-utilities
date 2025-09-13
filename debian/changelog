@@ -1,3 +1,11 @@
+bunsen-utilities (13.1-1) carbon; urgency=medium
+
+  * bl-lock: direct all lock calls to bl-exit --lock,
+     which is user-configurable.
+  * Remove tint2 and light-locker from Recommends.
+
+ -- John Crawley <john@bunsenlabs.org>  Sat, 13 Sep 2025 17:32:43 +0900
+
 bunsen-utilities (13.0-1) carbon; urgency=medium
 
   * Migrate for Debian Trixie
