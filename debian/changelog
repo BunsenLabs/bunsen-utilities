@@ -1,3 +1,9 @@
+bunsen-utilities (13.1.1-1) carbon; urgency=medium
+
+  * Loosen dependencies slightly.
+
+ -- John Crawley <john@bunsenlabs.org>  Tue, 16 Sep 2025 16:16:22 +0900
+
 bunsen-utilities (13.1-1) carbon; urgency=medium
 
   * bl-lock: direct all lock calls to bl-exit --lock,
