@@ -35,15 +35,15 @@ Depends: ${misc:Depends},
 Conflicts: bunsen-lock, bunsen-user-setup
 Recommends: at,
   bunsen-exit (>= 9.1-1),
-  bunsen-blob,
+  libglib2.0-bin,
+  openbox,
+  xsel,
+  xsettingsd
+Suggests: bunsen-blob,
   bunsen-conky,
   conky-all,
   gmrun,
-  libglib2.0-bin,
-  openbox,
-  scrot,
-  xsel,
-  xsettingsd
+  scrot
 Breaks: bunsen-pipemenus (<< 12.2-1)
 Description: Small scripts to use with BunsenLabs.
  A collection of small scripts to provide various functions
