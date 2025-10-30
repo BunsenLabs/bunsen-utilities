@@ -2,12 +2,16 @@
 #
 # bl-image-upload: script to upload files to an image hosting service
 # Taking of screenshots is also supported.
-# At present this is a wrapper script around bl-imgur-upload,
-# but may be extended in the future.
+# Edit so that your chosen image upload script is uncommented.
+# bl-imgbb-upload needs an account to be set up (the script helps).
+# bl-imgur-upload allows anonymous uploads but does not serve the UK.
 
-hash bl-imgur-upload 2>/dev/null || {
-    echo "$0: bl-imgur-upload is not available" >&2
+uploader=bl-imgbb-upload
+#uploader=bl-imgur-upload
+
+hash $uploader 2>/dev/null || {
+    echo "$0: $uploader is not available" >&2
     exit 1
 }
 
-bl-imgur-upload "$@"
+$uploader "$@"

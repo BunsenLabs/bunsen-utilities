@@ -136,7 +136,9 @@ function getargs(){
                             shift
                             F_FLAG=1
                             ;;
-            --test-account) TEST=1  # to test if user has Imgur account
+            --auto-upload)  : # ignore - option added for compatibility with bl-imgur-upload
+                            ;;
+            --test-account) TEST=1  # to test if user has Imgbb account
                             ;;
                          *) message="\n\tFailed to parse options\n\tExiting script...\n"
                             echo -e "${message}" >&2
@@ -558,7 +560,7 @@ function main(){
     # set defaults
     SCROT="${SCREENSHOT_FULL_COMMAND}"
     IMG_VIEWER=$(grep -oP '(?<=IMG_VIEWER=").*(?=")' "${SETTINGS_FILE}")
-    TEST=0                      # Flag to test if user has Imgur account
+    TEST=0                      # Flag to test if user has Imgbb account
 
     export -f run_browser       # to be used in YAD button command
     export -f show_image        # to be used in YAD button command
