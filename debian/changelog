@@ -1,3 +1,10 @@
+bunsen-utilities (13.1.2-1) carbon; urgency=medium
+
+  * Adjust image upload scripts to use imgbb by default.
+     (imgur no longer serves the UK)
+
+ -- John Crawley <john@bunsenlabs.org>  Thu, 30 Oct 2025 14:18:26 +0900
+
 bunsen-utilities (13.1.1-1) carbon; urgency=medium
 
   * Loosen dependencies slightly.
