@@ -118,6 +118,7 @@ killConkys(){
     fi
 }
 
+# TODO cope with empty session file
 # usage: loadSession <sessionfile>
 loadSession(){
     local sessfile CPATH_REGEX WMC_REGEX needRewrite conkys c path target

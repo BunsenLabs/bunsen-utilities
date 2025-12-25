@@ -106,11 +106,13 @@ fullPath(){
     printf '%s' "$path"
 }
 
+# TODO cope with empty session file
 loadSession(){
-    local sessfile=$1
+    local sessfile=$1 tints
     [[ $sessfile = /* ]] || sessfile="$TINT2PATH/$sessfile" # was relative path
     if [[ -f $sessfile ]] && grep -q '[^[:space:]]' "$sessfile"; then
         safeKill tint2
+        tints=0
         set -m
         while read -r path;do
             [[ -z $path ]] && continue ## ignore empty line
@@ -118,8 +120,13 @@ loadSession(){
             tint2 -c "$path" >/dev/null 2>&1 &
             disown
             sleep 0.5
+            (( tints++ ))
         done < "$sessfile"
         set +m
+        (( tints > 0 )) || {
+            echo "$0: ERROR: session file $sessfile did not launch any tint2s." >&2
+            exit 1
+        }
     else
         echo "$0: ERROR: session file $sessfile is empty or does not exist." >&2
         exit 1
@@ -131,7 +138,7 @@ loadSession(){
 if [[ ! -f $SESSIONFILE ]]; then
     echo "$0: There is no default session file: ${SESSIONFILE}, generating now..." >&2
     if [[ -f $DEFAULTTINT2 ]]; then
-        echo "${DEFAULTTINT2#$HOME/}" > "$SESSIONFILE"
+        echo "${DEFAULTTINT2#"$HOME"/}" > "$SESSIONFILE"
     else
         echo "$0: ERROR: unable to generate default session file." >&2
         exit 1

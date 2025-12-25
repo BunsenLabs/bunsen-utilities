@@ -29,7 +29,7 @@
 #
 ########################################################################
 #
-### REQUIRES:  yad, jq, xprop, wmctrl, wget, curl, scrot, xdotool, convert
+### REQUIRES:  yad, jq, wget, curl, scrot, xdotool, convert, composite
 #
 ########################################################################
 
@@ -101,7 +101,7 @@ OK="--button=OK:0"
 
 ### required programs ###
 declare -a APPS
-APPS=( "yad" "xprop" "wmctrl" "wget" "curl" "scrot" "xdotool" "convert" )
+APPS=( "yad" "wget" "curl" "scrot" "xdotool" "convert" "composite" )
 
 ### FUNCTIONS  #########################################################
 ### Get script args ###
