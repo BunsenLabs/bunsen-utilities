@@ -1,3 +1,9 @@
+bunsen-utilities (13.1.3-2) carbon; urgency=medium
+
+  * Add some lintian fixes to debian/control.
+
+ -- John Crawley <john@bunsenlabs.org>  Fri, 26 Dec 2025 15:10:58 +0900
+
 bunsen-utilities (13.1.3-1) carbon; urgency=medium
 
   * bl-{conky,tint2}-session: improve handling of empty session files.
