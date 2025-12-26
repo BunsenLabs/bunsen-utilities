@@ -52,7 +52,7 @@ STARTSESSION="$CONKYPATH/conky-startup-session" # symlink to chosen startup sess
 DEFAULTSESSFILE="$CONKYPATH/conky-sessionfile"
 SESSIONS="$CONKYPATH/saved-sessions"    # list of saved sessions to be used by a pipemenu
 CONKYDEFAULT="$CONKYPATH/conky.conf"
-BLDEFAULT="$CONKYPATH/BL-Default-conky.conf"
+BLDEFAULT=$(readlink -f "$CONKYPATH/BL-Default-conky.conf") # BL-Default-conky.conf is a symlink to this release's default conky
 
 USAGE1='
     USAGE:  bl-conky-manager [OPTION]...FILES
