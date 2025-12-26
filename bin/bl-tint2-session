@@ -38,7 +38,7 @@ Optional arguments:
     <SESSIONFILE>
 
 With no command arguments, the script uses the default tint2 session file
-~/.config/tint2/tint2-sessionfile" if it exists,
+~/.config/tint2/tint2-sessionfile" if it exists and is non-empty,
 otherwise the default tint2rc is written to a new tint2-sessionfile.
 
 If a filepath is passed it is used as the session file,
@@ -48,6 +48,9 @@ If not absolute, sessionfile paths are assumed to be relative to ~/.config/tint2
 
 Relative tint2 paths are checked against HOME and ~/.config/tint2/,
 with the latter having priority.
+
+NOTE this script will return an error if passed an empty sessionfile.
+To avoid that, check the file before calling bl-tint2-session.
 
 To start the default tint2 session at login,
 add the following line to autostart:
@@ -106,7 +109,6 @@ fullPath(){
     printf '%s' "$path"
 }
 
-# TODO cope with empty session file
 loadSession(){
     local sessfile=$1 tints
     [[ $sessfile = /* ]] || sessfile="$TINT2PATH/$sessfile" # was relative path
@@ -135,8 +137,8 @@ loadSession(){
 
 ########################################################################
 
-if [[ ! -f $SESSIONFILE ]]; then
-    echo "$0: There is no default session file: ${SESSIONFILE}, generating now..." >&2
+if [[ ! -f $SESSIONFILE ]] || ! grep -q '[^[:space:]]' "$SESSIONFILE"; then
+    echo "$0: There is no non-empty default session file: ${SESSIONFILE}, generating now..." >&2
     if [[ -f $DEFAULTTINT2 ]]; then
         echo "${DEFAULTTINT2#"$HOME"/}" > "$SESSIONFILE"
     else

@@ -118,11 +118,14 @@ killConkys(){
     fi
 }
 
-# TODO cope with empty session file
 # usage: loadSession <sessionfile>
 loadSession(){
     local sessfile CPATH_REGEX WMC_REGEX needRewrite conkys c path target
     sessfile=$1
+    [[ ! -f $sessfile ]] || ! grep -q '[^[:space:]]' "$sessfile" && {
+        echo "${0}: WARNING $sessfile is empty or does not exist" >&2
+        return 1
+    }
     CPATH_REGEX="-c[[:blank:]]+(.*(conky.*\.conf|conky|conkyrc))([[:blank:]]+|$)"
     WMC_REGEX='wmctrl -s ([0-9]{1,2})[[:blank:]]+'
     needRewrite=false
@@ -229,9 +232,9 @@ listSessfiles(){
         for file in "${sessfiles[@]}";
         do
             if [[ $file = "$startup" ]]; then
-                echo "${file#$CONKYPATH/} *"
+                echo "${file#"$CONKYPATH"/} *"
             else
-                echo "${file#$CONKYPATH/}"
+                echo "${file#"$CONKYPATH"/}"
             fi
         done
     else
@@ -259,13 +262,13 @@ needBackup(){
 
 ########################################################################
 
-if [[ ! -f $DEFAULTSESSFILE ]] ; then
+if [[ ! -f $DEFAULTSESSFILE ]] || ! grep -q '[^[:space:]]' "$DEFAULTSESSFILE"; then
     echo "$0: There is no default session file: ${DEFAULTSESSFILE}, generating now..." >&2
     if [[ -f $BLDEFAULT ]]; then
-        echo "${BLDEFAULT#$HOME/}" > "$DEFAULTSESSFILE" # use relative path in session file for better compatibility with BLOB
+        echo "${BLDEFAULT#"$HOME"/}" > "$DEFAULTSESSFILE" # use relative path in session file for better compatibility with BLOB
     elif [[ -f $CONKYDEFAULT ]]; then
         echo "$0: $BLDEFAULT not found, using $CONKYDEFAULT in session file." >&2
-        echo "${CONKYDEFAULT#$HOME/}" > "$DEFAULTSESSFILE"
+        echo "${CONKYDEFAULT#"$HOME"/}" > "$DEFAULTSESSFILE"
     else
         echo "$0: ERROR: unable to generate default session file." >&2
         exit 1
