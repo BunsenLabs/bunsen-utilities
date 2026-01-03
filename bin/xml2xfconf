@@ -1,0 +1,182 @@
+#!/usr/bin/bash
+# 
+#    xml2xfconf: convert xfconf xml file entries to xfconf-query commands
+#    Copyright (C) 2026  John Crawley <john@bunsenlabs.org>
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# shellcheck disable=SC2016
+HELP='xml2xfconf: A script to convert xfce4 xfconf
+ xml file entries into xfconf-query commands
+
+SUMMARY:    xml2xfconf  -x|--xml-file <filepath> [-c|--channel <channel name>]
+
+Passed an xfce xfconf xml file, this script will print
+the necessary xfconf-query commands to update
+the xfconf database for that channel.
+
+If passed a channel name, that will be compared with
+the channel name defined in the xml,
+and if they are different the script will exit.
+
+This is expected to be useful when restoring the xfconf settings of
+an app whose xml file has been backed up.
+
+USAGE EXAMPLE:
+
+restore=$(mktemp)
+xml2xfconf -x /path/to/xfce4-terminal.xml -c xfce4-terminal > "$restore"
+bash "$restore"
+'
+
+while [[ -n $1 ]]
+do
+    case "$1" in
+    -h|--help)
+        echo "$HELP"
+        exit 0
+        ;;
+    -x|--xml-file)
+        XML=$2
+        shift 2
+        ;;
+    -c|--channel)
+        chk_channel=$2
+        shift 2
+        ;;
+    *)
+        echo "${0}: ${1}: no such option" >&2
+        echo "$HELP"
+        exit 1
+        ;;
+    esac
+done
+
+if ! hash xmlstarlet >/dev/null 2>&1; then
+    echo "${0}: xmlstarlet not found; install it first." >&2
+    exit 1
+fi
+
+if [[ -z "$XML" ]] ; then
+    echo "${0}: missing -x|--xml-file option" >&2
+    echo "$HELP"
+    exit 1
+fi
+
+if [[ ! -f "$XML" ]]; then
+    echo "${0}: $XML file not found" >&2
+    exit 1
+fi
+
+# Parse channel name from XML <channel name="...">
+channel=$(xmlstarlet sel -t -v "/channel/@name" "$XML" 2>/dev/null)
+if [[ -z "$channel" ]]; then
+    echo "${0}: Could not parse channel name from $XML" >&2
+    exit 1
+fi
+
+[[ -n $chk_channel ]] && [[ $chk_channel != "$channel" ]] && {
+    echo "${0}: Passed channel name $chk_channel does not match $channel in the xml file" >&2
+    exit 1
+}
+
+# Each <property> element may represent:
+#  - a leaf value (string/bool/int/double)
+#  - an array of <value> elements
+#  - a subtree of nested <property> children
+#
+# This function walks the tree recursively and prints xfconf-query commands.
+
+walk_properties() {
+    local xpath="$1"
+    local base_path="$2"
+
+    xmlstarlet sel -t \
+        -m "$xpath/property" \
+        -v "concat(@name,'|',@type)" -n \
+        "$XML" 2>/dev/null | while IFS='|' read -r name type; do
+
+        local prop_path
+        if [[ -z "$base_path" ]]; then
+            prop_path="/$name"
+        else
+            prop_path="$base_path/$name"
+        fi
+
+        # Counts
+        local child_count
+        child_count=$(xmlstarlet sel -t \
+            -v "count($xpath/property[@name='$name']/property)" \
+            "$XML" 2>/dev/null)
+
+        local value_count
+        value_count=$(xmlstarlet sel -t \
+            -v "count($xpath/property[@name='$name']/value)" \
+            "$XML" 2>/dev/null)
+
+        # If this node is explicitly an array, treat it as such even if it has child <property> nodes
+        if [[ "$type" = "array" ]] || [[ "$value_count" != "0" && "$child_count" = "0" ]]; then
+
+            # Collect all types & values
+            typevalues=()
+            while IFS= read -r tv; do
+                typevalues+=("$tv")
+            done < <(xmlstarlet sel -t \
+                -m "$xpath/property[@name='$name']/value" \
+                -v "concat(@type,'|',@value)" -n \
+                "$XML" 2>/dev/null)
+
+            local qtype
+            printf 'xfconf-query -c %q -p %q -n -a' \
+                "$channel" "$prop_path"
+            for tv in "${typevalues[@]}"; do
+                qtype=${tv%|*}; value=${tv#*|}
+                [[ -z "$qtype" ]] && qtype="string"  # Safe default for arrays without <value @type>
+                printf ' -t %s -s %q' "$qtype" "$value"
+            done
+            printf '\n'
+
+           # CRITICAL: Always recurse into child properties after printing array
+            if [[ "$child_count" != "0" ]]; then
+                walk_properties "$xpath/property[@name='$name']" "$prop_path"
+            fi
+            
+        elif [[ "$child_count" != "0" ]]; then
+            # Recurse into subtree (non-array case)
+            walk_properties "$xpath/property[@name='$name']" "$prop_path"
+
+        else
+            # Scalar leaf: use @value
+            local value
+            value=$(xmlstarlet sel -t \
+                -m "$xpath/property[@name='$name']" \
+                -v "@value" \
+                "$XML" 2>/dev/null)
+
+            # Map XML type to xfconf-query type
+            local qtype
+            case "$type" in
+                string|int|bool|double|uint) qtype="$type" ;;
+                empty) continue ;;  # Skip empty properties entirely
+                *) qtype="$type" ;;
+            esac
+
+            printf 'xfconf-query -c %q -p %q -n -t %s -s %q\n' \
+                "$channel" "$prop_path" "$qtype" "$value"
+        fi
+    done
+}
+
+# Start at the root <channel> element
+walk_properties "/channel" ""
