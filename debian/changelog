@@ -1,3 +1,10 @@
+bunsen-utilities (13.2-1) carbon; urgency=medium
+
+  * Add utility xml2xfconf for parsing xfconf xml files.
+  * Remove obsolete dependency on python3-lxml.
+
+ -- John Crawley <john@bunsenlabs.org>  Sat, 03 Jan 2026 16:11:13 +0900
+
 bunsen-utilities (13.1.4-1) carbon; urgency=medium
 
   * conky and tint2 manager: dereference link to current default.
