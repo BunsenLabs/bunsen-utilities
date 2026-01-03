@@ -70,3 +70,5 @@ Description: Small scripts to use with BunsenLabs
   - bl-tint2-session: Script to handle multiple tint2 sessions.
   - bl-urxlx: Script to convert Xresources colours to rgb for lxterminal.
   - bl-xinerama-prop: Script to get xinerama properties in a shell script.
+  - xml2xfconf: Script to convert xfce4 xfconf xml file entries
+     into xfconf-query commands.

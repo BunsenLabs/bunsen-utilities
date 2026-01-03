@@ -26,6 +26,8 @@ bl-urxlx:               Convert Xresources colours to rgb for lxterminal configu
 bl-xinerama-prop:       Get xinerama properties in a shell script.
 bl-reload-gtk23:        Script to notify GTK2/3 clients of GTK2/3 app configuration changes such as theming.
 
+xml2xconf               Script to convert xfce4 xfconf xml file entries into xfconf-query commands.
+
 NOTE tint2 is no longer part of the default BunsenLabs desktop,
  but these utilities are still shipped with this package:
 

@@ -17,10 +17,9 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # shellcheck disable=SC2016
-HELP='xml2xfconf: A script to convert xfce4 xfconf
- xml file entries into xfconf-query commands
+HELP='xml2xfconf: convert xfce xfconf xml file entries into xfconf-query commands
 
-SUMMARY:    xml2xfconf  -x|--xml-file <filepath> [-c|--channel <channel name>]
+SUMMARY:    xml2xfconf -x|--xml-file <filepath> [-c|--channel <channelname>]
 
 Passed an xfce xfconf xml file, this script will print
 the necessary xfconf-query commands to update
