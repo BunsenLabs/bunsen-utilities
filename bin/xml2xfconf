@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 # 
 #    xml2xfconf: convert xfconf xml file entries to xfconf-query commands
 #    Copyright (C) 2026  John Crawley <john@bunsenlabs.org>
