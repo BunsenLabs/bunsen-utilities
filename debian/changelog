@@ -1,3 +1,15 @@
+bunsen-utilities (13.2.2-1) carbon; urgency=medium
+
+  * Add mention of xml2xfconf to documentation.
+
+ -- John Crawley <john@bunsenlabs.org>  Sat, 03 Jan 2026 16:41:13 +0900
+
+bunsen-utilities (13.2.1-1) carbon; urgency=medium
+
+  * Bugfix: xml2xfconf bash path to /bin/bash
+
+ -- John Crawley <john@bunsenlabs.org>  Sat, 03 Jan 2026 16:19:18 +0900
+
 bunsen-utilities (13.2-1) carbon; urgency=medium
 
   * Add utility xml2xfconf for parsing xfconf xml files.
