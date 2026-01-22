@@ -1,3 +1,9 @@
+bunsen-utilities (13.3-1) carbon; urgency=medium
+
+  * Conky Manager: Bugfix: fix handling of case where all conkys are killed.
+
+ -- John Crawley <john@bunsenlabs.org>  Thu, 22 Jan 2026 15:24:33 +0900
+
 bunsen-utilities (13.2.2-1) carbon; urgency=medium
 
   * Add mention of xml2xfconf to documentation.
