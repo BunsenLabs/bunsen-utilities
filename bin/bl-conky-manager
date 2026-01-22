@@ -2,7 +2,7 @@
 #
 #    bl-conky-manager: BunsenLabs Conky selection and switcher script
 #    Copyright (C) 2015-2019  damo    <damo@bunsenlabs.org>
-#                  2019-2021  John Crawley <john@bunsenlabs.org>
+#                  2019-2026  John Crawley <john@bunsenlabs.org>
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -111,6 +111,7 @@ do
 done
 
 BL_COMMON_LIBDIR='/usr/lib/bunsen/common'
+# shellcheck source=/dev/null
 if ! . "$BL_COMMON_LIBDIR/bl-includes" 2> /dev/null; then
     echo $"Error: Failed to locate bl-includes in $BL_COMMON_LIBDIR" >&2
     exit 1
@@ -182,7 +183,7 @@ findConkys(){
     for file in "$CONKYPATH"/**;do
         [[ -f $file ]] || continue
         [[ $file =~ ${CPATH_REGEX}$ ]] || continue # ignore other than conky config files
-        name=${file#$CONKYPATH/}
+        name=${file#"$CONKYPATH"/}
         if isRunning "$file"; then
             check='TRUE'
         else
@@ -243,7 +244,7 @@ parseConkyfile(){
         value=${BASH_REMATCH[2]#[\'\"]} # strip quotes
         value=${value%[\'\"]}
         CONKY_CONF["${name}"]="${value}"
-        conkyconf=${conkyconf#*${BASH_REMATCH[0]}}
+        conkyconf=${conkyconf#*"${BASH_REMATCH[0]}"}
     done
 }
 
@@ -318,7 +319,7 @@ chooseStartup(){
         else
             chk=FALSE
         fi
-        name=${file#$CONKYPATH/}
+        name=${file#"$CONKYPATH"/}
         sflst+=("$chk" "$(pangoEscape "$name")" "$file")
     done < <(bl-conky-session --list)
     choice=$($DLGDEC $WINICON --list --title="$TITLE" \
@@ -367,6 +368,13 @@ loadDialog() {
         if [[ $? = 1 ]];then
             return
         fi
+        if pgrep -x -u "$USER" conky >/dev/null;then
+            pkill -x -u "$USER" conky
+            sleep 0.5 # make sure killed conkys are not running at next iteration of getRunning()
+        fi
+        MSG="The default Conky will be launched at next login.\nTo stop all conkys, edit ~/.config/bunsen/autostart:\n\nComment out 'bl-conky-session &amp;'"
+        $DLG $WINICON --title="$TITLE" --text="$MSG" $OK
+        return 0
     fi
 
     :> "$SESSIONFILE"    # Create/overwrite empty session file
@@ -377,12 +385,12 @@ loadDialog() {
         do
             [[ -n $path ]] || continue
             if isSticky "$path"; then
-                echo "${path#$HOME/}" >> "$SESSIONFILE" # put HOME-relative paths in sessionfile for better compatibility with BLOB
+                echo "${path#"$HOME"/}" >> "$SESSIONFILE" # put HOME-relative paths in sessionfile for better compatibility with BLOB
             else
                 if desktop=$( chooseDesktop "$path" ); then
-                    echo "D[${desktop}] ${path#$HOME/}" >> "$SESSIONFILE"
+                    echo "D[${desktop}] ${path#"$HOME"/}" >> "$SESSIONFILE"
                 else
-                    echo "${path#$HOME/}" >> "$SESSIONFILE"
+                    echo "${path#"$HOME"/}" >> "$SESSIONFILE"
                 fi
             fi
         done <<< "$choice"
@@ -397,7 +405,7 @@ loadDialog() {
         while read -r path
         do
             [[ -n $path ]] || continue
-            echo "${path#$HOME/}" >> "$SESSIONFILE"
+            echo "${path#"$HOME"/}" >> "$SESSIONFILE"
             set -m # enable job control so forked conky is immune to signals
             # start the conky (adjust the sleep time if required)
             conky -c "$path" >/dev/null 2>&1 &
