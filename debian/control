@@ -36,6 +36,8 @@ Recommends: at,
   libglib2.0-bin,
   openbox,
   scrot,
+  wtype,
+  xmlstarlet,
   xsel,
   xsettingsd
 Suggests: bunsen-blob,
