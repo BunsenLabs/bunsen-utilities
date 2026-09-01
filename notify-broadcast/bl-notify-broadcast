@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# see also: https://wiki.archlinux.org/title/Desktop_notifications#Send_notifications_to_all_graphical_users
+# for alternative
+
 HELP="Call notify-send for all current X users.
 Passed arguments (message, icon etc) are sent on as-is.
 This script must be run as root."
