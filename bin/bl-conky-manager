@@ -30,7 +30,7 @@
 #   When the dialog opens, any running conkys will be checkmarked.
 #
 #   Click "OK" and all running conkys are stopped, and all checkmarked
-#   conkys are started
+#   conkys are started.
 #
 #   To stop a conky just uncheck it, and "OK"
 #
@@ -48,11 +48,17 @@
 ########################################################################
 
 CONKYPATH="$HOME/.config/conky"
-STARTSESSION="$CONKYPATH/conky-startup-session" # symlink to chosen startup session (DEFAULTSESSFILE by default)
-DEFAULTSESSFILE="$CONKYPATH/conky-sessionfile"
-SESSIONS="$CONKYPATH/saved-sessions"    # list of saved sessions to be used by a pipemenu
-CONKYDEFAULT="$CONKYPATH/conky.conf"
 BLDEFAULT=$(readlink -f "$CONKYPATH/BL-Default-conky.conf") # BL-Default-conky.conf is a symlink to this release's default conky
+DEFAULTSESSFILE="$CONKYPATH/conky-sessionfile"
+STARTSESSION="$CONKYPATH/conky-startup-session" # symlink to chosen startup session (DEFAULTSESSFILE by default)
+SAVEDSESSIONS="$CONKYPATH/saved-sessions"    # list of saved sessions to be used by a pipemenu
+CUSTOMSESSION="$CONKYPATH/custom-session"
+# if bl-conky-session is launched with a single non-default sessionfile, it will be written to CUSTOMSESSION
+# CUSTOMSESSION will be cleared next time bl-conky-session is run with default or multiple sessionfiles
+CONKYDEFAULT="$CONKYPATH/conky.conf"
+OBPATH="$HOME/.config/bunsen/openbox" # not currently used in this script
+LABPATH="$HOME/.config/bunsen/labwc" # path used by BunsenLabs
+LABRCFILE="$LABPATH/rc.xml"
 
 USAGE1='
     USAGE:  bl-conky-manager [OPTION]...FILES
@@ -124,7 +130,7 @@ if [ ! -f "$DEFAULTSESSFILE" ] ; then
     echo "$BLDEFAULT" > "$DEFAULTSESSFILE"
 fi
 
-if [[ ! -f $STARTSESSION ]]; then
+if [[ ! -f "$STARTSESSION" ]]; then
     echo "$0: generating missing symlink $STARTSESSION to $DEFAULTSESSFILE"
     ln -s "$DEFAULTSESSFILE" "$STARTSESSION" || echo "$0: WARNING: failed to create symlink $STARTSESSION"
 fi
@@ -278,29 +284,68 @@ parseConky(){
     parseConkyfile "$path"
 }
 
-# determine stickiness of conkyfile
-# usage isSticky <file>
+# determine stickiness of conkyfile by CONKY_CONF
 isSticky(){
-    parseConky "$1"
+#    parseConky "$1" # parseConky should have been run before isSticky
     [[ ${CONKY_CONF[own_window]} != true ]] && return 0
     [[ ${CONKY_CONF[own_window_type]+X} = X ]] && [[ ${CONKY_CONF[own_window_type]} != normal ]] && return 0
     [[ ${CONKY_CONF[own_window_hints]} = *sticky* ]] && return 0
     return 1
 }
 
+# parse labwc's rc.xml to get the number of desktops
+# unlike X with wmctrl, the config is the only place to look
+getLabDesktops(){
+    command -v xmlstarlet >/dev/null || return 1 # desktop choice is only for X11 anyway
+
+    # these variables are global here but local in chooseDesktop()
+    named_desktops=()
+    count_named_desktops=0
+    count_all_desktops=0
+
+    mapfile -t named_desktops < <(xmlstarlet sel -t -m 'labwc_config/desktops/names/name' -v '.' -n "$LABRCFILE")
+    count_named_desktops=${#named_desktops[@]}
+    count_all_desktops=$(xmlstarlet sel -t -v 'labwc_config/desktops/@number' "$LABRCFILE" | tr -d '[:space:]')
+    [[ $count_all_desktops =~ ^[1-9][0-9]*$ ]] ||
+        count_all_desktops=$(xmlstarlet sel -t -v 'labwc_config/desktops/number' "$LABRCFILE" | tr -d '[:space:]')
+    [[ $count_all_desktops =~ ^[1-9][0-9]*$ ]] ||
+        count_all_desktops=$count_named_desktops
+    [[ $count_all_desktops =~ ^[1-9][0-9]*$ ]] || return 1
+}
+
 # usage: chooseDesktop [<path>]
 # will use <path> in message, if known
 chooseDesktop(){
-    local path dtplst desktop a b c d e f g h name choice
+    local path dtplst desktop a b c d e f g h name choice count_named_desktops count_all_desktops yadtext
+    local -a named_desktops
     [[ -n $1 ]] && path=$1
-    dtplst=(TRUE "Current Desktop" "x")
+    dtplst=(TRUE "Desktop where launched" "x")
     # shellcheck disable=SC2034
-    while read -r desktop a b c d e f g h name
-    do
-        dtplst+=(FALSE "$(pangoEscape "$name")" "$desktop")
-    done < <( wmctrl -d )
+    case "$BUNSEN_SESSION_TYPE" in
+    x11)
+        while read -r desktop a b c d e f g h name
+        do
+            dtplst+=(FALSE "$(pangoEscape "$name")" "$desktop")
+        done < <( wmctrl -d )
+        ;;
+    wayland)
+        getLabDesktops || return 1
+        for (( i=0; i<count_all_desktops; i++ ))
+        do
+            desktop=$i
+            name=${named_desktops[i]}
+            [[ -n $name ]] || name="Desktop $((desktop+1))"
+            dtplst+=(FALSE "$(pangoEscape "$name")" "$desktop")
+        done
+        ;;
+    esac
+    yadtext="Choose a desktop for $(pangoEscape "${path##*/}"):"
+    [[ ${CONKY_CONF[out_to_wayland]} = 'true' ]] && yadtext+="
+
+(Conkys running on native Wayland cannot be assigned to a desktop
+ so this choice will be applied in X11 sessions only.)"
     choice=$($DLGDEC $WINICON --list --title="$TITLE" \
-        --text="Choose a desktop for $(pangoEscape "${path##*/}"):" \
+        --text="$yadtext" \
         --radiolist --width=300 --height=400 \
         --column=Select:RD --column="Desktop Name:TEXT" --column=desktop:HD \
         "${dtplst[@]}" --separator='' --print-column=3 "$OK" ) || return 1
@@ -354,8 +399,8 @@ loadDialog() {
         # if session file is empty restore previous saved-sessions file
         if [[ ! -s "$SESSIONFILE" ]];then
             #rm -f "$SESSIONFILE"
-            if  [[ -f $SESSIONS.bkp ]]; then
-                mv "$SESSIONS.bkp" "$SESSIONS"
+            if  [[ -f $SAVEDSESSIONS.bkp ]]; then
+                mv "$SAVEDSESSIONS.bkp" "$SAVEDSESSIONS"
             fi
         fi
         setStartupDlg
@@ -384,7 +429,8 @@ loadDialog() {
         while read -r path
         do
             [[ -n $path ]] || continue
-            if isSticky "$path"; then
+            parseConky "$path" # generates global array CONKY_CONF
+            if isSticky; then # isSticky() refers to CONKY_CONF, as does chooseDesktop()
                 echo "${path#"$HOME"/}" >> "$SESSIONFILE" # put HOME-relative paths in sessionfile for better compatibility with BLOB
             else
                 if desktop=$( chooseDesktop "$path" ); then
@@ -432,7 +478,9 @@ while [[ -n $1 ]];do
         -f|--file)
             if [[ -n $2 ]];then
                 SFNAME="$2"    # sessionfile has been specified
+                [[ $SFNAME = /* ]] && SFNAME="${SFNAME##*/}" # cope with absolute paths too, but must be in conky dir
                 NEWSESSFILE="$CONKYPATH/$SFNAME"
+                [[ -f $NEWSESSFILE ]] || { echo "$0: Session file $NEWSESSFILE not found" >&2; exit 1;}
                 break
             else
                 echo "$0: No session file name specified" >&2
@@ -480,11 +528,11 @@ done
 
 if [[ -n "$NEWSESSFILE" ]]; then
     SESSIONFILE="$NEWSESSFILE"
-    if grep -qx "$SESSIONFILE" "$SESSIONS";then
+    if grep -qx "$SESSIONFILE" "$SAVEDSESSIONS";then
         echo "$0: session \"$SFNAME\" is already in saved sessions"
     else
-        cp "$SESSIONS" "$SESSIONS.bkp"
-        echo "$SESSIONFILE" >> "$SESSIONS"
+        cp "$SAVEDSESSIONS" "$SAVEDSESSIONS.bkp"
+        echo "$SESSIONFILE" >> "$SAVEDSESSIONS"
     fi
 fi
 
