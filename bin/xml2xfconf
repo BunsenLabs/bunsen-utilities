@@ -34,8 +34,8 @@ an app whose xml file has been backed up.
 
 USAGE EXAMPLE:
 
-restore=$(mktemp)
-xml2xfconf -x /path/to/xfce4-terminal.xml -c xfce4-terminal > "$restore"
+restore=$(mktemp);
+xml2xfconf -x /path/to/xfce4-terminal.xml -c xfce4-terminal > "$restore";
 bash "$restore"
 '
 
